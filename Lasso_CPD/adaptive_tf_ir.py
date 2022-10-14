@@ -3,7 +3,7 @@ from scipy.sparse import dia_matrix
 from sparse_inv import sparse_inversion
 
 
-def l1tf_adaptive(y, t=None, lambda_p=None, k=2):
+def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
 
     """
     y is observed signal
@@ -13,61 +13,57 @@ def l1tf_adaptive(y, t=None, lambda_p=None, k=2):
     lambda_p =penalty to adaptively filter; defaults to array
 
     """
-    alpha = 0.01
-    beta = 0.5
-    mu = 2
-    maxiter = 100
+    gamma=0.5
+    alpha=0.01
+    beta=0.5
+    mu=2
+    maxiter = 100# adjust
     maxlsiter = 50
-    tol = 1e-4  # tol for duality gap to terminate upon
+    tol = 1e-8  # adjust for tol
 
     n = len(y)
     m = n - k
-
     if not isinstance(lambda_p, np.ndarray):
 
         lambda_p = lambda_p * np.ones((m, 1))
+        
 
     # Difference operators for algorithm
-    D = Dmat(n, k).toarray()  # kth order difference matrix
+    D = Dmat(n, k).toarray()  
 
     if t is not None:
 
         """Account for irregularly spaced timestamps; right now k=2 supported"""
 
         if k == 2:
-            t_diff = t
+            t_diff = np.diff(t)
 
-            # t_diff=np.pad(np.diff(t),(1,0),'constant',constant_values=t[1]) # difference time occurrences (seconds), pad beginning with 1st observation
-            # t_diff=((t_diff-np.min(t_diff))/(np.max(t_diff)-np.min(t_diff))+1)/2
-            # explicitly compute differences
-
-            t_diff1 = np.pad(t_diff[1:], (0, 1), "constant", constant_values=t_diff[-1])
+            t_diff1 = np.pad(t_diff, (0, 1), "constant", constant_values=t_diff[-1])
             t_diff3 = np.pad(
-                t_diff[:-1], (0, 1), "constant", constant_values=t_diff[-1]
+                t_diff, (0, 1), "constant", constant_values=t_diff[-1]
             )
             t_diff2 = t_diff1 + t_diff3  # error in composition
 
             a = t_diff1 / t_diff3
             b = -t_diff2 / (t_diff1 * t_diff3)
-            c = t_diff3 / t_diff1
+            c = t_diff3 #/ t_diff1
 
             # project onto matrix
             T = dia_matrix(
-                (np.vstack([a, b, c]), [0, 1, 2]), shape=(n - 2, n)
+                (np.vstack([a, b, c]), [0, 1, 2]), shape=(n - 2, n-2)
             ).toarray()
-
-            # factor into our difference matrix
-            D = T
+            
+            lambda_p=np.dot(lambda_p.T,abs(T)).reshape(-1,1) # factor in the absolute difference in time 
+         
+            
         else:
             print(f"K={k} not supported yet for uneven time discretization")
 
     DDT = np.dot(D, D.transpose())
     DDT_inv = sparse_inversion(DDT)
-
-    # initial difference guess
-    Dy = np.dot(D, y)
-
-    z = np.zeros((m, 1))  # this is our dual variable
+    
+    Dy=np.dot(D,y)
+    z = np.zeros((m, 1))  #dual variable
     mu1 = np.ones((m, 1))
     mu2 = np.ones((m, 1))
 
@@ -81,13 +77,12 @@ def l1tf_adaptive(y, t=None, lambda_p=None, k=2):
     f2 = -z - lambda_p
 
     for iters in range(maxiter + 1):
-
         # rhs of algorithm to implement
-        DTz = np.dot(z.transpose(), D).transpose()
+        DTz = np.dot(z.transpose(), D).transpose() ### need to adjust
         DDTz = np.dot(D, DTz)
         w = Dy - (mu1 - mu2)
-
-        # how are the two primal objectives equivalent
+       
+        # primal and dual
         pobj1 = 0.5 * np.dot(w.transpose(), (np.dot(DDT_inv, w))) + np.sum(
             np.dot(lambda_p.T, (mu1 + mu2))
         )
@@ -95,21 +90,33 @@ def l1tf_adaptive(y, t=None, lambda_p=None, k=2):
             np.dot(lambda_p.T, abs(Dy - DDTz))
         )
 
-        pobj = min(pobj1, pobj2)  # sensitive of shaping of arrays
+        pobj = min(pobj1, pobj2)  
+        
+        #dual of the dual
         dobj = -0.5 * np.dot(DTz.transpose(), DTz) + np.dot(
             Dy.transpose(), z
-        )  # dual objective
-
+        ) 
+    
         gap = pobj - dobj  # duality gap
-
+        
+        print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")  
+        if gap<0:
+            status = "negative duality gap"
+            print(status)
+            print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")
+            guess= y - np.dot(D.transpose(), z)
+            return guess, status, D
+            
         if gap <= tol:
             status = "solved"
             print(status)
+            print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")
             x = y - np.dot(D.transpose(), z)  # solution
             return x, status, D
 
         # update scheme for the step within primal-dual interior point method , which is a fist order approximation
         # note the step size for the search direction is a function of the residuals for both objectives as the system is coupled
+        # implemented adaptive stepsizes foor increased stability at rate gamma 
         if step >= 0.2:
             t = max(2 * m * mu / gap, 1.2 * t)
 
@@ -139,7 +146,7 @@ def l1tf_adaptive(y, t=None, lambda_p=None, k=2):
 
         # Backtracking style line search, parameterized by alpha and beta
         for liter in range(maxlsiter):
-
+                
             newz = z + step * dz
             newmu1 = mu1 + step * dmu1
             newmu2 = mu2 + step * dmu2
@@ -158,7 +165,18 @@ def l1tf_adaptive(y, t=None, lambda_p=None, k=2):
                 break
 
             step *= beta
-
+        
+        # Adaptive stepsizes for updating our mu direction 
+        #####################
+        if 2*pobj1>pobj2:
+            newmu1=newmu1/gamma
+            newmu2=newmu2*gamma
+        elif 2*pobj2>pobj1:
+            newmu1=newmu1*gamma
+            newmu2=newmu2*gamma
+        else:
+            pass
+        #####################
         z = newz
         mu1 = newmu1
         mu2 = newmu2
@@ -174,7 +192,7 @@ def l1tf_adaptive(y, t=None, lambda_p=None, k=2):
 
 def Dmat(n, k):
     """
-    Optimized difference matrix computation using scipy sparse matrices
+    Optimized difference matrix computation using scipy sparse matrices using pascals 
 
     Parameters
     ----------
