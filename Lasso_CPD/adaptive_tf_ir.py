@@ -83,13 +83,14 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
         w = Dy - (mu1 - mu2)
        
         # primal and dual
-        pobj1 = 0.5 * np.dot(w.transpose(), (np.dot(DDT_inv, w))) + np.sum(
+        pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(
             np.dot(lambda_p.T, (mu1 + mu2))
         )
         pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(
             np.dot(lambda_p.T, abs(Dy - DDTz))
         )
-
+        
+     
         pobj = min(pobj1, pobj2)  
         
         #dual of the dual
@@ -167,6 +168,7 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
             step *= beta
         
         # Adaptive stepsizes for updating our mu direction 
+        # Ref. Adaptive primal-dual hybrid gradient methods
         #####################
         if 2*pobj1>pobj2:
             newmu1=newmu1/gamma
