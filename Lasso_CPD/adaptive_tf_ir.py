@@ -17,9 +17,9 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
     alpha=0.01
     beta=0.5
     mu=2
-    maxiter = 100# adjust
+    maxiter = 500# adjust
     maxlsiter = 50
-    tol = 1e-8  # adjust for tol
+    tol = 1e-2  # adjust for tol
 
     n = len(y)
     m = n - k
@@ -100,7 +100,8 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
     
         gap = pobj - dobj  # duality gap
         
-        print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")  
+        if iters%5==0:
+            print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")  
         if gap<0:
             status = "negative duality gap"
             print(status)

@@ -1,7 +1,4 @@
 import numpy as np
-from scipy.sparse import dia_matrix, csc_matrix
-from scipy.sparse.linalg import inv
-from scipy.interpolate import interp1d
 from scipy.stats import iqr
 import sys
 
