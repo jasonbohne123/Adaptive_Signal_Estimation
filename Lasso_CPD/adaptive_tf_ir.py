@@ -26,7 +26,6 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
     if not isinstance(lambda_p, np.ndarray):
 
         lambda_p = lambda_p * np.ones((m, 1))
-        
 
     # Difference operators for algorithm
     D = Dmat(n, k).toarray()  
