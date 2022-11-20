@@ -2,16 +2,21 @@ import numpy as np
 from scipy.sparse import dia_matrix
 from sparse_inv import sparse_inversion
 
-
-def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
-
+def compute_lambda_max(series,k=2):
+    """ Computes Lambda Max corresponding to penalty
     """
-    y is observed signal
+    D=Dmat(len(series),k)
+    D_y=D.dot(series)
+    DDT = D.dot(D.T)
+    DDT_inv = sparse_inversion(DDT)
+    
+    lambda_max=np.max(np.sum(DDT_inv.dot(D_y),axis=1))
+    
+    
+    return lambda_max
 
-    t= times at which observations occur ; defaults to irregularly spaced
-
-    lambda_p =penalty to adaptively filter; defaults to array
-
+def get_hyperparams():
+    """ Specify hyperparameters in this function
     """
     gamma=0.5
     alpha=0.01
@@ -20,6 +25,21 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
     maxiter = 500# adjust
     maxlsiter = 50
     tol = 1e-2  # adjust for tol
+    
+    param_dict={
+    
+
+
+
+
+
+def adaptive_tf(y, t=None, lambda_p=None,k=2):
+    """ Adaptive Trend Filtering Script
+    """
+    
+    params=get_hyperparams():
+    
+
 
     n = len(y)
     m = n - k
@@ -27,7 +47,7 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
 
         lambda_p = lambda_p * np.ones((m, 1))
 
-    # Difference operators for algorithm
+  
     D = Dmat(n, k).toarray()  
 
     if t is not None:
@@ -62,22 +82,20 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
     DDT_inv = sparse_inversion(DDT)
     
     Dy=np.dot(D,y)
-    z = np.zeros((m, 1))  #dual variable
+    z = np.zeros((m, 1))  
     mu1 = np.ones((m, 1))
     mu2 = np.ones((m, 1))
 
     t = 1e-10
-    pobj = np.inf  # primal objective
-    dobj = 0  # dual objective
+    pobj = np.inf  
+    dobj = 0  
     step = np.inf
 
-    # initial values for f1, f2 , from vector lambda_p
     f1 = z - lambda_p
     f2 = -z - lambda_p
 
     for iters in range(maxiter + 1):
-        # rhs of algorithm to implement
-        DTz = np.dot(z.transpose(), D).transpose() ### need to adjust
+        DTz = np.dot(z.transpose(), D).transpose() 
         DDTz = np.dot(D, DTz)
         w = Dy - (mu1 - mu2)
        
@@ -89,7 +107,6 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
             np.dot(lambda_p.T, abs(Dy - DDTz))
         )
         
-     
         pobj = min(pobj1, pobj2)  
         
         #dual of the dual
@@ -97,10 +114,11 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
             Dy.transpose(), z
         ) 
     
-        gap = pobj - dobj  # duality gap
+        gap = pobj - dobj 
         
         if iters%5==0:
             print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")  
+        
         if gap<0:
             status = "negative duality gap"
             print(status)
@@ -115,18 +133,17 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
             x = y - np.dot(D.transpose(), z)  # solution
             return x, status, D
 
-        # update scheme for the step within primal-dual interior point method , which is a fist order approximation
-        # note the step size for the search direction is a function of the residuals for both objectives as the system is coupled
-        # implemented adaptive stepsizes foor increased stability at rate gamma 
+        # update scheme for the step within primal-dual interior point method 
         if step >= 0.2:
             t = max(2 * m * mu / gap, 1.2 * t)
 
         rz = DDTz - w
-        S = DDT - np.diag((mu1 / f1 + mu2 / f2).flatten())  # Jacobian J_1 J_2
+        S = DDT - np.diag((mu1 / f1 + mu2 / f2).flatten()) 
         r = -DDTz + Dy + (1 / t) / f1 - (1 / t) / f2
+        # step size for dual variable representing equality
         dz = np.dot(
             np.linalg.inv(S), r
-        )  # step size for dual variable representing equality
+        )  
 
         # step size for the dual variables formulated from constraints
         dmu1 = -(mu1 + ((1 / t) + dz * mu1) / f1)
@@ -147,7 +164,6 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
 
         # Backtracking style line search, parameterized by alpha and beta
         for liter in range(maxlsiter):
-                
             newz = z + step * dz
             newmu1 = mu1 + step * dmu1
             newmu2 = mu2 + step * dmu2
@@ -157,7 +173,6 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
             newResDual = np.dot(DDT, newz) - Dy + newmu1 - newmu2
             newResCent = np.vstack((-newmu1 * newf1 - 1 / t, -newmu2 * newf2 - 1 / t))
             newResidual = np.vstack((newResDual, newResCent))
-
             # break out if actual reduction meets expected via norm of residual
             if max(max(newf1), max(newf2)) < 0 and (
                 np.linalg.norm(newResidual)
@@ -167,9 +182,7 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
 
             step *= beta
         
-        # Adaptive stepsizes for updating our mu direction 
-        # Ref. Adaptive primal-dual hybrid gradient methods
-        #####################
+       # adaptive step sizes by ratio of gamma for updating mu
         if 2*pobj1>pobj2:
             newmu1=newmu1/gamma
             newmu2=newmu2*gamma
@@ -178,7 +191,6 @@ def l1tf_adaptive_ir(y, t=None, lambda_p=None,k=2):
             newmu2=newmu2*gamma
         else:
             pass
-        #####################
         z = newz
         mu1 = newmu1
         mu2 = newmu2
