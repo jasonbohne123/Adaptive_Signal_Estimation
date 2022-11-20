@@ -1,16 +1,13 @@
 from petsc4py import PETSc
 from slepc4py import SLEPc
 import numpy as np
-import scipy
 from scipy.sparse import csr_matrix
 
 
 def sparse_inversion(A, algorithm="lanczos"):
     """
-    Computes the inverse of sparse matrices via SVD through SLEPc and PETSc
-
+    Inverts sparse matrices via SVD through SLEPc and PETSc
     Default Algorithm is Lanczos Algorithm
-
     """
 
     r, c = A.shape
@@ -20,18 +17,21 @@ def sparse_inversion(A, algorithm="lanczos"):
     p1 = A.indptr
     p2 = A.indices
     p3 = A.data
+    # creates matrix witin PETSC data type
     A_p = PETSc.Mat().createAIJ(size=A.shape, csr=(p1, p2, p3))
 
+    # constructs eigenvalue problem within SLEPC 
     E = SLEPc.SVD()
     E.create()
     E.setOperators(A_p)
     E.setDimensions(r)
-    E.setProblemType(SLEPc.SVD.ProblemType.STANDARD)  # standard svd decomposition
+    E.setProblemType(SLEPc.SVD.ProblemType.STANDARD)  
     E.setType(algorithm)
     E.setFromOptions()
 
     E.solve()
 
+    # gets eigenvalues and eigenvectors
     eigs = np.array([E.getValue(i) for i in range(0, r)])
 
     u = []
@@ -39,7 +39,7 @@ def sparse_inversion(A, algorithm="lanczos"):
 
     for i in range(0, r):
 
-        # memory allocation
+        # allocates memory for eigenvectors
         u_ = PETSc.Vec().createSeq(r)
         v_ = PETSc.Vec().createSeq(c)
 
@@ -52,9 +52,5 @@ def sparse_inversion(A, algorithm="lanczos"):
 
     s = np.diagflat((1 / eigs) ** 2)
     l = np.matmul(np.matmul(u, s), u.T)
-
-    """
-        Safeguard against unstable inverses 
-    """
 
     return l

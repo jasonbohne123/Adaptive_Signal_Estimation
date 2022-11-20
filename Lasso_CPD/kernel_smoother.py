@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.stats import iqr
-import sys
 
 def compute_kernel(x_0,x_i,bandwidth):
     """ Given two points x_0 and x_i; compute the gaussian kernel utilizing euclidean distance 
@@ -43,8 +42,10 @@ def smooth_series(prior,index,bw_style=1):
         return None
     
     smooth=[]
+
+    # optimal bandwidth selection are for gaussian kernels 
     if bw_style==0:
-        bw=0.9*min(np.std(index),iqr(index)/1.35)/(len(index)**0.2) # standard deviation
+        bw=0.9*min(np.std(index),iqr(index)/1.35)/(len(index)**0.2) 
     else:
         bw=1.06*np.std(index) / (len(index)**0.2)
     
@@ -86,6 +87,7 @@ def mom_kde(prior,index,N,bandwidth):
     return np.array(kde_flatten)
 
 def cv_block_size(true,prior,index,bw,grid,verbose=False):
+    """ Cross validates block size for kernel density estimation"""
     results={}
 
     for n_i in grid:
