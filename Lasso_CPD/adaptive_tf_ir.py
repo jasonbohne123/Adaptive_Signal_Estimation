@@ -120,8 +120,8 @@ def get_hyperparams():
         "alpha": 0.01,
         "beta": 0.5,
         "mu": 2,
-        "maxiter": 500,
-        "maxlsiter": 50,
+        "maxiter": 100,
+        "maxlsiter": 25,
         "tol": 1e-4,
     }
     return hyperparams
@@ -144,12 +144,12 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
     n = len(y)
     m = n - k
 
-    if type(lambda_p) is int:
-        lambda_p = lambda_p * np.ones((m, 1))
+    if len(lambda_p) == 1:
+        lambda_p = np.array(lambda_p) * np.ones((m, 1))
 
     lambda_p = adjust_penalty_time(lambda_p, t, k, verbose)
 
-    # compute difference matrices and their inverses
+    # compute difference matrices and their inverses ; sparse algorithm
     D = Dmat(n, k).toarray()
     DDT = np.dot(D, D.transpose())
     DDT_inv = sparse_inversion(DDT)
@@ -199,7 +199,7 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
                 print(
                     f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")
             x = y - np.dot(D.transpose(), z)
-            return x, status, D
+            return x, status, gap
 
         # if duality gap is small enough
         if gap <= tol:
@@ -207,7 +207,7 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
             print(status)
             print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")
             x = y - np.dot(D.transpose(), z)
-            return x, status, D
+            return x, status, gap
 
         # Update scheme for mu
         if step >= 0.2:
@@ -282,4 +282,18 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
     if iters >= maxiter:
         status = "maxiter exceeded"
         print(status)
-        return x, status, D
+        return x, status, gap
+
+def cv_tf_penalty(y,t,grid,verbose):
+    """Cross Validation for constant TF penalty parameter lambda_p"""
+    
+    best_gap=np.inf
+    best_lambda=None
+    for lambda_i in grid:
+        x,status,gap=adaptive_tf(y,t,[lambda_i],verbose=verbose)
+
+        if gap<best_gap:
+            best_gap=gap
+            best_lambda=lambda_i
+        
+    return np.array([best_lambda]),np.array([best_gap])
