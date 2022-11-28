@@ -4,7 +4,7 @@ from sparse_inv import sparse_inversion
 
 
 def compute_lambda_max(y, k=2):
-
+    """Computes the maximum lambda value for the adaptive trend filtering algorithm"""
     D = Dmat(len(y), k)
     DTD = D.T.dot(D)
     DTD_inv = sparse_inversion(DTD)
