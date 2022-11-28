@@ -1,2 +1,6 @@
 # Adaptive_Signal_Estimation
-Public collection of algorithms for adaptive signal estimation
+Collection of algorithms comfortable sharing publicly related to topics for adaptive signal estimation
+
+Topics include
+- Optimized numerical algorithms for sparse matrices and differece matrices
+- Kernel density estimation methods and cross validation parameter tuning
