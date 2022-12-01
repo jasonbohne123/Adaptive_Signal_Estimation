@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse import dia_matrix
-from sparse_inv import sparse_inversion
+from matrix_algorithms.sparse_inv import sparse_inversion
 
 
 def compute_lambda_max(y, k=2):

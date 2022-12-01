@@ -1,7 +1,7 @@
-from dp_recursion import map_intervals,best_fit_polynomial
+from dynamic_programming.dp_recursion import map_intervals,best_fit_polynomial
 import numpy as np
 
-def generalized_cross_validation(optimal_indices,Y,order=1):
+def generalized_cross_validation(Y,optimal_indices,order=1):
     """ Determines optimal number of changepoints based on generalized cross validation """
 
     mse_dict={}

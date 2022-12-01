@@ -3,4 +3,8 @@
  __pycache__/
  ../Old/.ipynb_checkpoints/
 .ipynb_checkpoints/
-Lasso_CPD/__pycache__/
+
+dynamic_programming/__pycache__/
+kernel_methods/__pycache__/
+matrix_algorithms/__pycache__/
+trend_filtering/__pycache__/

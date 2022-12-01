@@ -111,7 +111,7 @@ def dp_solver(Y,indices,K_max,k=1):
         K_max=len(indices)
 
     indices=np.unique(np.concatenate([[0],indices,[len(Y)]]))
-    print("Indices are {}".format(indices))
+    print("Candidate Indices are {}".format(indices))
 
     # map the indices to the intervals of the data
     cp_mappings=map_intervals(Y,indices)
