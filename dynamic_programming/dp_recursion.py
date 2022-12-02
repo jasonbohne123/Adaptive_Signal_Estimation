@@ -99,6 +99,8 @@ def convert_observed_cp(optimal_segment,indices):
         
         all_segments[i]=[indices_dict[int(i)+1] for i in all_segments[i]]
     all_segments={i+1:all_segments[i] for i in range(len(all_segments))}
+    # include case where zero changepoints are optimal
+    all_segments[0]=[0]
     return all_segments
 
 
