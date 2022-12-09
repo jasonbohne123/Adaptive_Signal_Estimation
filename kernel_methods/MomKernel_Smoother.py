@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 path='/home/jbohn/jupyter/personal/'
-sys.path.append(f'{path}Adaptive_Signal_Estimation_Private/')
+sys.path.append(f'{path}Adaptive_Signal_Estimation_Private/kernel_methods/')
 from Kernel_Smoother import KernelSmoother
 
 
@@ -23,12 +23,13 @@ class MomKernelSmoother(KernelSmoother):
         """
         all_indices=np.arange(len(self.index))
         partition_indices=np.array_split(all_indices,N)
+        print(partition_indices)
 
         blocked_prior=[]
         blocked_index=[]
         for i in range(N):
-            blocked_prior.append(self.prior[partition_indices[i]])
-            blocked_index.append(self.index[partition_indices[i]])
+            blocked_prior.append(self.prior[partition_indices[i][0]:partition_indices[i][-1]])
+            blocked_index.append(self.index[partition_indices[i][0]:partition_indices[i][-1]])
             
         return blocked_prior,blocked_index
 
@@ -53,7 +54,7 @@ class MomKernelSmoother(KernelSmoother):
                 kde_estimates[i,j]=blocked_kernel.evaluate_kernel(self.index[j])
        
        
-        kde=kde[kde!=None]
+        kde_estimates=kde_estimates[kde_estimates!=None]
         # take median of estimates across each block
         kde=np.median(kde_estimates,axis=0)
 
