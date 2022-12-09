@@ -1,54 +1,68 @@
 import numpy as np
-from KernelSmoother import KernelSmoother
+import sys
+path='/home/jbohn/jupyter/personal/'
+sys.path.append(f'{path}Adaptive_Signal_Estimation_Private/')
+from Kernel_Smoother import KernelSmoother
 
 
 class MomKernelSmoother(KernelSmoother):
     """ Median of Means Kernel Smoother Class
     """
-    def __init__(self,kernel_smoother):
+    def __init__(self,kernel_smoother,N=None):
         self.prior=kernel_smoother.prior
         self.index=kernel_smoother.index
         self.bandwidth_style=kernel_smoother.bandwidth_style
         self.fitted_kernel_matrix=kernel_smoother.fitted_kernel_matrix
+        self.N=N
+        if N is None:
+            self.N=10
+            # CV
 
-
-    def partition_blocks(self,prior,index,N):
+    def partition_blocks(self,N):
         """ Partition prior into N blocks
         """
-        all_indices=np.arange(len(index))
+        all_indices=np.arange(len(self.index))
         partition_indices=np.array_split(all_indices,N)
 
         blocked_prior=[]
         blocked_index=[]
         for i in range(N):
-            blocked_prior.append(prior[partition_indices[i]])
-            blocked_index.append(index[partition_indices[i]])
+            blocked_prior.append(self.prior[partition_indices[i]])
+            blocked_index.append(self.index[partition_indices[i]])
             
         return blocked_prior,blocked_index
 
 
-    def mom_kde(self,prior,index,N,bandwidth):
+    def fit_mom_kde(self,N=None):
         """ Applies robust kernel density estimation median of means 
         """
-        kde_list=[]
-        
+        if N is None:
+            N=self.N
         # partition prior into N blocks
-        block_prior,block_index=self.partition_blocks(prior,index,N)
+        block_prior,block_index=self.partition_blocks(N)
 
         # fit kde on each block
-        kde_estimates=np.empty((N,len(index)))
+        kde_estimates=np.empty((N,len(self.index)))
         
         for i in range(N):
             # determine the smooth values for each block
-            kde_estimates[i]=smooth_series(block_prior[i],block_index[i])[0]
-
+            blocked_kernel=KernelSmoother(block_prior[i],block_index[i],bandwidth_style=self.bandwidth_style)
+            blocked_kernel.fit()
+            blocked_kernel.smooth_series()
+            for j in range(len(self.index)):
+                kde_estimates[i,j]=blocked_kernel.evaluate_kernel(self.index[j])
+       
+       
+        kde=kde[kde!=None]
         # take median of estimates across each block
         kde=np.median(kde_estimates,axis=0)
 
         # rescale to unit density
         kde=kde/np.sum(kde)
 
-        return kde 
+        self.smooth_prior=kde
+
+        return 
         
 
     def cv_block_size(self,true,prior,index,bw,grid,verbose=False):

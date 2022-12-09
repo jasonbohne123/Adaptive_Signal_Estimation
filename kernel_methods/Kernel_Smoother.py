@@ -75,6 +75,8 @@ class KernelSmoother:
             kernel=self.compute_kernel(self.index[i],y_i,self.optimal_bandwidth) 
             kernel_matrix[i]=kernel
         
+        if np.sum(kernel_matrix)==0:
+            return None
 
         y_hat=np.sum(kernel_matrix*self.prior)/np.sum(kernel_matrix)
 
