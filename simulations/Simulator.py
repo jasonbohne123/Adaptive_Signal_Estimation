@@ -1,13 +1,15 @@
 import numpy as np
 from scipy.stats import norm, uniform, lognorm, expon, gamma, beta
 
+
 class Simulator():
-    """ Base class for simulators.
+    """ Base class for simulators, probability distributions are defined from scipy.stats
     """
-    def __init__(self,dist,rng=None,variance_scaling=10e-4):
-        
+
+    def __init__(self, dist, rng=None, variance_scaling=10e-4):
+
         self.variance_scaling = variance_scaling
-        
+
         if dist == 'normal':
             self.dist = norm
         elif dist == 'uniform':
@@ -22,19 +24,22 @@ class Simulator():
             self.dist = beta
         else:
             raise ValueError('Distribution not supported')
-        
+
         if rng is None:
             self.rng = np.random.RandomState()
         else:
             self.rng = rng
-    
-    def simulate(self,n,rng=None):
+
+    def simulate(self, n,loc=None,scale=None, rng=None):
         """Simulate data from a specific distribution."""
 
         if rng is None:
             rng = np.random.RandomState()
-        
-        return self.dist.rvs(size=n,scale=self.variance_scaling,random_state=rng)
 
-
+        if loc is None:
+            loc = np.zeros(n)
+        if scale is None:
+            scale = self.variance_scaling * np.ones(n)
         
+
+        return self.dist.rvs(size=n, loc=loc, scale=scale, random_state=rng)

@@ -12,19 +12,21 @@ class MomKernelSmoother(KernelSmoother):
         self.prior=kernel_smoother.prior
         self.index=kernel_smoother.index
         self.bandwidth_style=kernel_smoother.bandwidth_style
-        self.fitted_kernel_matrix=kernel_smoother.fitted_kernel_matrix
-        self.N=N
         if N is None:
-            self.N=10
-            # CV
+            sorted_cv=self.cv_block_size(self.prior,grid=np.floor(np.linspace(2,len(self.index)/10,10)).astype(int),verbose=True)
+            self.N=sorted_cv[0]
+            print(f"Optimal block size is {self.N}")
+        else:
+            self.N=N
+        
+
 
     def partition_blocks(self,N):
         """ Partition prior into N blocks
         """
         all_indices=np.arange(len(self.index))
         partition_indices=np.array_split(all_indices,N)
-        print(partition_indices)
-
+      
         blocked_prior=[]
         blocked_index=[]
         for i in range(N):
@@ -48,30 +50,28 @@ class MomKernelSmoother(KernelSmoother):
         for i in range(N):
             # determine the smooth values for each block
             blocked_kernel=KernelSmoother(block_prior[i],block_index[i],bandwidth_style=self.bandwidth_style)
-            blocked_kernel.fit()
-            blocked_kernel.smooth_series()
+            fitted_kernel_matrix=blocked_kernel.fit()
+            smooth=blocked_kernel.smooth_series(fitted_kernel_matrix)
             for j in range(len(self.index)):
                 kde_estimates[i,j]=blocked_kernel.evaluate_kernel(self.index[j])
        
        
-        kde_estimates=kde_estimates[kde_estimates!=None]
+        kde_estimates=kde_estimates[np.isnan(kde_estimates)==False]
         # take median of estimates across each block
         kde=np.median(kde_estimates,axis=0)
 
         # rescale to unit density
         kde=kde/np.sum(kde)
 
-        self.smooth_prior=kde
-
-        return 
+        return kde 
         
-
-    def cv_block_size(self,true,prior,index,bw,grid,verbose=False):
+    # TO:DO: why isn't CV working for different block sizes?
+    def cv_block_size(self,true,grid,verbose=False):
         """ Cross validates block size for kernel density estimation"""
         results={}
 
         for n_i in grid:
-            kde=self.mom_kde(prior,index,n_i,bw)
+            kde=self.fit_mom_kde(N=n_i)
             mse=np.round(np.sum((true-kde)**2),2)
             
             results[n_i]=[mse]

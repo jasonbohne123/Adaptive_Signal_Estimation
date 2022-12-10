@@ -49,15 +49,15 @@ class KernelSmoother:
                 kernel=self.compute_kernel(self.index[i],self.index[j],bandwidth=self.optimal_bandwidth) 
                 kernel_matrix[i,j]=kernel
 
-        self.fitted_kernel_matrix=kernel_matrix/np.sum(kernel_matrix,axis=1)
-        return 
+        fitted_kernel_matrix=kernel_matrix/np.sum(kernel_matrix,axis=1)
+        return fitted_kernel_matrix
 
-    def smooth_series(self):
+    def smooth_series(self,fitted_kernel_matrix):
         """ Smooths the series using the kernel smoothing estimator 
         """
-        self.smooth_prior=self.fitted_kernel_matrix.dot(self.prior)
+        smooth_prior=fitted_kernel_matrix.dot(self.prior)
         
-        return
+        return smooth_prior
     
     def evaluate_kernel(self,y_i):
         """ Evaluates the kernel at a given point y_i
