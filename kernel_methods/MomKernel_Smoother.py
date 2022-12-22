@@ -12,14 +12,14 @@ class MomKernelSmoother(KernelSmoother):
     """
 
     def __init__(self, kernel_smoother, N=None):
-        self.prior = kernel_smoother.prior
-        self.index = kernel_smoother.index
+        self.y = kernel_smoother.y
+        self.x = kernel_smoother.x
         self.bandwidth_style = kernel_smoother.bandwidth_style
 
         # if N is not specified, then we will cross validate across a grid of block sizes between trivial and 2% of the length of the prior
         if N is None:
-            grid = np.unique(np.floor(np.linspace(1, len(self.index)/50, 10))).astype(int)
-            sorted_cv = self.cv_block_size(self.prior, grid=grid, verbose=True)
+            grid = np.unique(np.floor(np.linspace(1, len(self.x)/50, 10))).astype(int)
+            sorted_cv = self.cv_block_size(self.y, grid=grid, verbose=True)
             self.N = sorted_cv[0]
             print(f"Optimal block size is {self.N}")
         else:
@@ -30,21 +30,21 @@ class MomKernelSmoother(KernelSmoother):
         """
 
         if oos_indices is not None:
-            all_indices = np.arange(len(self.index))
+            all_indices = np.arange(len(self.x))
         else:
-            all_indices =np.setdiff1d(np.arange(len(self.index)),oos_indices).sort()
+            all_indices =np.setdiff1d(np.arange(len(self.x)),oos_indices).sort()
         
         partition_indices = np.array_split(all_indices, N)
 
-        blocked_prior = []
-        blocked_index = []
+        blocked_y = []
+        blocked_x = []
         for i in range(N):
-            blocked_prior.append(
-                self.prior[partition_indices[i][0]:partition_indices[i][-1]])
-            blocked_index.append(
-                self.index[partition_indices[i][0]:partition_indices[i][-1]])
+            blocked_y.append(
+                self.y[partition_indices[i][0]:partition_indices[i][-1]])
+            blocked_x.append(
+                self.x[partition_indices[i][0]:partition_indices[i][-1]])
 
-        return blocked_prior, blocked_index
+        return blocked_y, blocked_x
 
     def fit_mom_kde(self, N=None,oos_indices=None):
         """ Applies robust kernel density estimation median of means 
@@ -53,20 +53,20 @@ class MomKernelSmoother(KernelSmoother):
             N = self.N
 
         # partition prior into N blocks, if testing oos pass to block partition
-        block_prior, block_index = self.partition_blocks(N,oos_indices)
+        block_y, block_x = self.partition_blocks(N,oos_indices)
 
         # fit kde on each block
-        kde_estimates = np.zeros((N, len(self.index)))
+        kde_estimates = np.zeros((N, len(self.x)))
 
         for i in range(N):
             # determine the smooth values for each block
             blocked_kernel = KernelSmoother(
-                block_prior[i], block_index[i], bandwidth_style=self.bandwidth_style)
+                block_y[i], block_x[i], bandwidth_style=self.bandwidth_style)
             fitted_kernel_matrix = blocked_kernel.fit()
 
             # evaluate across range ( which includes extrapolation)
-            for j in range(len(self.index)):
-                kernel_eval = blocked_kernel.evaluate_kernel(self.index[j])
+            for j in range(len(self.x)):
+                kernel_eval = blocked_kernel.evaluate_kernel(self.x[j])
 
                 kde_estimates[i, j] = kernel_eval
 
@@ -82,7 +82,7 @@ class MomKernelSmoother(KernelSmoother):
         for n_i in grid:
             
             # reserve 25% of data for oos
-            oos_indices= np.random.choice(np.arange(len(self.index)), size=math.floor(len(self.index)/4), replace=False)
+            oos_indices= np.random.choice(np.arange(len(self.x)), size=math.floor(len(self.x)/4), replace=False)
             
             # compare true to kde of blocks n_i
             kde = self.fit_mom_kde(n_i,oos_indices)

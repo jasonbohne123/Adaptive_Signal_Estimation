@@ -9,9 +9,9 @@ class KernelSmoother:
     """ Kernel Smoother Class
     """
 
-    def __init__(self, prior, index, bandwidth_style):
-        self.prior = prior
-        self.index = index
+    def __init__(self, x, y, bandwidth_style):
+        self.y = y
+        self.x = x
         self.bandwidth_style = bandwidth_style
         self.optimal_bandwidth = None
 
@@ -31,26 +31,26 @@ class KernelSmoother:
         Fits a kernel smoothing estimator on a prior series
         """
 
-        if len(self.prior) != len(self.index):
+        if len(self.y) != len(self.x):
             print("Mismatched Series")
             return None
 
-        kernel_matrix = np.zeros((len(self.index), len(self.index)))
+        kernel_matrix = np.zeros((len(self.x), len(self.x)))
 
         # optimal bandwidth selection are for gaussian kernels
         if self.bandwidth_style == 0:
-            bw = 0.9*min(np.std(self.index), iqr(self.index) /
-                         1.35)/(len(self.index)**0.2)
+            bw = 0.9*min(np.std(self.x), iqr(self.x) /
+                         1.35)/(len(self.x)**0.2)
         else:
-            bw = 1.06*np.std(self.index) / (len(self.index)**0.2)
+            bw = 1.06*np.std(self.x) / (len(self.x)**0.2)
 
         self.optimal_bandwidth = bw
 
-        for i in range(0, len(self.index)):
+        for i in range(0, len(self.x)):
 
-            for j in range(0, len(self.index)):
+            for j in range(0, len(self.x)):
                 kernel = self.compute_kernel(
-                    self.index[i], self.index[j], bandwidth=self.optimal_bandwidth)
+                    self.x[i], self.x[j], bandwidth=self.optimal_bandwidth)
                 kernel_matrix[i, j] = kernel
 
         fitted_kernel_matrix = kernel_matrix/np.sum(kernel_matrix, axis=1)
@@ -59,7 +59,7 @@ class KernelSmoother:
     def smooth_series(self, fitted_kernel_matrix):
         """ Smooths the series using the kernel smoothing estimator 
         """
-        smooth_prior = fitted_kernel_matrix.dot(self.prior)
+        smooth_prior = fitted_kernel_matrix.dot(self.y)
 
         return smooth_prior
 
@@ -69,22 +69,22 @@ class KernelSmoother:
 
         if self.optimal_bandwidth is None:
             if self.bandwidth_style == 0:
-                bw = 0.9*min(np.std(self.index), iqr(self.index) /
-                             1.35)/(len(self.index)**0.2)
+                bw = 0.9*min(np.std(self.x), iqr(self.x) /
+                             1.35)/(len(self.x)**0.2)
             else:
-                bw = 1.06*np.std(self.index) / (len(self.index)**0.2)
+                bw = 1.06*np.std(self.x) / (len(self.x)**0.2)
             self.optimal_bandwidth = bw
 
-        kernel_matrix = np.zeros((len(self.index)))
-        for i in range(0, len(self.index)):
+        kernel_matrix = np.zeros((len(self.x)))
+        for i in range(0, len(self.x)):
             kernel = self.compute_kernel(
-                self.index[i], y_i, self.optimal_bandwidth)
+                self.x[i], y_i, self.optimal_bandwidth)
             kernel_matrix[i] = kernel
 
         # decay weight causes extrapolation estimate to be zero
         if np.sum(kernel_matrix) == 0:
             return None
 
-        y_hat = np.sum(kernel_matrix*self.prior)/np.sum(kernel_matrix)
+        y_hat = np.sum(kernel_matrix*self.y)/np.sum(kernel_matrix)
 
         return y_hat

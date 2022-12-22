@@ -1,70 +1,7 @@
 import numpy as np
 from scipy.sparse import dia_matrix
-from matrix_algorithms.sparse_inv import sparse_inversion
-
-
-def compute_lambda_max(y, k=2):
-    """Computes the maximum lambda value for the adaptive trend filtering algorithm"""
-    D = Dmat(len(y), k)
-    DTD = D.T.dot(D)
-    DTD_inv = sparse_inversion(DTD)
-    lambda_max = np.sqrt(DTD_inv.diagonal().max())
-
-    return lambda_max
-
-
-def extract_cp(smooth, k=2, threshold=1e-6):
-    """ Extract changepoints via difference operator 
-    """
-    diff_mat = Dmat(len(smooth), k).todense()
-    diff = np.dot(diff_mat, smooth).reshape(1, -1)[0]
-
-    x, y, index = np.where([abs(diff) > threshold])
-    return index
-
-
-def Dmat(n, k):
-    """
-    Difference matrix computation using pascals recurison stored in scipy sparse matrix format
-
-    Parameters
-    ----------
-    n : int
-    k: int
-
-    Returns
-    -------
-    D : Array
-    """
-
-    def pascals(k):
-        pas = [0, 1, 0]
-        counter = k
-        while counter > 0:
-            pas.insert(0, 0)
-            pas = [np.sum(pas[i: i + 2]) for i in range(0, len(pas))]
-            counter -= 1
-        return pas
-
-    coeff = pascals(k)
-    coeff = [i for i in coeff if i != 0]
-    coeff = [coeff[i] if i % 2 == 0 else -coeff[i]
-             for i in range(0, len(coeff))]
-
-    if k == 0:
-        D = dia_matrix((np.ones(n), 0), shape=(n - 2, n))
-    elif k == 1:
-        D = dia_matrix(
-            (np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)),
-            shape=(n - 2, n),
-        )
-    else:
-        D = dia_matrix(
-            (np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)),
-            shape=(n - 2, n),
-        )
-
-    return D
+from matrix_algorithms.difference_matrix import Difference_Matrix
+from trend_filtering.opt_params import get_hyperparams
 
 
 def adjust_penalty_time(lambda_p, times, k, verbose):
@@ -106,27 +43,6 @@ def adjust_penalty_time(lambda_p, times, k, verbose):
     return lambda_p
 
 
-def get_hyperparams():
-    """
-    Returns the hyperparameters for the adaptive trend filtering algorithm
-
-    Returns
-    -------
-    hyperparams : dict
-        Dictionary containing the hyperparameters
-    """
-    hyperparams = {
-        "gamma": 0.5,
-        "alpha": 0.01,
-        "beta": 0.5,
-        "mu": 2,
-        "maxiter": 100,
-        "maxlsiter": 25,
-        "tol": 1e-4,
-    }
-    return hyperparams
-
-
 def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
     """
     Adaptive trend filtering algorithm
@@ -149,11 +65,15 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
 
     lambda_p = adjust_penalty_time(lambda_p, t, k, verbose)
 
-    # compute difference matrices and their inverses ; sparse algorithm
-    D = Dmat(n, k).toarray()
-    DDT = np.dot(D, D.transpose())
-    DDT_inv = sparse_inversion(DDT)
+    # construct difference matrix
+    diff_mat = Difference_Matrix(n, k)
+    D = diff_mat.D
+    DDT = diff_mat.DDT
+    DDT_inv=diff_mat.DDT_inv
+
     Dy = np.dot(D, y)
+
+  
 
     # init variables and objectives
     z = np.zeros((m, 1))
@@ -185,6 +105,7 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
             Dy.transpose(), z
         )
         gap = pobj - dobj
+        print("Duality Gap is {}".format(gap))
 
         if verbose:
             if iters % 5 == 0:
