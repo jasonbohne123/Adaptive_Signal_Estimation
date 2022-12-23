@@ -22,10 +22,10 @@ def adjust_penalty_time(lambda_p, times, k, verbose):
     t_diff = np.diff(times)
 
     # forms three tridiagonal of time penalties in linear trend filtering
-    t_diff1 = np.pad(t_diff, (0, 1), "constant", constant_values=t_diff[-1])
-    t_diff3 = np.pad(
+    t_diff1 =np.fmax(0.01, np.pad(t_diff, (0, 1), "constant", constant_values=t_diff[-1]))
+    t_diff3 =np.fmax(0.01, np.pad(
         t_diff, (0, 1), "constant", constant_values=t_diff[-1]
-    )
+    ))
     t_diff2 = t_diff1 + t_diff3
 
     a = t_diff1 / t_diff3
@@ -72,8 +72,6 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
     DDT_inv=diff_mat.DDT_inv
 
     Dy = np.dot(D, y)
-
-  
 
     # init variables and objectives
     z = np.zeros((m, 1))
