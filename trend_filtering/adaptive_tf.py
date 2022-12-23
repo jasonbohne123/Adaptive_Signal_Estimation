@@ -203,9 +203,10 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
         print(status)
         return x, status, gap
 
-def cv_tf_penalty(y,t,grid,verbose):
+def cv_tf_penalty(y,grid,t=None,verbose=True):
     """Cross Validation for constant TF penalty parameter lambda_p"""
     
+
     best_gap=np.inf
     best_lambda=None
     for lambda_i in grid:

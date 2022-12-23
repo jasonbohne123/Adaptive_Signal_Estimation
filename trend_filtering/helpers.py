@@ -18,6 +18,6 @@ def extract_cp(smooth, k=2, threshold=1e-6):
     diff_mat = Difference_Matrix(n, k)
     D=diff_mat.D
     diff = np.dot(D, smooth).reshape(1, -1)[0]
-
+    
     x, y, index = np.where([abs(diff) > threshold])
     return index
