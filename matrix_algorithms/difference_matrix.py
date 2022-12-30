@@ -8,6 +8,10 @@ from scipy.sparse.linalg import spsolve
 class Difference_Matrix:
     def __init__(self, n, k, style=None) -> None:
 
+        ### normalize matrix before inversion; apply constant after the fact
+
+        # rescaling=1/np.min(DDT[abs(DDT)>0])
+
         self.n = n
         self.k = k
         self.style = style if style is not None else "lapack"
@@ -52,6 +56,11 @@ class Difference_Matrix:
         """
         if style == "lapack":
             DDT_inv = self.LU_decomposition()
+
+            #   test_result=asset ...
+
+            # if not test_result
+
             return DDT_inv
         elif style == "pentapy":
             DDT_inv = self.ptrans_algorithm()
@@ -162,6 +171,10 @@ def test_lapack(n=100):
     DDT = D.DDT
     DDT_inv = D.DDT_inv
 
+    DDT_rank = np.linalg.matrix_rank(DDT)
+
+    print(f"Rank of DDT matrix is {DDT_rank} out of {n-2}.")
+
     # check that the inverse is correct
     assert np.allclose(DDT.dot(DDT_inv), np.eye(n - 2), rtol=1e-8, atol=1e-8)
 
@@ -177,6 +190,10 @@ def test_sparse(n=100):
     DDT = D.DDT
     DDT_inv = D.DDT_inv
 
+    DDT_rank = np.linalg.matrix_rank(DDT)
+
+    print(f"Rank of DDT matrix is {DDT_rank} out of {n-2}.")
+
     # check that the inverse is correct
     assert np.allclose(DDT.dot(DDT_inv), np.eye(n - 2), rtol=1e-8, atol=1e-8)
 
@@ -191,6 +208,10 @@ def test_pentapy(n=100):
 
     DDT = D.DDT
     DDT_inv = D.DDT_inv
+
+    DDT_rank = np.linalg.matrix_rank(DDT)
+
+    print(f"Rank of DDT matrix is {DDT_rank} out of {n-2}.")
 
     # check that the inverse is correct
     assert np.allclose(DDT.dot(DDT_inv), np.eye(n - 2), rtol=1e-8, atol=1e-8)

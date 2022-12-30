@@ -8,3 +8,5 @@ dynamic_programming/__pycache__/
 kernel_methods/__pycache__/
 matrix_algorithms/__pycache__/
 trend_filtering/__pycache__/
+profiling/__pycache__/
+.vscode/
