@@ -1,4 +1,3 @@
-
 def get_hyperparams():
     """
     Returns the hyperparameters for the adaptive trend filtering algorithm
@@ -13,8 +12,8 @@ def get_hyperparams():
         "alpha": 0.01,
         "beta": 0.5,
         "mu": 2,
-        "maxiter": 25,
+        "maxiter": 100,
         "maxlsiter": 25,
-        "tol": 1e-4,
+        "tol": 1e-6,
     }
     return hyperparams
