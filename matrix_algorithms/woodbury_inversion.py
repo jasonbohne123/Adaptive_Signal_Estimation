@@ -1,6 +1,11 @@
+import sys
 import time
 
 import numpy as np
+
+path = "/home/jbohne/sbu/research/"
+sys.path.append(f"{path}Adaptive_Signal_Estimation_Private/matrix_algorithms/")
+
 from difference_matrix import Difference_Matrix
 from sherman_morrison import sherman_morrison_recursion
 

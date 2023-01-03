@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 
-path = "/home/jbohn/jupyter/personal/"
+path = "/home/jbohne/sbu/research/"
 sys.path.append(f"{path}Adaptive_Signal_Estimation_Private/kernel_methods/")
 from Kernel_Smoother import KernelSmoother
 
