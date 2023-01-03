@@ -122,6 +122,9 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
 
         # step size of dual variable for equality
         rz = DDTz - w
+
+        S_inv = sherman_morrison_recursion(np.diag((mu1 / f1 + mu2 / f2).flatten()), DDT, len(f1))
+
         S = DDT - np.diag((mu1 / f1 + mu2 / f2).flatten())
         r = -DDTz + Dy + (1 / mu_inc) / f1 - (1 / mu_inc) / f2
         dz = np.dot(
@@ -190,6 +193,24 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
         status = "maxiter exceeded"
         print(status)
         return x, status, gap
+
+
+def sherman_morrison_recursion(a_ij, DDT_inv, n):
+    """Compute the inverse of a matrix using the Sherman-Morrison formula"""
+    e_n = np.zeros(n)
+    e_n[n - 1] = 1
+    if n == 1:
+        A_inv = DDT_inv - DDT_inv.dot(a_ij[0] * e_n * e_n.transpose()).dot(DDT_inv) / (
+            1 + e_n.transpose().dot(DDT_inv).dot(e_n)
+        )
+    else:
+        A_inv = sherman_morrison_recursion(a_ij, DDT_inv, n - 1) - sherman_morrison_recursion(a_ij, DDT_inv, n - 1).dot(
+            a_ij[n - 1] * e_n * e_n.transpose()
+        ).dot(sherman_morrison_recursion(a_ij, DDT_inv, n - 1)) / (
+            1 + e_n.transpose().dot(sherman_morrison_recursion(a_ij, DDT_inv, n - 1)).dot(e_n)
+        )
+
+    return A_inv
 
 
 def cv_tf_penalty(y, grid, t=None, verbose=True):
