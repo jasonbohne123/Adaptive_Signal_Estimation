@@ -124,9 +124,9 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
         # step size of dual variable for equality
         rz = DDTz - w
 
-        S_inv = woodbury_matrix_inversion(np.diag((mu1 / f1 + mu2 / f2).flatten()), DDT_inv)
+        S_inv, tot_time = woodbury_matrix_inversion(-(mu1 / f1 + mu2 / f2), DDT_inv)
 
-        S = DDT - np.diag((mu1 / f1 + mu2 / f2).flatten())
+        DDT - np.diag((mu1 / f1 + mu2 / f2).flatten())
         r = -DDTz + Dy + (1 / mu_inc) / f1 - (1 / mu_inc) / f2
         dz = np.dot(S_inv, r)
 

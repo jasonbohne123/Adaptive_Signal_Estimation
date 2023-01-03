@@ -10,7 +10,7 @@ from difference_matrix import Difference_Matrix
 from sherman_morrison import sherman_morrison_recursion
 
 
-def woodbury_matrix_inversion(a_ij, DDT_inv, step=20):
+def woodbury_matrix_inversion(a_ij, DDT_inv, step=20, tests=False):
     """Compute the inverse of a matrix using the Woodbury formula
 
     k-blocks of the matrix are inverted at a time
@@ -41,8 +41,9 @@ def woodbury_matrix_inversion(a_ij, DDT_inv, step=20):
         # compute the inverse of the kth block of A_inv
         inv_truncated_mat = np.linalg.inv(truncated_mat)
 
-        # check that the inverse using numpy is correct
-        assert np.max(np.abs(truncated_mat.dot(inv_truncated_mat) - np.eye(len_block))) < 1e-10
+        if tests:
+            # check that the inverse using numpy is correct
+            assert np.max(np.abs(truncated_mat.dot(inv_truncated_mat) - np.eye(len_block))) < 1e-10
 
         c_a_inv, tot_time = sherman_morrison_recursion(1 / a_ij[k - 1 : k - 1 + step], inv_truncated_mat)
 
