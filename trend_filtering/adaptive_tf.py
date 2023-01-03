@@ -78,8 +78,8 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
     pobj = np.inf
     dobj = 0
     step = np.inf
-    f1 = z - lambda_p
-    f2 = -z - lambda_p
+    f1 = z[0] - lambda_p
+    f2 = -z[0] - lambda_p
 
     # main loop of iteration
     for iters in range(maxiter + 1):
