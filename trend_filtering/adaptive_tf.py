@@ -158,6 +158,8 @@ def adaptive_tf(y, t=None, lambda_p=1.0, k=2, verbose=True):
             newf1 = newz - lambda_p
             newf2 = -newz - lambda_p
 
+            print(newf1.shape, newf2.shape)
+
             newResDual = np.dot(DDT, newz) - Dy + newmu1 - newmu2
             newResCent = np.vstack((-newmu1 * newf1 - 1 / mu_inc, -newmu2 * newf2 - 1 / mu_inc))
             newResidual = np.vstack((newResDual, newResCent))
