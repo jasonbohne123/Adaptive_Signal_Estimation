@@ -89,7 +89,7 @@ def adaptive_tf(y, D_: Difference_Matrix, lambda_p, k=2, verbose=True):
             }
 
         # invert S matrix
-        S_inv = np.linalg.inv(DDT - (np.divide(mu1, f1) + np.divide(mu2, f2)))
+        S_inv = np.linalg.inv(DDT - np.diag((np.divide(mu1, f1) + np.divide(mu2, f2))))
 
         # our algorithm us much slower
         # woodbury_matrix_inversion(-(np.divide(mu1,f1) +np.divide(mu2,f2)), DDT_inv)
