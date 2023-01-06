@@ -14,14 +14,10 @@ def adaptive_tf(y, D_: Difference_Matrix, lambda_p, k=2, verbose=True):
     """
 
     hyperparams = get_hyperparams()
-    gamma = hyperparams["gamma"]
-    alpha = hyperparams["alpha"]
-    beta = hyperparams["beta"]
-    mu = hyperparams["mu"]
-    mu_inc = hyperparams["mu_inc"]
-    maxiter = hyperparams["maxiter"]
-    maxlsiter = hyperparams["maxlsiter"]
-    tol = hyperparams["tol"]
+
+    alpha, beta, gamma, mu, mu_inc, maxiter, maxlsiter, tol = map(
+        hyperparams.get, ["alpha", "beta", "gamma", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
+    )
 
     n = len(y)
     m = n - k
@@ -46,10 +42,6 @@ def adaptive_tf(y, D_: Difference_Matrix, lambda_p, k=2, verbose=True):
 
     f1 = z - lambda_p
     f2 = -z - lambda_p
-
-    alpha, beta, gamma, mu, mu_inc, maxiter, maxlsiter, tol = map(
-        hyperparams.get, ["alpha", "beta", "gamma", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
-    )
 
     # main loop of iteration
     for iters in range(maxiter + 1):
@@ -81,7 +73,7 @@ def adaptive_tf(y, D_: Difference_Matrix, lambda_p, k=2, verbose=True):
             if verbose:
                 print(status)
                 print(f"pobj: {min(pobj1,pobj2)} ,dobj: {dobj}, gap: {gap}")
-            x = y - np.dot(D.transpose(), z)
+            x = y - np.dot(D.T, z)
             return {
                 "sol": x,
                 "status": status,
@@ -148,7 +140,7 @@ def compute_objective(Dy, DDT_inv, DTz, DDTz, z, w, lambda_p, mu1, mu2):
     pobj2 = pobj2.item()
     pobj = min(pobj1, pobj2)
 
-    dobj = -0.5 * np.dot(DTz.transpose(), DTz) + np.dot(Dy.transpose(), z)
+    dobj = -0.5 * np.dot(DTz.T, DTz) + np.dot(Dy.T, z)
 
     dobj = dobj.item()
     gap = pobj - dobj
@@ -169,13 +161,15 @@ def update_step_size(DDTz, S_inv, Dy, w, step, mu1, mu2, f1, f2, gap, mu, mu_inc
     # step size of dual variable for equality
     rz = DDTz - w
     r = -DDTz + Dy + (1 / mu_inc) / f1 - (1 / mu_inc) / f2
+
     dz = (np.dot(S_inv, r.reshape(-1, 1))).flatten()
 
     # step size for the dual variables formulated from constraints
-    dmu1 = -(mu1 + ((1 / mu_inc) + np.dot(dz, mu1.T)) / f1)
-    dmu2 = -(mu2 + ((1 / mu_inc) - np.dot(dz, mu2.T)) / f2)
+    # This should be multiplication as ds is diagonal of a matrix J
+    dmu1 = -(mu1 + ((1 / mu_inc) + dz * mu1) / f1)
+    dmu2 = -(mu2 + ((1 / mu_inc) - dz * mu2) / f2)
 
-    residual = np.vstack((rz, -mu1 * f1 - 1 / mu_inc, -mu2 * f2 - 1 / mu_inc))
+    residual = np.vstack((rz, np.vstack((-mu1 * f1 - 1 / mu_inc, -mu2 * f2 - 1 / mu_inc))))
 
     negIdx1 = np.asarray(dmu1 < 0).nonzero()
     negIdx2 = np.asarray(dmu2 < 0).nonzero()
@@ -208,7 +202,7 @@ def line_search(DDT, Dy, lambda_p, z, dz, mu1, mu2, dmu1, dmu2, step, residual, 
         newf2 = -newz - lambda_p
 
         newResDual = np.dot(DDT, newz) - Dy + newmu1 - newmu2
-        newResidual = np.vstack((newResDual, -newmu1 * newf1 - 1 / mu_inc, -newmu2 * newf2 - 1 / mu_inc))
+        newResidual = np.vstack((newResDual, np.vstack((-newmu1 * newf1 - 1 / mu_inc, -newmu2 * newf2 - 1 / mu_inc))))
 
         # break out if actual reduction meets expected via norm of residual
         if max(np.max(newf1), np.max(newf2)) < 0 and (
