@@ -72,8 +72,8 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
         newz, newmu1, newmu2, newf1, newf2 = update_step(
             DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
         )
-        # adaptive stepsize of mu with ratio gamma
 
+        # adaptive stepsize of mu with ratio gamma
         newmu1, newmu2 = adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma)
 
         z = newz
@@ -90,6 +90,8 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
 
 
 def prep_matrices(D, Dy, z, mu, mu2):
+    """Prep matrices for objective computation"""
+
     DTz = np.dot(D.T, z)
     DDTz = np.dot(D, DTz)
     w = Dy - (mu - mu2)
@@ -97,7 +99,7 @@ def prep_matrices(D, Dy, z, mu, mu2):
 
 
 def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
-
+    """Computes Primal and Dual objectives and duality gap"""
     pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
     pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, abs(Dy - DDTz)))
     pobj = min(pobj1, pobj2)
@@ -107,6 +109,8 @@ def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
 
 
 def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter):
+    """Update step for z, mu1, mu2, f1, f2"""
+
     # Update scheme for mu
     if step >= 0.2:
         mu_inc = max(2 * m * mu / gap, 1.2 * mu_inc)
@@ -158,11 +162,14 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
         ):
             break
 
+        # must not return step otherwise converges to zero
         step *= beta
+
     return newz, newmu1, newmu2, newf1, newf2
 
 
 def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
+    """Adaptive step size of mu with ratio gamma"""
     if 2 * pobj1 > pobj2:
         newmu1 = newmu1 / gamma
         newmu2 = newmu2 * gamma
