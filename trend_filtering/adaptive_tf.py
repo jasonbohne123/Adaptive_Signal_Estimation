@@ -31,7 +31,7 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
     mu1 = np.ones((m, 1))
     mu2 = np.ones((m, 1))
     mu_inc = 1e-10
-    pobj = np.inf
+    np.inf
     dobj = 0
     step = np.inf
     f1 = z[0] - lambda_p
@@ -40,15 +40,11 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
     # main loop of iteration
     for iters in range(maxiter + 1):
 
-        # prep matrices for the linear system
         DTz, DDTz, w = prep_matrices(D, Dy, z, mu1, mu2)
 
-        # compute primal and dual objective values
-        pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
-        pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, abs(Dy - DDTz)))
-        pobj = min(pobj1, pobj2)
-        dobj = -0.5 * np.dot(DTz.transpose(), DTz) + np.dot(Dy.transpose(), z)
-        gap = pobj - dobj
+        # compute objectives
+        pobj1, pobj2, dobj, gap = compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p)
+
         print("Duality Gap is {}".format(gap))
 
         if verbose:
@@ -149,6 +145,16 @@ def prep_matrices(D, Dy, z, mu, mu2):
     DDTz = np.dot(D, DTz)
     w = Dy - (mu - mu2)
     return DTz, DDTz, w
+
+
+def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
+
+    pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
+    pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, abs(Dy - DDTz)))
+    pobj = min(pobj1, pobj2)
+    dobj = -0.5 * np.dot(DTz.transpose(), DTz) + np.dot(Dy.transpose(), z)
+    gap = pobj - dobj
+    return pobj1, pobj2, dobj, gap
 
 
 def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
