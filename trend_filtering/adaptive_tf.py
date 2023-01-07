@@ -45,8 +45,6 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
         # compute objectives
         pobj1, pobj2, dobj, gap = compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p)
 
-        print("Duality Gap is {}".format(gap))
-
         if verbose:
             if iters % 5 == 0:
                 print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")

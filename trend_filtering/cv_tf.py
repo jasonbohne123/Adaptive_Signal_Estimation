@@ -32,4 +32,4 @@ def cross_validation(y, D: Difference_Matrix, grid, verbose=True):
     if best_lambda is None:
         return None, None
 
-    return np.array([best_lambda]), np.array([best_gap])
+    return best_lambda, best_gap
