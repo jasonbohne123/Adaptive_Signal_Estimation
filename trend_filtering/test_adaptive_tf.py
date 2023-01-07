@@ -35,18 +35,24 @@ def test_adaptive_tf(x, n=None, k=2, include_cv=False, lambda_p=None, plot=False
                 return
             else:
                 print("Using predefined lambda_p")
-                lambda_p = np.array(lambda_p)
+                lambda_p = np.array([lambda_p])
 
-        lambda_p = optimal_lambda
+        else:
+            lambda_p = optimal_lambda
 
     # reconstruct signal
-    x_hat, status, gap = adaptive_tf(x.reshape(-1, 1), D_=D, lambda_p=lambda_p, verbose=False)
+    results = adaptive_tf(x.reshape(-1, 1), D_=D, lambda_p=lambda_p, verbose=False)
+
+    # extract solution information
+    results["gap"]
+    results["status"]
+    sol = results["sol"]
 
     if plot:
         # plot
         plt.figure(figsize=(10, 4))
         plt.plot(x, "b", label="noisy signal")
-        plt.plot(x_hat, "r", label="reconstructed signal")
+        plt.plot(sol, "r", label="reconstructed signal")
         plt.legend()
         plt.title("Reconstruction of a noisy signal with adaptive TF penalty")
         plt.show()
