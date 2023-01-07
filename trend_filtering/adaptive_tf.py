@@ -58,7 +58,7 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
                 print(status)
                 print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")
             x = y - np.dot(D.transpose(), z)
-            return x, status, gap
+            return {"sol": None, "status": status, "gap": -1}
 
         # if duality gap is small enough
         if gap <= tol:
@@ -66,7 +66,7 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
             print(status)
             print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")
             x = y - np.dot(D.transpose(), z)
-            return x, status, gap
+            return {"sol": x, "status": status, "gap": gap}
 
         # update step
         newz, newmu1, newmu2, newf1, newf2 = update_step(
@@ -82,11 +82,8 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
         f1 = newf1
         f2 = newf2
 
-    x = y - np.dot(D.transpose(), z)
-    if iters >= maxiter:
-        status = "maxiter exceeded"
-        print(status)
-        return x, status, gap
+    status = "maxiter exceeded"
+    return {"sol": None, "status": status, "gap": -1}
 
 
 def prep_matrices(D, Dy, z, mu, mu2):
