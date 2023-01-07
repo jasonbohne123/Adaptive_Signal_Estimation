@@ -32,7 +32,7 @@ def test_adaptive_tf(x=None, n=None, plot=False, include_cv=False, lambda_p=None
         lambda_p = np.array([0.5])
 
     # reconstruct signal
-    result = adaptive_tf(x, D, lambda_p=lambda_p, verbose=False)
+    result = adaptive_tf(x, D, lambda_p=lambda_p, verbose=True)
 
     if result is None:
         return

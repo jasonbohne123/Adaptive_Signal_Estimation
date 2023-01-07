@@ -23,21 +23,19 @@ def adaptive_tf(y, D_: Difference_Matrix, lambda_p, k=2, verbose=True):
     m = n - k
 
     if len(lambda_p) == 1:
-        lambda_p = np.array(lambda_p) * np.ones(m)
+        lambda_p = np.array(lambda_p) * np.ones((m, 1))
 
     D = D_.D
     DDT = D_.DDT
     DDT_inv = D_.DDT_inv
 
-    Dy = np.dot(D, y)
+    Dy = np.dot(D, y.reshape(-1, 1))
 
     # init variables and objectives
-    z = np.zeros(m)
-    mu1 = np.ones(m)
-    mu2 = np.ones(m)
+    z = np.zeros((m, 1))
+    mu1 = np.ones((m, 1))
+    mu2 = np.ones((m, 1))
 
-    np.inf
-    dobj = 0
     step = np.inf
 
     f1 = z - lambda_p
@@ -87,7 +85,9 @@ def adaptive_tf(y, D_: Difference_Matrix, lambda_p, k=2, verbose=True):
         # woodbury_matrix_inversion(-(np.divide(mu1,f1) +np.divide(mu2,f2)), DDT_inv)
 
         # compute step direction and step size
-        step, dz, dmu1, dmu2, residual = update_step_size(DDTz, S_inv, Dy, w, step, mu1, mu2, f1, f2, gap, mu, mu_inc)
+        step, dz, dmu1, dmu2, residual = update_step_size(
+            DDTz, S_inv, Dy, w, step, mu1, mu2, f1, f2, gap, mu, mu_inc, m
+        )
 
         # Backtracking style line search, parameterized by alpha and beta
         newz, newmu1, newmu2, newf1, newf2, step = line_search(
@@ -130,17 +130,14 @@ def prep_matrices(D, Dy, z, mu1, mu2):
 def compute_objective(Dy, DDT_inv, DTz, DDTz, z, w, lambda_p, mu1, mu2):
     """Compute primal and dual objective values"""
 
-    # refactor each 1-d array into row or column vector
-    pobj1 = 0.5 * np.dot(w.reshape(1, -1), (np.dot(DDT_inv, w).reshape(-1, 1))) + np.sum(
-        np.dot(lambda_p.reshape(1, -1), (mu1 + mu2).reshape(-1, 1))
-    )
-    pobj2 = 0.5 * np.dot(DTz.T, DTz) + np.sum(np.dot(lambda_p.reshape(1, -1), np.abs(Dy - DDTz).reshape(-1, 1)))
+    pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
+    pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, abs(Dy - DDTz)))
 
     pobj1 = pobj1.item()
     pobj2 = pobj2.item()
     pobj = min(pobj1, pobj2)
 
-    dobj = -0.5 * np.dot(DTz.T, DTz) + np.dot(Dy.T, z)
+    dobj = -0.5 * np.dot(DTz.transpose(), DTz) + np.dot(Dy.transpose(), z)
 
     dobj = dobj.item()
     gap = pobj - dobj
@@ -149,10 +146,8 @@ def compute_objective(Dy, DDT_inv, DTz, DDTz, z, w, lambda_p, mu1, mu2):
 
 
 # @njit(nogil=True,cache=True)
-def update_step_size(DDTz, S_inv, Dy, w, step, mu1, mu2, f1, f2, gap, mu, mu_inc):
+def update_step_size(DDTz, S_inv, Dy, w, step, mu1, mu2, f1, f2, gap, mu, mu_inc, m):
     "Update step size and direction"
-
-    m = len(f1)
 
     # Update scheme for mu
     if step >= 0.2:
@@ -162,30 +157,32 @@ def update_step_size(DDTz, S_inv, Dy, w, step, mu1, mu2, f1, f2, gap, mu, mu_inc
     rz = DDTz - w
     r = -DDTz + Dy + (1 / mu_inc) / f1 - (1 / mu_inc) / f2
 
-    dz = (np.dot(S_inv, r.reshape(-1, 1))).flatten()
+    dz = np.dot(S_inv, r)
 
     # step size for the dual variables formulated from constraints
     # This should be multiplication as ds is diagonal of a matrix J
     dmu1 = -(mu1 + ((1 / mu_inc) + dz * mu1) / f1)
     dmu2 = -(mu2 + ((1 / mu_inc) - dz * mu2) / f2)
 
-    residual = np.vstack((rz, np.vstack((-mu1 * f1 - 1 / mu_inc, -mu2 * f2 - 1 / mu_inc))))
+    resDual = rz
+    resCent = np.vstack((-mu1 * f1 - 1 / mu_inc, -mu2 * f2 - 1 / mu_inc))
+    residual = np.vstack((resDual, resCent))
 
-    negIdx1 = np.asarray(dmu1 < 0).nonzero()
-    negIdx2 = np.asarray(dmu2 < 0).nonzero()
+    negIdx1 = dmu1 < 0
+    negIdx2 = dmu2 < 0
 
     step = 1.0
 
-    if len(negIdx1[0]) > 0:
+    if negIdx1.any():
 
-        min_el = np.min(-mu1[negIdx1] / dmu1[negIdx1]).item()
+        min_el = min(-mu1[negIdx1] / dmu1[negIdx1])
         step = min(step, 0.99 * min_el)
 
-    if len(negIdx2[0]) > 0:
+    if negIdx2.any():
 
-        min_el = np.min(-mu2[negIdx2] / dmu2[negIdx2]).item()
+        min_el = min(-mu2[negIdx2] / dmu2[negIdx2])
         step = min(step, 0.99 * min_el)
-
+    print(step)
     return step, dz, dmu1, dmu2, residual
 
 
