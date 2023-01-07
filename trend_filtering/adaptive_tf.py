@@ -10,13 +10,9 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
     """
 
     hyperparams = get_hyperparams()
-    gamma = hyperparams["gamma"]
-    alpha = hyperparams["alpha"]
-    beta = hyperparams["beta"]
-    mu = hyperparams["mu"]
-    maxiter = hyperparams["maxiter"]
-    maxlsiter = hyperparams["maxlsiter"]
-    tol = hyperparams["tol"]
+    alpha, beta, gamma, mu, mu_inc, maxiter, maxlsiter, tol = map(
+        hyperparams.get, ["alpha", "beta", "gamma", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
+    )
 
     n = len(y)
     m = n - k
@@ -133,14 +129,9 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
             step *= beta
 
         # adaptive stepsize of mu with ratio gamma
-        if 2 * pobj1 > pobj2:
-            newmu1 = newmu1 / gamma
-            newmu2 = newmu2 * gamma
-        elif 2 * pobj2 > pobj1:
-            newmu1 = newmu1 * gamma
-            newmu2 = newmu2 * gamma
-        else:
-            pass
+
+        newmu1, newmu2 = adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma)
+
         z = newz
         mu1 = newmu1
         mu2 = newmu2
@@ -152,3 +143,15 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
         status = "maxiter exceeded"
         print(status)
         return x, status, gap
+
+
+def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
+    if 2 * pobj1 > pobj2:
+        newmu1 = newmu1 / gamma
+        newmu2 = newmu2 * gamma
+    elif 2 * pobj2 > pobj1:
+        newmu1 = newmu1 * gamma
+        newmu2 = newmu2 * gamma
+    else:
+        pass
+    return newmu1, newmu2
