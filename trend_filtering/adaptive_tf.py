@@ -40,9 +40,8 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
     # main loop of iteration
     for iters in range(maxiter + 1):
 
-        DTz = np.dot(z.transpose(), D).transpose()
-        DDTz = np.dot(D, DTz)
-        w = Dy - (mu1 - mu2)
+        # prep matrices for the linear system
+        DTz, DDTz, w = prep_matrices(D, Dy, z, mu1, mu2)
 
         # compute primal and dual objective values
         pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
@@ -143,6 +142,13 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
         status = "maxiter exceeded"
         print(status)
         return x, status, gap
+
+
+def prep_matrices(D, Dy, z, mu, mu2):
+    DTz = np.dot(D.T, z)
+    DDTz = np.dot(D, DTz)
+    w = Dy - (mu - mu2)
+    return DTz, DDTz, w
 
 
 def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
