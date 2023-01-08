@@ -1,6 +1,6 @@
 ### Adaptive Signal Estimation (Private Repo)
 
-Collection of algorithms comfortable sharing publicly related to topics for adaptive signal estimation
+Collection of private algorithms related to topics for adaptive signal estimation
 
 Work relevant to current research interests of conditional trend filtering and changepoint detection
 

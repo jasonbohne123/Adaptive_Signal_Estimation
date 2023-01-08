@@ -1,18 +1,18 @@
 import numpy as np
 from numba import njit
+
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from trend_filtering.opt_params import get_hyperparams
-from matrix_algorithms.woodbury_inversion import woodbury_matrix_inversion
-from matrix_algorithms.sherman_morrison import sherman_morrison_recursion
 
 ###### Numba Integration
 # Utilize @njit decorator to compile functions to machine code
 # Blocks default to object mode
 # First compilation takes longer to cache the compilation of the code
-# Utilies Intel's ICC compiler through Numba 
+# Utilies Intel's ICC compiler through Numba
 
-def adaptive_tf(y, D_:Difference_Matrix, t=None,lambda_p=1.0, k=2, verbose=True):
+
+def adaptive_tf(y, D_: Difference_Matrix, t=None, lambda_p=1.0, k=2):
     """
     Adaptive trend filtering algorithm
     """
@@ -25,9 +25,9 @@ def adaptive_tf(y, D_:Difference_Matrix, t=None,lambda_p=1.0, k=2, verbose=True)
     n = len(y)
     m = n - k
 
-    lambda_p=prep_penalty(lambda_p,m)
+    lambda_p = prep_penalty(lambda_p, m)
 
-    D,DDT,DDT_inv=prep_difference_matrix(D_,t)
+    D, DDT, DDT_inv = prep_difference_matrix(D_, t)
 
     D = D_.D
     DDT = D_.DDT
@@ -39,8 +39,8 @@ def adaptive_tf(y, D_:Difference_Matrix, t=None,lambda_p=1.0, k=2, verbose=True)
     z = np.zeros((m, 1))
     mu1 = np.ones((m, 1))
     mu2 = np.ones((m, 1))
-    
-    pobj=np.inf
+
+    np.inf
     dobj = 0
     step = np.inf
     f1 = z[0] - lambda_p
@@ -54,7 +54,6 @@ def adaptive_tf(y, D_:Difference_Matrix, t=None,lambda_p=1.0, k=2, verbose=True)
         # compute objectives
         pobj1, pobj2, dobj, gap = compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p)
 
-        
         # if duality gap becomes negative
         if gap < 0:
             status = "negative duality gap"
@@ -84,29 +83,31 @@ def adaptive_tf(y, D_:Difference_Matrix, t=None,lambda_p=1.0, k=2, verbose=True)
     status = "maxiter exceeded"
     return {"sol": None, "status": status, "gap": -1}
 
-def prep_penalty(lambda_p,m):
-    
-    # better variable typing here 
+
+def prep_penalty(lambda_p, m):
+
+    # better variable typing here
     if len(lambda_p) == 1:
         lambda_p = np.array(lambda_p) * np.ones((m, 1))
-    
+
     return lambda_p
 
-def prep_difference_matrix(D_,t=None):
-    """ Accounts for irregular time series in difference matrix"""
+
+def prep_difference_matrix(D_, t=None):
+    """Accounts for irregular time series in difference matrix"""
 
     if t is None:
         D = D_.D
         DDT = D_.DDT
         DDT_inv = D_.DDT_inv
-        return D,DDT,DDT_inv
+        return D, DDT, DDT_inv
 
     else:
-        T=Time_Difference_Matrix(D_,t)
+        T = Time_Difference_Matrix(D_, t)
         D = T.T_D
-        DDT=T.T_DDT
-        DDT_inv=T.T_DDT_inv
-        return D,DDT,DDT_inv
+        DDT = T.T_DDT
+        DDT_inv = T.T_DDT_inv
+        return D, DDT, DDT_inv
 
 
 @njit(fastmath=True, cache=True)
@@ -118,21 +119,25 @@ def prep_matrices(D, Dy, z, mu, mu2):
     w = Dy - (mu - mu2)
     return DTz, DDTz, w
 
+
 @njit(fastmath=True, cache=True)
 def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     """Computes Primal and Dual objectives and duality gap"""
     pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
     pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, np.abs(Dy - DDTz)))
-    pobj1=pobj1.item()
-    pobj2=pobj2.item()
+    pobj1 = pobj1.item()
+    pobj2 = pobj2.item()
     pobj = min(pobj1, pobj2)
     dobj = -0.5 * np.dot(DTz.transpose(), DTz) + np.dot(Dy.transpose(), z)
-    dobj=dobj.item()
+    dobj = dobj.item()
     gap = pobj - dobj
     return pobj1, pobj2, dobj, gap
 
+
 @njit(fastmath=True, cache=True)
-def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter):
+def update_step(
+    DDT, DDTz, Dy, DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
+):
     """Update step for z, mu1, mu2, f1, f2"""
 
     # Update scheme for mu
@@ -146,7 +151,7 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
     S = DDT - np.diag((mu1 / f1 + mu2 / f2).flatten())
     S_inv = np.linalg.inv(S)
 
-    #S_inv=woodbury_matrix_inversion(-(mu1 / f1 + mu2 / f2), DDT_inv,step=20)
+    # S_inv=woodbury_matrix_inversion(-(mu1 / f1 + mu2 / f2), DDT_inv,step=20)
 
     r = -DDTz + Dy + mu_inc_inv / f1 - mu_inc_inv / f2
     dz = np.dot(S_inv, r)
@@ -156,8 +161,7 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
     dmu2 = -(mu2 + (mu_inc_inv - dz * mu2) / f2)
 
     # residual of dual variables
-    residual = np.vstack((rz,-mu1 * f1 - mu_inc_inv, -mu2 * f2 - mu_inc_inv))
-    
+    residual = np.vstack((rz, -mu1 * f1 - mu_inc_inv, -mu2 * f2 - mu_inc_inv))
 
     negIdx1 = np.where(dmu1 < 0)[0]
     negIdx2 = np.where(dmu2 < 0)[0]
@@ -178,8 +182,9 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
         newf1 = newz - lambda_p
         newf2 = -newz - lambda_p
 
-        newResidual = np.vstack(( np.dot(DDT, newz) - Dy + newmu1 - newmu2,-newmu1 * newf1 - 1 / mu_inc, -newmu2 * newf2 - 1 / mu_inc))
-        
+        newResidual = np.vstack(
+            (np.dot(DDT, newz) - Dy + newmu1 - newmu2, -newmu1 * newf1 - 1 / mu_inc, -newmu2 * newf2 - 1 / mu_inc)
+        )
 
         # break out if actual reduction meets expected via norm of residual
         if max(np.max(newf1), np.max(newf2)) < 0 and (
@@ -192,7 +197,8 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
 
     return newz, newmu1, newmu2, newf1, newf2
 
-@njit(fastmath=True, cache=True,nogil=True)
+
+@njit(fastmath=True, cache=True, nogil=True)
 def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
     """Adaptive step size of mu with ratio gamma"""
     if 2 * pobj1 > pobj2:
