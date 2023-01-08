@@ -1,5 +1,5 @@
 import numpy as np
-from difference_matrix import Difference_Matrix
+from matrix_algorithms.difference_matrix import Difference_Matrix
 
 
 class Time_Difference_Matrix(Difference_Matrix):
@@ -12,7 +12,7 @@ class Time_Difference_Matrix(Difference_Matrix):
     def __init__(self, matrix: Difference_Matrix, t=None):
         super().__init__(matrix.n, matrix.k, matrix.style)
         self.t= t
-
+      
         # if time increments are not provided, assume they are unit spaced
         if t is None:
             t = np.arange(1, self.n + 1)

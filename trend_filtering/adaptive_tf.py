@@ -12,7 +12,7 @@ from matrix_algorithms.sherman_morrison import sherman_morrison_recursion
 # First compilation takes longer to cache the compilation of the code
 # Utilies Intel's ICC compiler through Numba 
 
-def adaptive_tf(y, D_=Difference_Matrix,t=None, lambda_p=1.0, k=2, verbose=True):
+def adaptive_tf(y, D_:Difference_Matrix, t=None,lambda_p=1.0, k=2, verbose=True):
     """
     Adaptive trend filtering algorithm
     """
@@ -25,9 +25,9 @@ def adaptive_tf(y, D_=Difference_Matrix,t=None, lambda_p=1.0, k=2, verbose=True)
     n = len(y)
     m = n - k
 
-    lambda_p=prep_penalty(lambda_p)
+    lambda_p=prep_penalty(lambda_p,m)
 
-    D,DDT,DDT_inv=prep_difference_matrix(D_,k)
+    D,DDT,DDT_inv=prep_difference_matrix(D_,t)
 
     D = D_.D
     DDT = D_.DDT
@@ -102,7 +102,7 @@ def prep_difference_matrix(D_,t=None):
         return D,DDT,DDT_inv
 
     else:
-        T=Time_Difference_Matrix(D,t)
+        T=Time_Difference_Matrix(D_,t)
         D = T.T_D
         DDT=T.T_DDT
         DDT_inv=T.T_DDT_inv
