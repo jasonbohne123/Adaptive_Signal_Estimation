@@ -1,7 +1,9 @@
 import numpy as np
-
+from numba import njit
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from trend_filtering.opt_params import get_hyperparams
+from matrix_algorithms.woodbury_inversion import woodbury_matrix_inversion
+from matrix_algorithms.sherman_morrison import sherman_morrison_recursion
 
 
 def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
@@ -68,7 +70,7 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
 
         # update step
         newz, newmu1, newmu2, newf1, newf2 = update_step(
-            DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
+            DDT, DDTz, Dy, DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
         )
 
         # adaptive stepsize of mu with ratio gamma
@@ -83,7 +85,7 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
     status = "maxiter exceeded"
     return {"sol": None, "status": status, "gap": -1}
 
-
+@njit(fastmath=True, cache=True)
 def prep_matrices(D, Dy, z, mu, mu2):
     """Prep matrices for objective computation"""
 
@@ -92,18 +94,20 @@ def prep_matrices(D, Dy, z, mu, mu2):
     w = Dy - (mu - mu2)
     return DTz, DDTz, w
 
-
+@njit(fastmath=True, cache=True)
 def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     """Computes Primal and Dual objectives and duality gap"""
     pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
-    pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, abs(Dy - DDTz)))
+    pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, np.abs(Dy - DDTz)))
+    pobj1=pobj1.item()
+    pobj2=pobj2.item()
     pobj = min(pobj1, pobj2)
     dobj = -0.5 * np.dot(DTz.transpose(), DTz) + np.dot(Dy.transpose(), z)
     gap = pobj - dobj
     return pobj1, pobj2, dobj, gap
 
-
-def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter):
+#@njit(fastmath=True, cache=True)
+def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter):
     """Update step for z, mu1, mu2, f1, f2"""
 
     # Update scheme for mu
@@ -115,6 +119,10 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
 
     S = DDT - np.diag((mu1 / f1 + mu2 / f2).flatten())
     S_inv = np.linalg.inv(S)
+
+    #S_inv=woodbury_matrix_inversion(-(mu1 / f1 + mu2 / f2), DDT_inv,step=20)
+
+    
 
     r = -DDTz + Dy + (1 / mu_inc) / f1 - (1 / mu_inc) / f2
     dz = np.dot(S_inv, r)
@@ -162,7 +170,7 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
 
     return newz, newmu1, newmu2, newf1, newf2
 
-
+#@njit(fastmath=True, cache=True)
 def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
     """Adaptive step size of mu with ratio gamma"""
     if 2 * pobj1 > pobj2:

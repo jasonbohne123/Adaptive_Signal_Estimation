@@ -1,8 +1,8 @@
 import numpy as np
+from numba import njit
 from difference_matrix import Difference_Matrix
 
 
-# @njit(nogil=True,fastmath=True,cache=True)
 def sherman_morrison_recursion(a_ij, DDT_inv):
     """Compute the inverse of a matrix using the Sherman-Morrison formula
 
@@ -11,7 +11,7 @@ def sherman_morrison_recursion(a_ij, DDT_inv):
 
     A_inv = DDT_inv
     k = 1
-
+    
     # Loop over the columns of the matrix
     while k <= len(a_ij):
 

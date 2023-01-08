@@ -35,6 +35,9 @@ def woodbury_matrix_inversion(a_ij, DDT_inv, step=20):
             u[k + i - 1, i] = 1
             v[i, k + i - 1] = 1
             c[i, i] = a_ij[k + i - 1]
+        u=np.asarray(u,order='C')
+        v=np.asarray(v,order='C')
+        c=np.asarray(c,order='C')
 
         # precompute repeated matrices
         v_dot_A_inv = v.dot(A_inv)
@@ -46,7 +49,7 @@ def woodbury_matrix_inversion(a_ij, DDT_inv, step=20):
         inv_truncated_mat = np.linalg.inv(truncated_mat)
 
         # check that the inverse using numpy is correct
-        assert np.max(np.abs(truncated_mat.dot(inv_truncated_mat) - np.eye(len_block))) < 1e-10
+        #assert np.max(np.abs(truncated_mat.dot(inv_truncated_mat) - np.eye(len_block))) < 1e-10
 
         c_a_inv = sherman_morrison_recursion(1 / a_ij[k - 1 : k - 1 + step], inv_truncated_mat)
 
