@@ -1,23 +1,19 @@
 import numpy as np
-import pentapy as pp
 from scipy.linalg import get_lapack_funcs
-from scipy.sparse import dia_matrix, spdiags
+from scipy.sparse import dia_matrix
 from scipy.sparse.linalg import spsolve
 
 
 class Difference_Matrix:
-    def __init__(self, n,k, style=None) -> None:
-
+    def __init__(self, n, k, style=None) -> None:
 
         self.n = n
-        self.k=k
+        self.k = k
         self.l, self.u = k, k
-
-
         self.style = style if style is not None else "lapack"
 
         # create the kth order difference matrix (sparse)
-        D = self.compose_difference_matrix(n,k)
+        D = self.compose_difference_matrix(n, k)
 
         # save the difference matrix
         self.D = D.toarray()
@@ -34,19 +30,18 @@ class Difference_Matrix:
         self.DDT = DDT.toarray()
 
         # save the inverse of the DDT matrix as C Contigous array
-        self.DDT_inv = np.asarray(self.invert(self.DDT_diag,style=self.style), order="C")
+        self.DDT_inv = np.asarray(self.invert(self.DDT_diag, style=self.style), order="C")
 
-
-    def invert(self,diag, style):
+    def invert(self, diag, style):
         """
         Inverts the banded difference matrix
 
         Parameters
         ----------
-        
+
         diag: Array
             Diagonals of the difference matrix
-        
+
         style : str
             "lapack" or "pentapy" or "sparse"
 
@@ -66,7 +61,7 @@ class Difference_Matrix:
 
             return None
 
-    def LU_decomposition(self,diag, b=None):
+    def LU_decomposition(self, diag, b=None):
         """
         LU decomposition specifically for banded matrices using LAPACK routine gbsv
 
@@ -104,7 +99,7 @@ class Difference_Matrix:
 
         return x
 
-    def sparse_banded(self,diag):
+    def sparse_banded(self, diag):
         """
         Solves the system using scipy sparse banded matrix solver
 
@@ -119,29 +114,28 @@ class Difference_Matrix:
         inv = spsolve(sparse_mat, np.eye(self.n - 2))
         return inv
 
-    def compose_difference_matrix(self, n,k):
-        """ Extracts the first difference matrix for any n-size array"""
+    def compose_difference_matrix(self, n, k):
+        """Extracts the first difference matrix for any n-size array"""
 
         def pascals(k):
-            pas=[0,1,0]
-            counter=k
-            while counter>0:
-                pas.insert(0,0)
-                pas=[np.sum(pas[i:i+2]) for i in range (0,len(pas))]
-                counter-=1    
+            pas = [0, 1, 0]
+            counter = k
+            while counter > 0:
+                pas.insert(0, 0)
+                pas = [np.sum(pas[i : i + 2]) for i in range(0, len(pas))]
+                counter -= 1
             return pas
-                
-                
-        coeff=pascals(k)
-        coeff=[i for i in coeff if i!=0]
-        coeff=[coeff[i] if i%2==0 else -coeff[i] for i in range(0,len(coeff))]
-        
+
+        coeff = pascals(k)
+        coeff = [i for i in coeff if i != 0]
+        coeff = [coeff[i] if i % 2 == 0 else -coeff[i] for i in range(0, len(coeff))]
+
         if k == 0:
-            D=dia_matrix((np.ones(n),0),shape=(n-2,n))
+            D = dia_matrix((np.ones(n), 0), shape=(n - 2, n))
         elif k == 1:
-            D=dia_matrix((np.vstack([i*np.ones(n) for  i in  coeff]),range(0,k+1)),shape=(n-2,n))
+            D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - 2, n))
         else:
-            D=dia_matrix((np.vstack([i*np.ones(n) for i in coeff]),range(0,k+1)),shape=(n-2,n))
+            D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - 2, n))
 
         return D
 
