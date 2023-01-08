@@ -5,32 +5,31 @@ from scipy.sparse import dia_matrix, spdiags
 from scipy.sparse.linalg import spsolve
 
 
-class Difference_Matrix:
-    def __init__(self, n, k, style=None) -> None:
+class Second_Order_Difference_Matrix:
+    def __init__(self, n, style=None) -> None:
 
-        ### normalize matrix before inversion; apply constant after the fact
-
-        # rescaling=1/np.min(DDT[abs(DDT)>0])
 
         self.n = n
-        self.k = k
+        self.k=2
+
+
         self.style = style if style is not None else "lapack"
 
         # number of upper and lower diagonals of DDT
-        self.l = k
-        self.u = k
+        self.l = 2
+        self.u = 2
 
-        # create the difference matrix (sparse)
-        D = self.extract_matrix_diagonals(self.n, self.k)
+        # create the naive second order difference matrix (sparse)
+        D = self.extract_second_order_difference_matrix(n)
 
         # save the difference matrix
         self.D = D.toarray()
 
-        # create the DDT matrix (sparse)
+        # create DDT
         DDT = D.dot(D.T)
 
         # determine the projected coefficients across diagonals
-        DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k, k + 1)]
+        DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-2, 2 + 1)]
 
         self.DDT_diag = np.array([i * np.ones(n - 2) for i in DDT_diag_coeff])
 
@@ -131,38 +130,25 @@ class Difference_Matrix:
             inv[i] = pp.solve(self.DDT, unit, is_flat=False)
         return inv
 
-    def extract_matrix_diagonals(self, n, k):
-        """
-        Extracts only the diagonals of the difference matrix
-        """
+    def extract_second_order_difference_matrix(self, n):
+        """ Extracts the first difference matrix for any n-size array"""
 
-        def pascals(k):
-            pas = [0, 1, 0]
-            counter = k
-            while counter > 0:
-                pas.insert(0, 0)
-                pas = [np.sum(pas[i : i + 2]) for i in range(0, len(pas))]
-                counter -= 1
-            return pas
+        # create the diagonals of the difference matrix
+        diagonals = np.array([np.ones(n ), -np.ones(n )])
 
-        coeff = pascals(k)
-        coeff = [i for i in coeff if i != 0]
-        coeff = [coeff[i] if i % 2 == 0 else -coeff[i] for i in range(0, len(coeff))]
+        # create the difference matrix
+        D = spdiags(diagonals, [0, -1], n , n)
 
-        if k == 0:
-            diag = spdiags([np.ones(n)], [0], n, n)
-        else:
+        D=D.dot(D).T
+        D=D[:-2,:]
 
-            diag = spdiags([i * np.ones(n) for i in coeff], np.arange(0, k + 1), n - 2, n)
-
-        return diag
-
+        return D
 
 def test_lapack(n=100):
     """Test the LU decomposition method"""
     k = 2
     print("Testing LU decomposition method")
-    D = Difference_Matrix(n, k, style="lapack")
+    D = Second_Order_Difference_Matrix(n, k, style="lapack")
 
     DDT = D.DDT
     DDT_inv = D.DDT_inv
@@ -181,7 +167,7 @@ def test_sparse(n=100):
     """Test the sparse method"""
     k = 2
     print("Testing sparse method")
-    D = Difference_Matrix(n, k, style="sparse")
+    D = Second_Order_Difference_Matrix(n, k, style="sparse")
 
     DDT = D.DDT
     DDT_inv = D.DDT_inv
@@ -200,7 +186,7 @@ def test_pentapy(n=100):
     """Test the pentapy method"""
     k = 2
     print("Testing pentapy method")
-    D = Difference_Matrix(n, k, style="pentapy")
+    D = Second_Order_Difference_Matrix(n, k, style="pentapy")
 
     DDT = D.DDT
     DDT_inv = D.DDT_inv

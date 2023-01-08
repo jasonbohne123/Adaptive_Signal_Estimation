@@ -1,6 +1,6 @@
 import numpy as np
 from numba import njit
-from matrix_algorithms.difference_matrix import Difference_Matrix
+from matrix_algorithms.difference_matrix import Second_Order_Difference_Matrix
 from trend_filtering.opt_params import get_hyperparams
 from matrix_algorithms.woodbury_inversion import woodbury_matrix_inversion
 from matrix_algorithms.sherman_morrison import sherman_morrison_recursion
@@ -11,7 +11,7 @@ from matrix_algorithms.sherman_morrison import sherman_morrison_recursion
 # First compilation takes longer to cache the compilation of the code
 # Utilies Intel's ICC compiler through Numba 
 
-def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
+def adaptive_tf(y, D_=Second_Order_Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
     """
     Adaptive trend filtering algorithm
     """
