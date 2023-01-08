@@ -1,15 +1,22 @@
-import cProfile
-import pstats
+import profilehooks as ph
 
-
-def profile(fnc, n):
+def profile(fnc):
     """A decorator that uses cProfile to profile a function"""
 
-    pr = cProfile.Profile()
-    pr.enable()
+    def outer(*args, **kwargs):
+        """The outer function"""
 
-    fnc(n)
-    pr.disable()
-    ps = pstats.Stats(pr).sort_stats("cumulative")
-    ps.print_stats()
-    return
+        # profilehooks decorator
+        @ph.profile(immediate=True,entries=1000)
+        def inner(*args, **kwargs):
+            """The inner function"""
+            # run the function
+            fnc(*args, **kwargs)
+            return True
+
+        print("Profiling: {}".format(fnc.__name__))
+        
+        # returns the time of execution
+        return print(inner(*args, **kwargs))
+
+    return outer

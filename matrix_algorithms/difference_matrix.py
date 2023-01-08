@@ -37,8 +37,8 @@ class Difference_Matrix:
         # save the DDT matrix
         self.DDT = DDT.toarray()
 
-        # save the inverse of the DDT matrix
-        self.DDT_inv = self.invert(style=self.style)
+        # save the inverse of the DDT matrix as C Contigous array
+        self.DDT_inv = np.asarray(self.invert(style=self.style), order="C")
 
     def invert(self, style):
         """
@@ -56,10 +56,6 @@ class Difference_Matrix:
         """
         if style == "lapack":
             DDT_inv = self.LU_decomposition()
-
-            #   test_result=asset ...
-
-            # if not test_result
 
             return DDT_inv
         elif style == "pentapy":

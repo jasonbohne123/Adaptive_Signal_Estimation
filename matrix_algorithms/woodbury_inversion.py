@@ -1,5 +1,4 @@
 import sys
-import time
 
 import numpy as np
 
@@ -10,12 +9,14 @@ from difference_matrix import Difference_Matrix
 from sherman_morrison import sherman_morrison_recursion
 
 
-def woodbury_matrix_inversion(a_ij, DDT_inv, step=20, tests=False):
+def woodbury_matrix_inversion(a_ij, DDT_inv, step=20):
     """Compute the inverse of a matrix using the Woodbury formula
 
     k-blocks of the matrix are inverted at a time
+
+    default step size is 20; shown to be good
     """
-    start = time.time()
+
     A_inv = DDT_inv
     k = 1
 
@@ -34,25 +35,28 @@ def woodbury_matrix_inversion(a_ij, DDT_inv, step=20, tests=False):
             u[k + i - 1, i] = 1
             v[i, k + i - 1] = 1
             c[i, i] = a_ij[k + i - 1]
+        u=np.asarray(u,order='C')
+        v=np.asarray(v,order='C')
+        c=np.asarray(c,order='C')
+
+        # precompute repeated matrices
+        v_dot_A_inv = v.dot(A_inv)
 
         #  extract kth block of A_inv
-        truncated_mat = v.dot(A_inv).dot(u)
+        truncated_mat = v_dot_A_inv.dot(u)
 
         # compute the inverse of the kth block of A_inv
         inv_truncated_mat = np.linalg.inv(truncated_mat)
 
-        if tests:
-            # check that the inverse using numpy is correct
-            assert np.max(np.abs(truncated_mat.dot(inv_truncated_mat) - np.eye(len_block))) < 1e-10
+        # check that the inverse using numpy is correct
+        #assert np.max(np.abs(truncated_mat.dot(inv_truncated_mat) - np.eye(len_block))) < 1e-10
 
-        c_a_inv, tot_time = sherman_morrison_recursion(1 / a_ij[k - 1 : k - 1 + step], inv_truncated_mat)
+        c_a_inv = sherman_morrison_recursion(1 / a_ij[k - 1 : k - 1 + step], inv_truncated_mat)
 
-        A_inv = A_inv - A_inv.dot(u).dot(c_a_inv.dot(v).dot(A_inv))
+        A_inv = A_inv - A_inv.dot(u).dot(c_a_inv.dot(v_dot_A_inv))
 
         k = k + step
-    end = time.time()
-    total_time = end - start
-    return A_inv, total_time
+    return A_inv
 
 
 def test_woodbury_inversion(n, step=None):

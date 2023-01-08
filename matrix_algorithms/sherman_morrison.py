@@ -1,6 +1,5 @@
-import time
-
 import numpy as np
+from numba import njit
 from difference_matrix import Difference_Matrix
 
 
@@ -9,10 +8,10 @@ def sherman_morrison_recursion(a_ij, DDT_inv):
 
     Utilizes forward recrusion for computational efficiency
     """
-    start = time.time()
+
     A_inv = DDT_inv
     k = 1
-
+    
     # Loop over the columns of the matrix
     while k <= len(a_ij):
 
@@ -22,15 +21,14 @@ def sherman_morrison_recursion(a_ij, DDT_inv):
         u = e_n.reshape(-1, 1)
         v = e_n.reshape(1, -1)
 
-        num = A_inv.dot(a_ij[k - 1] * u.dot(v)).dot(A_inv)
-        den = 1 + a_ij[k - 1] * v.dot(A_inv).dot(u)
+        num = np.dot(np.dot(A_inv, np.dot(a_ij[k - 1] * u, v)), A_inv)
+        den = 1 + np.dot(np.dot(a_ij[k - 1] * v, A_inv), u)
 
         A_inv = A_inv - num / den
 
         k = k + 1
-    end = time.time()
-    total_time = end - start
-    return A_inv, total_time
+
+    return A_inv
 
 
 def test_sherman_morrison(n):

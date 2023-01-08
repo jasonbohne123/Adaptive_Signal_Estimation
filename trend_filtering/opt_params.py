@@ -12,7 +12,8 @@ def get_hyperparams():
         "alpha": 0.01,
         "beta": 0.5,
         "mu": 2,
-        "maxiter": 100,
+        "mu_inc": 1e-10,
+        "maxiter": 50,
         "maxlsiter": 25,
         "tol": 1e-6,
     }
