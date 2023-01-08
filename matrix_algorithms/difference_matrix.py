@@ -5,22 +5,19 @@ from scipy.sparse import dia_matrix, spdiags
 from scipy.sparse.linalg import spsolve
 
 
-class Second_Order_Difference_Matrix:
-    def __init__(self, n, style=None) -> None:
+class Difference_Matrix:
+    def __init__(self, n,k, style=None) -> None:
 
 
         self.n = n
-        self.k=2
+        self.k=k
+        self.l, self.u = k, k
 
 
         self.style = style if style is not None else "lapack"
 
-        # number of upper and lower diagonals of DDT
-        self.l = 2
-        self.u = 2
-
-        # create the naive second order difference matrix (sparse)
-        D = self.extract_second_order_difference_matrix(n)
+        # create the kth order difference matrix (sparse)
+        D = self.compose_difference_matrix(n,k)
 
         # save the difference matrix
         self.D = D.toarray()
@@ -29,7 +26,7 @@ class Second_Order_Difference_Matrix:
         DDT = D.dot(D.T)
 
         # determine the projected coefficients across diagonals
-        DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-2, 2 + 1)]
+        DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k, k + 1)]
 
         self.DDT_diag = np.array([i * np.ones(n - 2) for i in DDT_diag_coeff])
 
@@ -37,14 +34,19 @@ class Second_Order_Difference_Matrix:
         self.DDT = DDT.toarray()
 
         # save the inverse of the DDT matrix as C Contigous array
-        self.DDT_inv = np.asarray(self.invert(style=self.style), order="C")
+        self.DDT_inv = np.asarray(self.invert(self.DDT_diag,style=self.style), order="C")
 
-    def invert(self, style):
+
+    def invert(self,diag, style):
         """
-        Inverts the difference matrix
+        Inverts the banded difference matrix
 
         Parameters
         ----------
+        
+        diag: Array
+            Diagonals of the difference matrix
+        
         style : str
             "lapack" or "pentapy" or "sparse"
 
@@ -54,20 +56,17 @@ class Second_Order_Difference_Matrix:
             Inverse of the difference matrix
         """
         if style == "lapack":
-            DDT_inv = self.LU_decomposition()
+            DDT_inv = self.LU_decomposition(diag)
 
             return DDT_inv
-        elif style == "pentapy":
-            DDT_inv = self.ptrans_algorithm()
-            return DDT_inv
         elif style == "sparse":
-            DDT_inv = self.sparse_banded()
+            DDT_inv = self.sparse_banded(diag)
             return DDT_inv
         else:
 
             return None
 
-    def LU_decomposition(self, b=None):
+    def LU_decomposition(self,diag, b=None):
         """
         LU decomposition specifically for banded matrices using LAPACK routine gbsv
 
@@ -96,16 +95,16 @@ class Second_Order_Difference_Matrix:
         (nlower, nupper) = self.l, self.u
 
         # get lapack function
-        (gbsv,) = get_lapack_funcs(("gbsv",), (self.DDT_diag, b))
+        (gbsv,) = get_lapack_funcs(("gbsv",), (diag, b))
 
         # setup problem
         a2 = np.zeros((2 * nlower + nupper + 1, self.n - 2), dtype=gbsv.dtype)
-        a2[nlower:, :] = self.DDT_diag
+        a2[nlower:, :] = diag
         lu, piv, x, info = gbsv(nlower, nupper, a2, b, overwrite_ab=True, overwrite_b=True)
 
         return x
 
-    def sparse_banded(self):
+    def sparse_banded(self,diag):
         """
         Solves the system using scipy sparse banded matrix solver
 
@@ -116,39 +115,42 @@ class Second_Order_Difference_Matrix:
         """
 
         # confirm this works
-        sparse_mat = dia_matrix((self.DDT_diag, range(-self.k, self.k + 1)), shape=(self.n - 2, self.n - 2))
+        sparse_mat = dia_matrix((diag, range(-self.k, self.k + 1)), shape=(self.n - 2, self.n - 2))
         inv = spsolve(sparse_mat, np.eye(self.n - 2))
         return inv
 
-    def ptrans_algorithm(self):
-        """Solves pentadiagonal system using pentapy package"""
-
-        inv = np.zeros((self.n - 2, self.n - 2))
-        for i in range(0, self.n - 2):
-            unit = np.zeros(self.n - 2)
-            unit[i] = 1
-            inv[i] = pp.solve(self.DDT, unit, is_flat=False)
-        return inv
-
-    def extract_second_order_difference_matrix(self, n):
+    def compose_difference_matrix(self, n,k):
         """ Extracts the first difference matrix for any n-size array"""
 
-        # create the diagonals of the difference matrix
-        diagonals = np.array([np.ones(n ), -np.ones(n )])
-
-        # create the difference matrix
-        D = spdiags(diagonals, [0, -1], n , n)
-
-        D=D.dot(D).T
-        D=D[:-2,:]
+        def pascals(k):
+            pas=[0,1,0]
+            counter=k
+            while counter>0:
+                pas.insert(0,0)
+                pas=[np.sum(pas[i:i+2]) for i in range (0,len(pas))]
+                counter-=1    
+            return pas
+                
+                
+        coeff=pascals(k)
+        coeff=[i for i in coeff if i!=0]
+        coeff=[coeff[i] if i%2==0 else -coeff[i] for i in range(0,len(coeff))]
+        
+        if k == 0:
+            D=dia_matrix((np.ones(n),0),shape=(n-2,n))
+        elif k == 1:
+            D=dia_matrix((np.vstack([i*np.ones(n) for  i in  coeff]),range(0,k+1)),shape=(n-2,n))
+        else:
+            D=dia_matrix((np.vstack([i*np.ones(n) for i in coeff]),range(0,k+1)),shape=(n-2,n))
 
         return D
+
 
 def test_lapack(n=100):
     """Test the LU decomposition method"""
     k = 2
     print("Testing LU decomposition method")
-    D = Second_Order_Difference_Matrix(n, k, style="lapack")
+    D = Difference_Matrix(n, k, style="lapack")
 
     DDT = D.DDT
     DDT_inv = D.DDT_inv
@@ -167,7 +169,7 @@ def test_sparse(n=100):
     """Test the sparse method"""
     k = 2
     print("Testing sparse method")
-    D = Second_Order_Difference_Matrix(n, k, style="sparse")
+    D = Difference_Matrix(n, k, style="sparse")
 
     DDT = D.DDT
     DDT_inv = D.DDT_inv
@@ -186,7 +188,7 @@ def test_pentapy(n=100):
     """Test the pentapy method"""
     k = 2
     print("Testing pentapy method")
-    D = Second_Order_Difference_Matrix(n, k, style="pentapy")
+    D = Difference_Matrix(n, k, style="pentapy")
 
     DDT = D.DDT
     DDT_inv = D.DDT_inv

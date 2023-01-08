@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit
-from matrix_algorithms.difference_matrix import Second_Order_Difference_Matrix
+from matrix_algorithms.difference_matrix import Difference_Matrix
+from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from trend_filtering.opt_params import get_hyperparams
 from matrix_algorithms.woodbury_inversion import woodbury_matrix_inversion
 from matrix_algorithms.sherman_morrison import sherman_morrison_recursion
@@ -11,7 +12,7 @@ from matrix_algorithms.sherman_morrison import sherman_morrison_recursion
 # First compilation takes longer to cache the compilation of the code
 # Utilies Intel's ICC compiler through Numba 
 
-def adaptive_tf(y, D_=Second_Order_Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
+def adaptive_tf(y, D_=Difference_Matrix,t=None, lambda_p=1.0, k=2, verbose=True):
     """
     Adaptive trend filtering algorithm
     """
@@ -24,8 +25,9 @@ def adaptive_tf(y, D_=Second_Order_Difference_Matrix, lambda_p=1.0, k=2, verbose
     n = len(y)
     m = n - k
 
-    if len(lambda_p) == 1:
-        lambda_p = np.array(lambda_p) * np.ones((m, 1))
+    lambda_p=prep_penalty(lambda_p)
+
+    D,DDT,DDT_inv=prep_difference_matrix(D_,k)
 
     D = D_.D
     DDT = D_.DDT
@@ -81,6 +83,31 @@ def adaptive_tf(y, D_=Second_Order_Difference_Matrix, lambda_p=1.0, k=2, verbose
 
     status = "maxiter exceeded"
     return {"sol": None, "status": status, "gap": -1}
+
+def prep_penalty(lambda_p,m):
+    
+    # better variable typing here 
+    if len(lambda_p) == 1:
+        lambda_p = np.array(lambda_p) * np.ones((m, 1))
+    
+    return lambda_p
+
+def prep_difference_matrix(D_,t=None):
+    """ Accounts for irregular time series in difference matrix"""
+
+    if t is None:
+        D = D_.D
+        DDT = D_.DDT
+        DDT_inv = D_.DDT_inv
+        return D,DDT,DDT_inv
+
+    else:
+        T=Time_Difference_Matrix(D,t)
+        D = T.T_D
+        DDT=T.T_DDT
+        DDT_inv=T.T_DDT_inv
+        return D,DDT,DDT_inv
+
 
 @njit(fastmath=True, cache=True)
 def prep_matrices(D, Dy, z, mu, mu2):
