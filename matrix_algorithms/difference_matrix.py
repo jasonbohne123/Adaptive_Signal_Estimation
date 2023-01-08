@@ -6,27 +6,23 @@ from scipy.sparse.linalg import spsolve
 
 
 class Difference_Matrix:
-    def __init__(self, n, k, style=None) -> None:
+    def __init__(self, n,k, style=None) -> None:
 
-        ### normalize matrix before inversion; apply constant after the fact
-
-        # rescaling=1/np.min(DDT[abs(DDT)>0])
 
         self.n = n
-        self.k = k
+        self.k=k
+        self.l, self.u = k, k
+
+
         self.style = style if style is not None else "lapack"
 
-        # number of upper and lower diagonals of DDT
-        self.l = k
-        self.u = k
-
-        # create the difference matrix (sparse)
-        D = self.extract_matrix_diagonals(self.n, self.k)
+        # create the kth order difference matrix (sparse)
+        D = self.compose_difference_matrix(n,k)
 
         # save the difference matrix
         self.D = D.toarray()
 
-        # create the DDT matrix (sparse)
+        # create DDT
         DDT = D.dot(D.T)
 
         # determine the projected coefficients across diagonals
@@ -38,14 +34,19 @@ class Difference_Matrix:
         self.DDT = DDT.toarray()
 
         # save the inverse of the DDT matrix as C Contigous array
-        self.DDT_inv = np.asarray(self.invert(style=self.style), order="C")
+        self.DDT_inv = np.asarray(self.invert(self.DDT_diag,style=self.style), order="C")
 
-    def invert(self, style):
+
+    def invert(self,diag, style):
         """
-        Inverts the difference matrix
+        Inverts the banded difference matrix
 
         Parameters
         ----------
+        
+        diag: Array
+            Diagonals of the difference matrix
+        
         style : str
             "lapack" or "pentapy" or "sparse"
 
@@ -55,20 +56,17 @@ class Difference_Matrix:
             Inverse of the difference matrix
         """
         if style == "lapack":
-            DDT_inv = self.LU_decomposition()
+            DDT_inv = self.LU_decomposition(diag)
 
             return DDT_inv
-        elif style == "pentapy":
-            DDT_inv = self.ptrans_algorithm()
-            return DDT_inv
         elif style == "sparse":
-            DDT_inv = self.sparse_banded()
+            DDT_inv = self.sparse_banded(diag)
             return DDT_inv
         else:
 
             return None
 
-    def LU_decomposition(self, b=None):
+    def LU_decomposition(self,diag, b=None):
         """
         LU decomposition specifically for banded matrices using LAPACK routine gbsv
 
@@ -97,16 +95,16 @@ class Difference_Matrix:
         (nlower, nupper) = self.l, self.u
 
         # get lapack function
-        (gbsv,) = get_lapack_funcs(("gbsv",), (self.DDT_diag, b))
+        (gbsv,) = get_lapack_funcs(("gbsv",), (diag, b))
 
         # setup problem
         a2 = np.zeros((2 * nlower + nupper + 1, self.n - 2), dtype=gbsv.dtype)
-        a2[nlower:, :] = self.DDT_diag
+        a2[nlower:, :] = diag
         lu, piv, x, info = gbsv(nlower, nupper, a2, b, overwrite_ab=True, overwrite_b=True)
 
         return x
 
-    def sparse_banded(self):
+    def sparse_banded(self,diag):
         """
         Solves the system using scipy sparse banded matrix solver
 
@@ -117,45 +115,35 @@ class Difference_Matrix:
         """
 
         # confirm this works
-        sparse_mat = dia_matrix((self.DDT_diag, range(-self.k, self.k + 1)), shape=(self.n - 2, self.n - 2))
+        sparse_mat = dia_matrix((diag, range(-self.k, self.k + 1)), shape=(self.n - 2, self.n - 2))
         inv = spsolve(sparse_mat, np.eye(self.n - 2))
         return inv
 
-    def ptrans_algorithm(self):
-        """Solves pentadiagonal system using pentapy package"""
-
-        inv = np.zeros((self.n - 2, self.n - 2))
-        for i in range(0, self.n - 2):
-            unit = np.zeros(self.n - 2)
-            unit[i] = 1
-            inv[i] = pp.solve(self.DDT, unit, is_flat=False)
-        return inv
-
-    def extract_matrix_diagonals(self, n, k):
-        """
-        Extracts only the diagonals of the difference matrix
-        """
+    def compose_difference_matrix(self, n,k):
+        """ Extracts the first difference matrix for any n-size array"""
 
         def pascals(k):
-            pas = [0, 1, 0]
-            counter = k
-            while counter > 0:
-                pas.insert(0, 0)
-                pas = [np.sum(pas[i : i + 2]) for i in range(0, len(pas))]
-                counter -= 1
+            pas=[0,1,0]
+            counter=k
+            while counter>0:
+                pas.insert(0,0)
+                pas=[np.sum(pas[i:i+2]) for i in range (0,len(pas))]
+                counter-=1    
             return pas
-
-        coeff = pascals(k)
-        coeff = [i for i in coeff if i != 0]
-        coeff = [coeff[i] if i % 2 == 0 else -coeff[i] for i in range(0, len(coeff))]
-
+                
+                
+        coeff=pascals(k)
+        coeff=[i for i in coeff if i!=0]
+        coeff=[coeff[i] if i%2==0 else -coeff[i] for i in range(0,len(coeff))]
+        
         if k == 0:
-            diag = spdiags([np.ones(n)], [0], n, n)
+            D=dia_matrix((np.ones(n),0),shape=(n-2,n))
+        elif k == 1:
+            D=dia_matrix((np.vstack([i*np.ones(n) for  i in  coeff]),range(0,k+1)),shape=(n-2,n))
         else:
+            D=dia_matrix((np.vstack([i*np.ones(n) for i in coeff]),range(0,k+1)),shape=(n-2,n))
 
-            diag = spdiags([i * np.ones(n) for i in coeff], np.arange(0, k + 1), n - 2, n)
-
-        return diag
+        return D
 
 
 def test_lapack(n=100):
