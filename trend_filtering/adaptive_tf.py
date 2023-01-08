@@ -32,8 +32,8 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
     z = np.zeros((m, 1))
     mu1 = np.ones((m, 1))
     mu2 = np.ones((m, 1))
-    mu_inc = 1e-10
-    np.inf
+    
+    pobj=np.inf
     dobj = 0
     step = np.inf
     f1 = z[0] - lambda_p
@@ -103,14 +103,16 @@ def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     pobj2=pobj2.item()
     pobj = min(pobj1, pobj2)
     dobj = -0.5 * np.dot(DTz.transpose(), DTz) + np.dot(Dy.transpose(), z)
+    dobj=dobj.item()
     gap = pobj - dobj
     return pobj1, pobj2, dobj, gap
 
-#@njit(fastmath=True, cache=True)
+@njit(fastmath=True, cache=True)
 def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter):
     """Update step for z, mu1, mu2, f1, f2"""
 
     # Update scheme for mu
+
     if step >= 0.2:
         mu_inc = max(2 * m * mu / gap, 1.2 * mu_inc)
 
@@ -132,18 +134,17 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
     dmu2 = -(mu2 + ((1 / mu_inc) - dz * mu2) / f2)
 
     # residual of dual variables
-    resDual = rz
-    resCent = np.vstack((-mu1 * f1 - 1 / mu_inc, -mu2 * f2 - 1 / mu_inc))
-    residual = np.vstack((resDual, resCent))
+    residual = np.vstack((rz,-mu1 * f1 - 1 / mu_inc, -mu2 * f2 - 1 / mu_inc))
+    
 
-    negIdx1 = dmu1 < 0
-    negIdx2 = dmu2 < 0
+    negIdx1 = np.where(dmu1 < 0)[0]
+    negIdx2 = np.where(dmu2 < 0)[0]
 
     step = 1
-    if negIdx1.any():
-        step = min(step, 0.99 * min(-mu1[negIdx1] / dmu1[negIdx1]))
-    if negIdx2.any():
-        step = min(step, 0.99 * min(-mu2[negIdx2] / dmu2[negIdx2]))
+    if len(negIdx1) > 0:
+        step = min(step, 0.99 * np.min(-mu1[negIdx1] / dmu1[negIdx1]))
+    if len(negIdx2) > 0:
+        step = min(step, 0.99 * np.min(-mu2[negIdx2] / dmu2[negIdx2]))
 
     # Backtracking style line search, parameterized by alpha and beta
     for liter in range(maxlsiter):
@@ -155,12 +156,11 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
         newf1 = newz - lambda_p
         newf2 = -newz - lambda_p
 
-        newResDual = np.dot(DDT, newz) - Dy + newmu1 - newmu2
-        newResCent = np.vstack((-newmu1 * newf1 - 1 / mu_inc, -newmu2 * newf2 - 1 / mu_inc))
-        newResidual = np.vstack((newResDual, newResCent))
+        newResidual = np.vstack(( np.dot(DDT, newz) - Dy + newmu1 - newmu2,-newmu1 * newf1 - 1 / mu_inc, -newmu2 * newf2 - 1 / mu_inc))
+        
 
         # break out if actual reduction meets expected via norm of residual
-        if max(max(newf1), max(newf2)) < 0 and (
+        if max(np.max(newf1), np.max(newf2)) < 0 and (
             np.linalg.norm(newResidual) <= (1 - alpha * step) * np.linalg.norm(residual)
         ):
             break
@@ -170,7 +170,7 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
 
     return newz, newmu1, newmu2, newf1, newf2
 
-#@njit(fastmath=True, cache=True)
+@njit(fastmath=True, cache=True)
 def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
     """Adaptive step size of mu with ratio gamma"""
     if 2 * pobj1 > pobj2:
