@@ -14,7 +14,7 @@ def get_hyperparams():
         "mu": 2,
         "mu_inc": 1e-10,
         "maxiter": 50,
-        "maxlsiter": 50,
+        "maxlsiter": 25,
         "tol": 1e-6,
     }
     return hyperparams

@@ -7,7 +7,7 @@ def profile(fnc):
         """The outer function"""
 
         # profilehooks decorator
-        @ph.profile(immediate=True)
+        @ph.profile(immediate=True,entries=1000)
         def inner(*args, **kwargs):
             """The inner function"""
             # run the function

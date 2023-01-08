@@ -5,6 +5,11 @@ from trend_filtering.opt_params import get_hyperparams
 from matrix_algorithms.woodbury_inversion import woodbury_matrix_inversion
 from matrix_algorithms.sherman_morrison import sherman_morrison_recursion
 
+###### Numba Integration
+# Utilize @njit decorator to compile functions to machine code
+# Blocks default to object mode
+# First compilation takes longer to cache the compilation of the code
+# Utilies Intel's ICC compiler through Numba 
 
 def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
     """
@@ -47,24 +52,16 @@ def adaptive_tf(y, D_=Difference_Matrix, lambda_p=1.0, k=2, verbose=True):
         # compute objectives
         pobj1, pobj2, dobj, gap = compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p)
 
-        if verbose:
-            if iters % 5 == 0:
-                print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")
-
+        
         # if duality gap becomes negative
         if gap < 0:
             status = "negative duality gap"
-            if verbose:
-                print(status)
-                print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")
             x = y - np.dot(D.transpose(), z)
             return {"sol": None, "status": status, "gap": -1}
 
         # if duality gap is small enough
         if gap <= tol:
             status = "solved"
-            print(status)
-            print(f"pobj1: {pobj1}, pobj2: {pobj2}, dobj: {dobj}, gap: {gap}")
             x = y - np.dot(D.transpose(), z)
             return {"sol": x, "status": status, "gap": gap}
 
@@ -115,7 +112,7 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
 
     if step >= 0.2:
         mu_inc = max(2 * m * mu / gap, 1.2 * mu_inc)
-
+    mu_inc_inv = 1 / mu_inc
     # step size of dual variable for equality
     rz = DDTz - w
 
@@ -124,17 +121,15 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
 
     #S_inv=woodbury_matrix_inversion(-(mu1 / f1 + mu2 / f2), DDT_inv,step=20)
 
-    
-
-    r = -DDTz + Dy + (1 / mu_inc) / f1 - (1 / mu_inc) / f2
+    r = -DDTz + Dy + mu_inc_inv / f1 - mu_inc_inv / f2
     dz = np.dot(S_inv, r)
 
     # step size for the dual variables formulated from constraints
-    dmu1 = -(mu1 + ((1 / mu_inc) + dz * mu1) / f1)
-    dmu2 = -(mu2 + ((1 / mu_inc) - dz * mu2) / f2)
+    dmu1 = -(mu1 + (mu_inc_inv + dz * mu1) / f1)
+    dmu2 = -(mu2 + (mu_inc_inv - dz * mu2) / f2)
 
     # residual of dual variables
-    residual = np.vstack((rz,-mu1 * f1 - 1 / mu_inc, -mu2 * f2 - 1 / mu_inc))
+    residual = np.vstack((rz,-mu1 * f1 - mu_inc_inv, -mu2 * f2 - mu_inc_inv))
     
 
     negIdx1 = np.where(dmu1 < 0)[0]
@@ -170,7 +165,7 @@ def update_step(DDT, DDTz, Dy,DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_
 
     return newz, newmu1, newmu2, newf1, newf2
 
-@njit(fastmath=True, cache=True)
+@njit(fastmath=True, cache=True,nogil=True)
 def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
     """Adaptive step size of mu with ratio gamma"""
     if 2 * pobj1 > pobj2:
