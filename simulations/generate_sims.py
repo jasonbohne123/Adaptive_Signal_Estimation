@@ -1,4 +1,3 @@
-import mlflow
 import numpy as np
 
 from simulations.Conditional_Simulator import ConditionalSimulator
@@ -23,19 +22,6 @@ def apply_function_to_paths(paths, function):
 
     # Ideally we can improve this from naivealy applying function once at a time
 
-    # Thoughts
+    # Thoughts can either
 
     return np.apply_along_axis(function, 1, paths)
-
-
-def save_to_mlflow(paths, mlflow_run, mlflow_tag):
-    """Save paths to mlflow"""
-
-    ## DECIDE
-    # Log each path
-    # Plot Results; estimation vs True
-    # Log each simulation
-    # Plot Sample Results
-    # Plot Overall statistics
-
-    mlflow.log_artifact(paths, mlflow_run.info.run_id, mlflow_tag)

@@ -10,3 +10,7 @@ matrix_algorithms/__pycache__/
 trend_filtering/__pycache__/
 profiling/__pycache__/
 .vscode/
+simulations/mlflow/__pycache__/mlflow_helpers.cpython-310.pyc
+simulations/mlruns/
+simulations/mlflow/mlruns/
+simulations/images/

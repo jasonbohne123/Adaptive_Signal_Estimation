@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from simulations.label_changepoints import label_changepoints
+from trend_filtering.label_changepoints import label_changepoints
 
 from .Simulator import Simulator
 
