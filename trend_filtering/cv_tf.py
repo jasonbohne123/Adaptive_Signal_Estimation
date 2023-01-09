@@ -1,17 +1,21 @@
+from typing import Union
+
 import numpy as np
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from trend_filtering.adaptive_tf import adaptive_tf
 
 
-def cross_validation(y, D: Difference_Matrix, grid, t=None, verbose=True):
+def cross_validation(
+    y: np.ndarray, D: Difference_Matrix, grid: np.ndarray, t: Union[None, np.ndarray] = None, verbose=True
+):
     """Cross Validation for constant TF penalty parameter lambda_p"""
 
     best_gap = np.inf
     best_lambda = None
 
     for lambda_i in grid:
-        result = adaptive_tf(y.reshape(-1, 1), D, t, lambda_p=[lambda_i])
+        result = adaptive_tf(y.reshape(-1, 1), D, t, lambda_p=lambda_i)
 
         # extract solution information
         gap = result["gap"]

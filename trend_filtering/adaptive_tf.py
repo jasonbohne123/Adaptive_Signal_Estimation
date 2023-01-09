@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 from numba import njit
 
@@ -12,7 +14,13 @@ from trend_filtering.opt_params import get_hyperparams
 # Utilies Intel's ICC compiler through Numba
 
 
-def adaptive_tf(y, D_: Difference_Matrix, t=None, lambda_p=1.0, k=2):
+def adaptive_tf(
+    y: np.ndarray,
+    D_: Difference_Matrix,
+    t: Union[None, np.ndarray] = None,
+    lambda_p: Union[float, np.ndarray] = 1.0,
+    k: int = 2,
+):
     """
     Adaptive trend filtering algorithm
     """
@@ -84,13 +92,15 @@ def adaptive_tf(y, D_: Difference_Matrix, t=None, lambda_p=1.0, k=2):
     return {"sol": None, "status": status, "gap": -1}
 
 
-def prep_penalty(lambda_p, m):
+def prep_penalty(lambda_p: Union[float, np.ndarray], m):
 
-    # better variable typing here
-    if len(lambda_p) == 1:
+    if isinstance(lambda_p, float):
         lambda_p = np.array(lambda_p) * np.ones((m, 1))
 
-    return lambda_p
+        return lambda_p
+
+    else:
+        return lambda_p.reshape(-1, 1)
 
 
 def prep_difference_matrix(D_, t=None):
