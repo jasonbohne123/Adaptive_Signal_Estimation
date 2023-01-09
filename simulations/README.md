@@ -12,3 +12,4 @@
 
 4. Store and Save Results 
     - MLFlow (Local DB for querying of runs )
+    - mlflow ui (Web dashboard for visualizing runs)

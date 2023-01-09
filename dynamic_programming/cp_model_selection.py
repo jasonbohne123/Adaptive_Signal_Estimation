@@ -27,7 +27,7 @@ def generalized_cross_validation(Y, optimal_indices, order=1):
         # compute the sum of squared errors of best fitted polynomial each interval
 
         for inter in list(fixed_intervals.values()):
-            mse = best_fit_polynomial(Y, inter)
+            mse = best_fit_polynomial(Y, inter, order=order)
             fixed_mse += mse
 
         mse_dict[k_i] = fixed_mse
@@ -35,4 +35,10 @@ def generalized_cross_validation(Y, optimal_indices, order=1):
 
     sorted_mse = sorted(mse_dict.items(), key=lambda x: x[1])
     sorted_gcv = sorted(gcv_dict.items(), key=lambda x: x[1])
+
+    # if optimal cp is first index; no cp are found
+    if sorted_gcv[0][0] == 0:
+        print("No changepoints found")
+        sorted_mse, None
+
     return sorted_mse, sorted_gcv

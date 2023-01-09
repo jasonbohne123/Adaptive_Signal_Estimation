@@ -7,7 +7,7 @@ from trend_filtering.cv_tf import cross_validation
 from trend_filtering.helpers import compute_lambda_max
 
 
-def test_adaptive_tf(x, t=None, n=None, k=2, include_cv=False, lambda_p=None, plot=False,verbose=False):
+def test_adaptive_tf(x, t=None, n=None, k=2, include_cv=False, lambda_p=None, plot=False, verbose=False):
     """Test adaptive_tf function"""
     # generate signal
     if n is None:
@@ -28,7 +28,7 @@ def test_adaptive_tf(x, t=None, n=None, k=2, include_cv=False, lambda_p=None, pl
         # cross validation
         lambda_max = compute_lambda_max(D)
         grid = np.linspace(0.1, lambda_max, 10)
-        optimal_lambda, gap = cross_validation(x, D, grid=grid, t=None,verbose=verbose)
+        optimal_lambda, gap = cross_validation(x, D, grid=grid, t=None, verbose=verbose)
 
         if optimal_lambda is None:
             print("No Optimal lambda found via Cross Validation")
@@ -38,13 +38,12 @@ def test_adaptive_tf(x, t=None, n=None, k=2, include_cv=False, lambda_p=None, pl
                 return
             else:
                 print("Using predefined lambda_p")
-                
 
         else:
             lambda_p = optimal_lambda
 
     # reconstruct signal
-    results = adaptive_tf(x.reshape(-1, 1), D_=D, t=t,lambda_p=np.array([lambda_p]), verbose= verbose)
+    results = adaptive_tf(x.reshape(-1, 1), D_=D, t=t, lambda_p=np.array([lambda_p]))
 
     # extract solution information
     results["gap"]
