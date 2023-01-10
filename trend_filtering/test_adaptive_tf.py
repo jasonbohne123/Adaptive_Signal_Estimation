@@ -1,5 +1,5 @@
 import time
-from typing import Union
+from typing import Union, Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,12 +18,12 @@ def test_adaptive_tf(
     n: int = None,
     k: int = 2,
     p: int = 5,
-    include_cv=False,
-    plot=False,
-    verbose=False,
-    log_mlflow=False,
-):
+    exp_name="DEFAULT",
+    flags:Dict[str,bool]=None):
     """Test adaptive_tf function"""
+
+    include_cv,plot,verbose,bulk,log_mlflow=map(flags.get,['include_cv','plot','verbose','bulk','log_mlflow'])
+
     # generate signal
     if n is None:
         n = len(x)
@@ -43,9 +43,9 @@ def test_adaptive_tf(
 
     if include_cv:
         # cross validation
-        lambda_max = compute_lambda_max(D)
-        grid = np.linspace(0.1, lambda_max, p)
-        optimal_lambda, gap = cross_validation(x, D, grid=grid, t=None, verbose=verbose)
+        lambda_max = compute_lambda_max(D,x)
+        grid = np.linspace(0.001, lambda_max, p)
+        optimal_lambda, gap = cross_validation(x, D, grid=grid, t=None, verbose=False)
 
         if optimal_lambda is None:
             print("No Optimal lambda found via Cross Validation")
@@ -62,6 +62,8 @@ def test_adaptive_tf(
     # reconstruct signal
     start_time = time.time()
     results = adaptive_tf(x.reshape(-1, 1), D_=D, t=t, lambda_p=lambda_p)
+    if verbose:
+        print(f"Solved TF problem with status: {results['status']}")
     results["computation_time"] = time.time() - start_time
 
     # extract solution information
@@ -77,8 +79,9 @@ def test_adaptive_tf(
         plt.legend()
         plt.title("Reconstruction of a noisy signal with adaptive TF penalty")
         plt.savefig("../simulations/images/adaptive_tf.png")
+        plt.close()
 
-    experiment_id, run, run_tag = create_mlflow_experiment("L1TrendFiltering")
+    experiment_id, run, run_tag = create_mlflow_experiment(exp_name,bulk=bulk)
     if log_mlflow:
         # Log to MLFlow
         run_end = log_mlflow_params(
@@ -93,7 +96,7 @@ def test_adaptive_tf(
                 "computation_time": results["computation_time"],
             },
             ["../simulations/images/adaptive_tf.png"],
-            f"{experiment_id}/{run_tag}",
+            f"{experiment_id}/{run_tag}"
         )
 
     return

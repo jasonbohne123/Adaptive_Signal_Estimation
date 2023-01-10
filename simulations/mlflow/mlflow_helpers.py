@@ -3,15 +3,16 @@ from typing import Dict, List
 import mlflow
 
 
-def create_mlflow_experiment(experiment_name):
+def create_mlflow_experiment(experiment_name,bulk=False):
     """Creates New MLFlow Experiment"""
 
-    mlflow.set_tracking_uri(uri="../simulations/mlflow/mlruns")
+    mlflow.set_tracking_uri(uri="../simulations/mlflow/mlruns/")
 
     exp = mlflow.get_experiment_by_name(name=experiment_name)
 
     if exp:
-        print("Experiment already exists")
+        if not bulk:
+            print("Experiment already exists")
         experiment_id = exp.experiment_id
 
     else:
@@ -32,9 +33,10 @@ def log_mlflow_params(mlflow_run, params: Dict[str, str], artifact_list: List[an
     # Log Parameters to MLFlow
     mlflow.log_params(params)
 
+    print(mlflow.get_artifact_uri() )
     # Log Artifacts to MLFlow
     for artifact in artifact_list:
-        mlflow.log_artifact(artifact)
+        mlflow.log_artifact(artifact,artifact_path)
 
     # End MLFlow Run
     mlflow.end_run()
