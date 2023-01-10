@@ -3,15 +3,18 @@ import numpy as np
 from matrix_algorithms.difference_matrix import Difference_Matrix
 
 
-def compute_lambda_max(diff_mat, time=False):
+def compute_lambda_max(diff_mat, y, time=False):
     """Computes the maximum lambda value for the adaptive trend filtering algorithm"""
 
     if time:
         DDT_inv = diff_mat.T_DDT_inv
+        D = diff_mat.T_D
     else:
         DDT_inv = diff_mat.DDT_inv
+        D = diff_mat.D
 
-    lambda_max = np.sqrt(DDT_inv.diagonal().max())
+    # lambda value which gives best affine fit
+    lambda_max = np.max(abs(DDT_inv.dot(D).dot(y)))
 
     return lambda_max
 

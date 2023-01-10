@@ -32,6 +32,9 @@ class Difference_Matrix:
         # save the inverse of the DDT matrix as C Contigous array
         self.DDT_inv = np.asarray(self.invert(self.DDT_diag, style=self.style), order="C")
 
+        # confirm this is in fact the inverse
+        assert self.DDT.dot(self.DDT_inv).all() == np.eye(n - 2).all()
+
     def invert(self, diag, style):
         """
         Inverts the banded difference matrix
