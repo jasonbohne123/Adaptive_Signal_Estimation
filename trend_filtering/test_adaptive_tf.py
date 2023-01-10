@@ -81,7 +81,7 @@ def test_adaptive_tf(
         plt.plot(sol, "r", label="reconstructed signal")
         plt.legend()
         plt.title("Reconstruction of a noisy signal with adaptive TF penalty")
-        plt.savefig("../simulations/images/adaptive_tf.png")
+        plt.savefig("images/adaptive_tf.png")
         plt.close()
 
     experiment_id, run, run_tag = create_mlflow_experiment(exp_name, bulk=bulk)
@@ -98,7 +98,7 @@ def test_adaptive_tf(
                 "adaptive_lambda_p": adaptive_penalty,
                 "computation_time": results["computation_time"],
             },
-            artifact_list=["../simulations/images/adaptive_tf.png"],
+            artifact_list=["images/adaptive_tf.png"],
         )
 
     return
