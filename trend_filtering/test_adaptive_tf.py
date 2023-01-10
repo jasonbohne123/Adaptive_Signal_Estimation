@@ -17,7 +17,7 @@ def test_adaptive_tf(
     lambda_p=Union[float, np.ndarray],
     n: int = None,
     k: int = 2,
-    p: int = 5,
+    p: int = 10,
     exp_name="DEFAULT",
     flags: Dict[str, bool] = None,
 ):
@@ -47,7 +47,7 @@ def test_adaptive_tf(
     if include_cv:
         # cross validation
         lambda_max = compute_lambda_max(D, x)
-        grid = np.linspace(0.001, lambda_max, p)
+        grid = np.linspace(0.0001, lambda_max, p)
         optimal_lambda, gap = cross_validation(x, D, grid=grid, t=None, verbose=False)
 
         if optimal_lambda is None:
@@ -93,6 +93,7 @@ def test_adaptive_tf(
                 "n": n,
                 "k": k,
                 "gap": results["gap"],
+                "mse": None,
                 "cross_validation": include_cv,
                 "no_folds": p,
                 "adaptive_lambda_p": adaptive_penalty,
