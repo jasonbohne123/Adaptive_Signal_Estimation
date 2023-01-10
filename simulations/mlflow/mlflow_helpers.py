@@ -23,17 +23,18 @@ def create_mlflow_experiment(experiment_name):
     # Get MLFlow Run ID
     mlflow_tag = mlflow_run.info.run_id
 
-    return mlflow_run, mlflow_tag
+    return experiment_id, mlflow_run, mlflow_tag
 
 
-def log_mlflow_params(mlflow_run: str, params: Dict[str, str], artifact_list: List[any], artifact_path: str = None):
+def log_mlflow_params(mlflow_run, params: Dict[str, str], artifact_list: List[any], artifact_path: str = None):
     """Logs Parameters to MLFlow"""
 
     # Log Parameters to MLFlow
     mlflow.log_params(params)
 
+    # Log Artifacts to MLFlow
     for artifact in artifact_list:
-        mlflow.log_artifact(artifact, artifact_path)
+        mlflow.log_artifact(artifact)
 
     # End MLFlow Run
     mlflow.end_run()

@@ -11,5 +11,9 @@
     - Analyze Statistics and Results
 
 4. Store and Save Results 
-    - MLFlow (Local DB for querying of runs )
-    - mlflow ui (Web dashboard for visualizing runs)
+    - Runs of a particular model are stored in MLFlow sharing a common experiment
+    - All MLFlow commands need to be ran from the corresponding directory `cd simulations/mlflow`
+    - Visually inspect by navigating to mlflow folder `mflow ui`
+    - Delete experiements or runs `mlflow gc`
+
+ 

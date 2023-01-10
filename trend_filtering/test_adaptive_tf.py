@@ -76,14 +76,13 @@ def test_adaptive_tf(
         plt.plot(sol, "r", label="reconstructed signal")
         plt.legend()
         plt.title("Reconstruction of a noisy signal with adaptive TF penalty")
-        plt.show()
         plt.savefig("../simulations/images/adaptive_tf.png")
 
-    run_id, tag = create_mlflow_experiment("L1TrendFiltering")
+    experiment_id, run, run_tag = create_mlflow_experiment("L1TrendFiltering")
     if log_mlflow:
         # Log to MLFlow
-        run = log_mlflow_params(
-            run_id,
+        run_end = log_mlflow_params(
+            run,
             {
                 "n": n,
                 "k": k,
@@ -94,6 +93,7 @@ def test_adaptive_tf(
                 "computation_time": results["computation_time"],
             },
             ["../simulations/images/adaptive_tf.png"],
+            f"{experiment_id}/{run_tag}",
         )
 
     return
