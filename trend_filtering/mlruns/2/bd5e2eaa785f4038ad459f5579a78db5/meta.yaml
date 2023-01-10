@@ -1,0 +1,15 @@
+artifact_uri: file:///home/jbohne/sbu/research/Adaptive_Signal_Estimation_Private/trend_filtering/mlruns/2/bd5e2eaa785f4038ad459f5579a78db5/artifacts
+end_time: 1673382557436
+entry_point_name: ''
+experiment_id: '2'
+lifecycle_stage: active
+run_id: bd5e2eaa785f4038ad459f5579a78db5
+run_name: casual-bat-683
+run_uuid: bd5e2eaa785f4038ad459f5579a78db5
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1673382557429
+status: 3
+tags: []
+user_id: jbohne

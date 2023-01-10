@@ -1,0 +1,15 @@
+artifact_uri: file:///home/jbohne/sbu/research/Adaptive_Signal_Estimation_Private/trend_filtering/mlruns/2/aac7783acb63453988c69c6c216dcf81/artifacts
+end_time: 1673382556266
+entry_point_name: ''
+experiment_id: '2'
+lifecycle_stage: active
+run_id: aac7783acb63453988c69c6c216dcf81
+run_name: funny-bat-228
+run_uuid: aac7783acb63453988c69c6c216dcf81
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1673382556257
+status: 3
+tags: []
+user_id: jbohne

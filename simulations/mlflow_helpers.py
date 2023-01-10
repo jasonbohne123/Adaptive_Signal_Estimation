@@ -3,10 +3,8 @@ from typing import Dict, List
 import mlflow
 
 
-def create_mlflow_experiment(experiment_name,bulk=False):
+def create_mlflow_experiment(experiment_name, bulk=False):
     """Creates New MLFlow Experiment"""
-
-    mlflow.set_tracking_uri(uri="../simulations/mlflow/mlruns/")
 
     exp = mlflow.get_experiment_by_name(name=experiment_name)
 
@@ -33,10 +31,9 @@ def log_mlflow_params(mlflow_run, params: Dict[str, str], artifact_list: List[an
     # Log Parameters to MLFlow
     mlflow.log_params(params)
 
-    print(mlflow.get_artifact_uri() )
     # Log Artifacts to MLFlow
     for artifact in artifact_list:
-        mlflow.log_artifact(artifact,artifact_path)
+        mlflow.log_artifact(artifact)
 
     # End MLFlow Run
     mlflow.end_run()

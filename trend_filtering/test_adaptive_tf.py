@@ -1,11 +1,11 @@
 import time
-from typing import Union, Dict
+from typing import Dict, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from simulations.mlflow.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
+from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
 from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.cv_tf import cross_validation
 from trend_filtering.helpers import compute_lambda_max
@@ -19,10 +19,13 @@ def test_adaptive_tf(
     k: int = 2,
     p: int = 5,
     exp_name="DEFAULT",
-    flags:Dict[str,bool]=None):
+    flags: Dict[str, bool] = None,
+):
     """Test adaptive_tf function"""
 
-    include_cv,plot,verbose,bulk,log_mlflow=map(flags.get,['include_cv','plot','verbose','bulk','log_mlflow'])
+    include_cv, plot, verbose, bulk, log_mlflow = map(
+        flags.get, ["include_cv", "plot", "verbose", "bulk", "log_mlflow"]
+    )
 
     # generate signal
     if n is None:
@@ -43,7 +46,7 @@ def test_adaptive_tf(
 
     if include_cv:
         # cross validation
-        lambda_max = compute_lambda_max(D,x)
+        lambda_max = compute_lambda_max(D, x)
         grid = np.linspace(0.001, lambda_max, p)
         optimal_lambda, gap = cross_validation(x, D, grid=grid, t=None, verbose=False)
 
@@ -81,7 +84,7 @@ def test_adaptive_tf(
         plt.savefig("../simulations/images/adaptive_tf.png")
         plt.close()
 
-    experiment_id, run, run_tag = create_mlflow_experiment(exp_name,bulk=bulk)
+    experiment_id, run, run_tag = create_mlflow_experiment(exp_name, bulk=bulk)
     if log_mlflow:
         # Log to MLFlow
         run_end = log_mlflow_params(
@@ -95,8 +98,7 @@ def test_adaptive_tf(
                 "adaptive_lambda_p": adaptive_penalty,
                 "computation_time": results["computation_time"],
             },
-            ["../simulations/images/adaptive_tf.png"],
-            f"{experiment_id}/{run_tag}"
+            artifact_list=["../simulations/images/adaptive_tf.png"],
         )
 
     return

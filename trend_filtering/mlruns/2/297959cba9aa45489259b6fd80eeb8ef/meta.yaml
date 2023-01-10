@@ -1,0 +1,15 @@
+artifact_uri: file:///home/jbohne/sbu/research/Adaptive_Signal_Estimation_Private/trend_filtering/mlruns/2/297959cba9aa45489259b6fd80eeb8ef/artifacts
+end_time: 1673382557103
+entry_point_name: ''
+experiment_id: '2'
+lifecycle_stage: active
+run_id: 297959cba9aa45489259b6fd80eeb8ef
+run_name: amusing-grouse-182
+run_uuid: 297959cba9aa45489259b6fd80eeb8ef
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1673382557094
+status: 3
+tags: []
+user_id: jbohne

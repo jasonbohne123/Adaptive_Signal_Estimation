@@ -12,7 +12,7 @@
 
 4. Store and Save Results 
     - Runs of a particular model are stored in MLFlow sharing a common experiment
-    - All MLFlow commands need to be ran from the corresponding directory `cd simulations/mlflow`
+    - All MLFlow commands need to be ran from the corresponding directory `cd trend_filtering`
     - Visually inspect by navigating to mlflow folder `mflow ui`
     - Delete experiements or runs `mlflow gc`
 
