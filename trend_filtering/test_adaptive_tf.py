@@ -5,23 +5,28 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
+from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
 from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.cv_tf import cross_validation
-from trend_filtering.helpers import compute_lambda_max
+from trend_filtering.helpers import compute_error, compute_lambda_max
+from trend_filtering.tf_constants import get_trend_filtering_simulation_constants
 
 
 def test_adaptive_tf(
-    x: np.ndarray,
+    sample: np.ndarray,
     t: Union[None, np.ndarray] = None,
-    lambda_p=Union[float, np.ndarray],
-    n: int = None,
-    k: int = 2,
-    p: int = 10,
+    true_sol: Union[None, np.ndarray] = None,
+    lambda_p: Union[float, np.ndarray] = 1.0,
     exp_name="DEFAULT",
     flags: Dict[str, bool] = None,
 ):
     """Test adaptive_tf function"""
+
+    start_time = time.time()
+
+    n, k, cv_folds = map(get_trend_filtering_simulation_constants().get, ["n", "k", "cv_folds"])
+    time_flag = False
 
     include_cv, plot, verbose, bulk, log_mlflow = map(
         flags.get, ["include_cv", "plot", "verbose", "bulk", "log_mlflow"]
@@ -29,14 +34,17 @@ def test_adaptive_tf(
 
     # generate signal
     if n is None:
-        n = len(x)
+        n = len(sample)
+
+    sample = sample[:n].reshape(-1, 1)
+    true_sol = true_sol[:n].reshape(-1, 1)
 
     D = Difference_Matrix(n, k)
 
-    x = x[:n]
-
     if t is not None:
         t = t[:n]
+        D = Time_Difference_Matrix(D, t)
+        time_flag = True
 
     adaptive_penalty = True if isinstance(lambda_p, np.ndarray) else False
 
@@ -44,11 +52,17 @@ def test_adaptive_tf(
         print(" No lambda_p provided and no cross validation")
         return
 
+    # cross validation grid
     if include_cv:
-        # cross validation
-        lambda_max = compute_lambda_max(D, x)
-        grid = np.linspace(0.0001, lambda_max, p)
-        optimal_lambda, gap = cross_validation(x, D, grid=grid, t=None, verbose=False)
+
+        # compute lambda_max to know grid boundary
+        lambda_max = compute_lambda_max(D, sample, time=time_flag)
+
+        # exponential grid
+        grid = np.geomspace(0.0001, lambda_max, cv_folds)
+
+        # perform CV
+        optimal_lambda, gap = cross_validation(sample, D, grid=grid, t=None, verbose=False)
 
         if optimal_lambda is None:
             print("No Optimal lambda found via Cross Validation")
@@ -63,43 +77,64 @@ def test_adaptive_tf(
             lambda_p = optimal_lambda
 
     # reconstruct signal
-    start_time = time.time()
-    results = adaptive_tf(x.reshape(-1, 1), D_=D, t=t, lambda_p=lambda_p)
+    results = adaptive_tf(sample, D_=D, t=t, lambda_p=lambda_p)
+
     if verbose:
         print(f"Solved TF problem with status: {results['status']}")
     results["computation_time"] = time.time() - start_time
 
     # extract solution information
-    results["gap"]
-    results["status"]
-    sol = results["sol"]
+    gap = results["gap"]
+    status = results["status"]
+    sol = results["sol"].reshape(-1, 1)
 
+    # compute mse from sample and true
+    mse_from_sample = compute_error(sample, sol, type="mse")
+    mse_from_true = compute_error(true_sol, sol, type="mse")
+
+    # plot to visualize estimation
     if plot:
-        # plot
         plt.figure(figsize=(10, 4))
-        plt.plot(x, "b", label="noisy signal")
-        plt.plot(sol, "r", label="reconstructed signal")
+        plt.plot(true_sol, color="orange", label="True Signal", lw=1.25)
+        plt.plot(sample, color="blue", label="Noisy Sample", lw=0.5)
+        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=1.25)
         plt.legend()
         plt.title("Reconstruction of a noisy signal with adaptive TF penalty")
-        plt.savefig("images/adaptive_tf.png")
+        plt.savefig("data/images/adaptive_tf.png")
         plt.close()
 
+    # save files (eventually refactor custom model)
+    with open("data/true_sol.txt", "w") as f:
+        f.write(str(true_sol))
+
+    with open("data/noisy_sample.txt", "w") as f:
+        f.write(str(sample))
+
+    with open("data/sol.txt", "w") as f:
+        f.write(str(sol))
+
+    # create mlflow experiement (if not exists) and run
     experiment_id, run, run_tag = create_mlflow_experiment(exp_name, bulk=bulk)
     if log_mlflow:
-        # Log to MLFlow
+        # Log params, metrics, tags, artifacts
         run_end = log_mlflow_params(
             run,
-            {
+            params={
                 "n": n,
                 "k": k,
-                "gap": results["gap"],
-                "mse": None,
                 "cross_validation": include_cv,
-                "no_folds": p,
+                "no_folds": cv_folds,
                 "adaptive_lambda_p": adaptive_penalty,
-                "computation_time": results["computation_time"],
+                "sample_variance": get_trend_filtering_simulation_constants()["sample_variance"],
             },
-            artifact_list=["images/adaptive_tf.png"],
+            metrics={
+                "computation_time": results["computation_time"],
+                "mse_from_sample": mse_from_sample,
+                "mse_from_true": mse_from_true,
+                "gap": gap,
+            },
+            tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": status}],
+            artifact_list=["data/images/adaptive_tf.png", "data/true_sol.txt", "data/noisy_sample.txt", "data/sol.txt"],
         )
 
     return

@@ -28,3 +28,18 @@ def extract_cp(smooth, k=2, threshold=1e-6):
 
     x, y, index = np.where([abs(diff) > threshold])
     return index
+
+
+def compute_error(x, x_hat, type="mse"):
+    assert type in ["mse", "mae"]
+
+    assert x.shape == x_hat.shape
+
+    if type == "mse":
+        return np.sum(np.abs(x - x_hat) ** 2) / len(x)
+
+    elif type == "mae":
+        return np.sum(np.abs(x - x_hat)) / len(x)
+
+    else:
+        raise ValueError("Error type not recognized")

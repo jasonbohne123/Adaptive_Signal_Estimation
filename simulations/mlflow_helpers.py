@@ -25,11 +25,25 @@ def create_mlflow_experiment(experiment_name, bulk=False):
     return experiment_id, mlflow_run, mlflow_tag
 
 
-def log_mlflow_params(mlflow_run, params: Dict[str, str], artifact_list: List[any], artifact_path: str = None):
+def log_mlflow_params(
+    mlflow_run,
+    params: Dict[str, str],
+    metrics: Dict[str, float],
+    tags: List[Dict[str, any]],
+    artifact_list: List[any],
+    artifact_path: str = None,
+):
     """Logs Parameters to MLFlow"""
 
     # Log Parameters to MLFlow
     mlflow.log_params(params)
+
+    # Log Metrics to MLFlow
+    mlflow.log_metrics(metrics)
+
+    # set tags to mlflow
+    for tag in tags:
+        mlflow.set_tags(tag)
 
     # Log Artifacts to MLFlow
     for artifact in artifact_list:
