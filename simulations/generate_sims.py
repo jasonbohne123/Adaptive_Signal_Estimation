@@ -1,15 +1,15 @@
 from simulations.Conditional_Simulator import ConditionalSimulator
 from simulations.Sampler import Sampler
-from trend_filtering.tf_constants import get_trend_filtering_simulation_constants
+from trend_filtering.tf_constants import get_simulation_constants
 
 
 def generate_conditional_piecewise_paths(prior, sim_style, label_style="k_maxima"):
     """Generate piecewise constant/linear paths with changepoints at the k_maxima of the prior distribution"""
-    k_points, underlying_dist, n_sims, sample_variance = map(
-        get_trend_filtering_simulation_constants().get, ["k_points", "underlying_dist", "n_sims", "sample_variance"]
+    k_points, underlying_dist, n_sims, sample_variance, shift = map(
+        get_simulation_constants().get, ["k_points", "underlying_dist", "n_sims", "sample_variance", "shift"]
     )
 
-    sim = ConditionalSimulator(prior, sim_style, label_style, k_points, underlying_dist, n_sims=n_sims)
+    sim = ConditionalSimulator(prior, sim_style, label_style, k_points, underlying_dist, n_sims=n_sims, shift=shift)
     true = sim.simulate()
 
     true = sim.evaluate_within_sample(sim.cp_index, true)

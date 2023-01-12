@@ -26,6 +26,7 @@ def run_bulk_trend_filtering(prior, sim_style, m=500, n=100, verbose=True):
 
     random_letters = "".join(random.choice(string.ascii_uppercase) for i in range(5))
     exp_name = f"L1_Trend_Filter_{random_letters}"
+    adaptive_exp_name = f"Adaptive_L1_Trend_Filter_{random_letters}"
 
     if verbose:
         print("Running {m} simulations of length {n}".format(n=m, m=n))
@@ -33,7 +34,14 @@ def run_bulk_trend_filtering(prior, sim_style, m=500, n=100, verbose=True):
 
     # apply tf to each path with specified flags
     flags = {"include_cv": True, "plot": True, "verbose": True, "bulk": True, "log_mlflow": True}
+
+    # constant penalty
     results = apply_function_to_paths(samples, test_adaptive_tf, exp_name=exp_name, flags=flags, true=true)
+
+    # adaptive penalty
+    new_results = apply_function_to_paths(
+        samples, test_adaptive_tf, exp_name=adaptive_exp_name, lambda_p=prior, flags=flags, true=true
+    )
 
     total_time = time.time() - start_time
     if verbose:
@@ -44,6 +52,6 @@ def run_bulk_trend_filtering(prior, sim_style, m=500, n=100, verbose=True):
 
 # python run_bulk_tf.py
 if __name__ == "__main__":
-    prior = np.ones(500)
+    prior = np.random.rand(500)
     sim_style = "piecewise_linear"
     run_bulk_trend_filtering(prior, sim_style)

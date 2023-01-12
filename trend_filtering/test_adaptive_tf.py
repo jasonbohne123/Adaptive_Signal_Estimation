@@ -10,14 +10,14 @@ from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_para
 from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.cv_tf import cross_validation
 from trend_filtering.helpers import compute_error, compute_lambda_max
-from trend_filtering.tf_constants import get_trend_filtering_simulation_constants
+from trend_filtering.tf_constants import get_model_constants, get_simulation_constants
 
 
 def test_adaptive_tf(
     sample: np.ndarray,
     t: Union[None, np.ndarray] = None,
     true_sol: Union[None, np.ndarray] = None,
-    lambda_p: Union[float, np.ndarray] = 1.0,
+    lambda_p: Union[np.ndarray, None] = None,
     exp_name="DEFAULT",
     flags: Dict[str, bool] = None,
 ):
@@ -25,12 +25,13 @@ def test_adaptive_tf(
 
     start_time = time.time()
 
-    n, k, cv_folds = map(get_trend_filtering_simulation_constants().get, ["n", "k", "cv_folds"])
-    time_flag = False
-
+    cv_folds, sample_variance = map(get_simulation_constants().get, ["cv_folds", "sample_variance"])
+    k, n, maxiter, maxlsiter, tol = map(get_model_constants().get, ["k", "n", "maxiter", "maxlsiter", "tol"])
     include_cv, plot, verbose, bulk, log_mlflow = map(
         flags.get, ["include_cv", "plot", "verbose", "bulk", "log_mlflow"]
     )
+
+    time_flag = False
 
     # generate signal
     if n is None:
@@ -45,8 +46,6 @@ def test_adaptive_tf(
         t = t[:n]
         D = Time_Difference_Matrix(D, t)
         time_flag = True
-
-    adaptive_penalty = True if isinstance(lambda_p, np.ndarray) else False
 
     if not include_cv and not lambda_p:
         print(" No lambda_p provided and no cross validation")
@@ -76,6 +75,9 @@ def test_adaptive_tf(
         else:
             lambda_p = optimal_lambda
 
+    # check if penalty is adaptive
+    adaptive_penalty = True if isinstance(lambda_p, np.ndarray) else False
+
     # reconstruct signal
     results = adaptive_tf(sample, D_=D, t=t, lambda_p=lambda_p)
 
@@ -86,7 +88,13 @@ def test_adaptive_tf(
     # extract solution information
     gap = results["gap"]
     status = results["status"]
-    sol = results["sol"].reshape(-1, 1)
+    sol = results["sol"]
+
+    if sol is not None:
+        sol = sol.reshape(-1, 1)
+    else:
+        print("No solution found")
+        return
 
     # compute mse from sample and true
     mse_from_sample = compute_error(sample, sol, type="mse")
@@ -96,11 +104,11 @@ def test_adaptive_tf(
     if plot:
         plt.figure(figsize=(10, 4))
         plt.plot(true_sol, color="orange", label="True Signal", lw=1.25)
-        plt.plot(sample, color="blue", label="Noisy Sample", lw=0.5)
+        plt.plot(sample, color="blue", label="Noisy Sample", lw=2)
         plt.plot(sol, color="red", label="Reconstructed Estimate", lw=1.25)
         plt.legend()
-        plt.title("Reconstruction of a noisy signal with adaptive TF penalty")
-        plt.savefig("data/images/adaptive_tf.png")
+        plt.title("Reconstruction of a noisy signal with TF penalty")
+        plt.savefig("data/images/tf.png")
         plt.close()
 
     # save files (eventually refactor custom model)
@@ -122,19 +130,24 @@ def test_adaptive_tf(
             params={
                 "n": n,
                 "k": k,
+                "maxiter": maxiter,
+                "maxsliter": maxlsiter,
+                "tol": tol,
                 "cross_validation": include_cv,
                 "no_folds": cv_folds,
                 "adaptive_lambda_p": adaptive_penalty,
-                "sample_variance": get_trend_filtering_simulation_constants()["sample_variance"],
+                "sample_variance": sample_variance,
             },
             metrics={
                 "computation_time": results["computation_time"],
+                "lambda_max": lambda_max,
+                "optimal_lambda": optimal_lambda,
                 "mse_from_sample": mse_from_sample,
                 "mse_from_true": mse_from_true,
                 "gap": gap,
             },
             tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": status}],
-            artifact_list=["data/images/adaptive_tf.png", "data/true_sol.txt", "data/noisy_sample.txt", "data/sol.txt"],
+            artifact_list=["data/images/tf.png", "data/true_sol.txt", "data/noisy_sample.txt", "data/sol.txt"],
         )
 
     return

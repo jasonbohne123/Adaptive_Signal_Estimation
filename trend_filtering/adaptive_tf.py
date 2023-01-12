@@ -5,7 +5,7 @@ from numba import njit
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
-from trend_filtering.opt_params import get_hyperparams
+from trend_filtering.tf_constants import get_model_constants
 
 ###### Numba Integration
 # Utilize @njit decorator to compile functions to machine code
@@ -25,7 +25,7 @@ def adaptive_tf(
     Adaptive trend filtering algorithm
     """
 
-    hyperparams = get_hyperparams()
+    hyperparams = get_model_constants()
     alpha, beta, gamma, mu, mu_inc, maxiter, maxlsiter, tol = map(
         hyperparams.get, ["alpha", "beta", "gamma", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
     )

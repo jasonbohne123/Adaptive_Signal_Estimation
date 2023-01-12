@@ -18,12 +18,14 @@ class ConditionalSimulator(Simulator):
         k_points,
         underlying_dist=None,
         n_sims=1000,
-        variance_scaling=10e-4,
+        variance_scaling=10e-3,
         rng=None,
+        shift=100,
     ):
         self.prior = prior
         self.sim_style = sim_style
         self.label_style = label_style
+        self.shift = shift
 
         if k_points > len(prior):
             print("k_points is greater than the length of the prior. Setting k_points to half of length of the prior")
@@ -93,4 +95,4 @@ class ConditionalSimulator(Simulator):
         else:
             raise ValueError("Invalid simulation style")
 
-        return true_processes
+        return true_processes + self.shift
