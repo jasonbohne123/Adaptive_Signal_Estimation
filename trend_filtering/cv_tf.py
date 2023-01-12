@@ -7,14 +7,21 @@ from trend_filtering.adaptive_tf import adaptive_tf
 
 
 def cross_validation(
-    y: np.ndarray, D: Difference_Matrix, grid: np.ndarray, t: Union[None, np.ndarray] = None, verbose=True
+    y: np.ndarray, D: Difference_Matrix, grid: np.ndarray, lambda_p:Union[None,np.ndarray]=None,t: Union[None, np.ndarray] = None, verbose=True
 ):
     """Cross Validation for constant TF penalty parameter lambda_p"""
 
     best_gap = np.inf
     best_lambda = None
-
     for lambda_i in grid:
+        
+        if lambda_p is not None:
+            
+            # must be multivariate ndarray if not None
+            assert isinstance(lambda_p, np.ndarray)
+
+            lambda_i = lambda_p*lambda_i
+
         result = adaptive_tf(y.reshape(-1, 1), D, t, lambda_p=lambda_i)
 
         # extract solution information

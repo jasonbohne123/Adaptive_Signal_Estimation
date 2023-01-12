@@ -1,9 +1,11 @@
+
 def get_simulation_constants():
+    """ Default Simulation Constants for Trend Filtering"""
     constants = {
-        "k_points": 10,
+        "k_points": 25,
         "underlying_dist": "normal",
         "sample_variance": 10e-2,
-        "n_sims": 10,
+        "n_sims": 1000,
         "shift": 100,
         "cv_folds": 40,
     }
@@ -11,6 +13,7 @@ def get_simulation_constants():
 
 
 def get_model_constants():
+    """Default Model Constants for Trned Filtering"""
     hyperparams = {
         "k": 2,
         "n": 500,
@@ -21,6 +24,6 @@ def get_model_constants():
         "mu_inc": 1e-10,
         "maxiter": 50,
         "maxlsiter": 50,
-        "tol": 1e-8,
+        "tol": 1e-5,
     }
     return hyperparams

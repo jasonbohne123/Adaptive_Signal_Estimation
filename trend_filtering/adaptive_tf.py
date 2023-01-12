@@ -18,7 +18,7 @@ def adaptive_tf(
     y: np.ndarray,
     D_: Difference_Matrix,
     t: Union[None, np.ndarray] = None,
-    lambda_p: Union[float, np.ndarray] = 1.0,
+    lambda_p: Union[float, np.ndarray] = None,
     k: int = 2,
 ):
     """
@@ -94,13 +94,12 @@ def adaptive_tf(
 
 def prep_penalty(lambda_p: Union[float, np.ndarray], m):
 
-    if isinstance(lambda_p, float):
-        lambda_p = np.array(lambda_p) * np.ones((m, 1))
-
-        return lambda_p
-
+    if isinstance(lambda_p,np.ndarray):
+        return lambda_p.reshape(-1,1)
+    elif isinstance(lambda_p,float):
+        return lambda_p*np.ones((m,1))
     else:
-        return lambda_p.reshape(-1, 1)
+        raise ValueError("lambda_p must be a float or numpy array")
 
 
 def prep_difference_matrix(D_, t=None):
