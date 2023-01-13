@@ -2,6 +2,7 @@ from typing import Union
 
 import numpy as np
 from numba import njit
+from piecewise_linear_model import Piecewise_Linear_Model
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
@@ -72,7 +73,7 @@ def adaptive_tf(
         if gap <= tol:
             status = "solved"
             x = y - np.dot(D.transpose(), z)
-            return {"sol": x, "status": status, "gap": gap}
+            return {"sol": Piecewise_Linear_Model(x, D=D, t=t), "status": status, "gap": gap}
 
         # update step
         newz, newmu1, newmu2, newf1, newf2 = update_step(
@@ -94,10 +95,10 @@ def adaptive_tf(
 
 def prep_penalty(lambda_p: Union[float, np.ndarray], m):
 
-    if isinstance(lambda_p,np.ndarray):
-        return lambda_p.reshape(-1,1)
-    elif isinstance(lambda_p,float):
-        return lambda_p*np.ones((m,1))
+    if isinstance(lambda_p, np.ndarray):
+        return lambda_p.reshape(-1, 1)
+    elif isinstance(lambda_p, float):
+        return lambda_p * np.ones((m, 1))
     else:
         raise ValueError("lambda_p must be a float or numpy array")
 

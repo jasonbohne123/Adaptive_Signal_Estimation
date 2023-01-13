@@ -1,13 +1,13 @@
-
 def get_simulation_constants():
-    """ Default Simulation Constants for Trend Filtering"""
+    """Default Simulation Constants for Trend Filtering"""
     constants = {
         "k_points": 25,
         "underlying_dist": "normal",
         "sample_variance": 10e-2,
-        "n_sims": 1000,
+        "n_sims": 2,
         "shift": 100,
         "cv_folds": 40,
+        "cross_validation_size": 0.8,
     }
     return constants
 
