@@ -5,7 +5,7 @@ from scipy.stats import beta, expon, gamma, lognorm, norm, uniform
 class Simulator:
     """Base class for simulators, probability distributions are defined from scipy.stats"""
 
-    def __init__(self, dist, rng=None, variance_scaling=10e-4):
+    def __init__(self, dist, rng, variance_scaling):
 
         self.variance_scaling = variance_scaling
 

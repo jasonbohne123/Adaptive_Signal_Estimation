@@ -3,6 +3,8 @@ def get_simulation_constants():
     constants = {
         "k_points": 25,
         "underlying_dist": "normal",
+        "label_style": "k_maxima",
+        "true_variance": 10e-2,
         "sample_variance": 10e-2,
         "n_sims": 2,
         "shift": 100,
@@ -15,6 +17,8 @@ def get_simulation_constants():
 def get_model_constants():
     """Default Model Constants for Trned Filtering"""
     hyperparams = {
+        "K_max": 10,
+        "order": 1,
         "k": 2,
         "n": 500,
         "gamma": 0.5,

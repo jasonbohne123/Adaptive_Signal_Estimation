@@ -19,11 +19,8 @@ def compute_lambda_max(diff_mat, y, time=False):
     return lambda_max
 
 
-def extract_cp(smooth, k=2, threshold=1e-6):
+def extract_cp(smooth, D: Difference_Matrix, threshold):
     """Extract changepoints via difference operator"""
-    n = len(smooth)
-    diff_mat = Difference_Matrix(n, k)
-    D = diff_mat.D
     diff = np.dot(D, smooth).reshape(1, -1)[0]
 
     x, y, index = np.where([abs(diff) > threshold])

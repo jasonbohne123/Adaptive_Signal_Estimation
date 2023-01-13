@@ -5,19 +5,20 @@ import numpy as np
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from trend_filtering.adaptive_tf import adaptive_tf
-from trend_filtering.helpers import compute_error
+from trend_filtering.helpers import compute_error, compute_lambda_max
 from trend_filtering.tf_constants import get_simulation_constants
 
 
 def cross_validation(
     x: np.ndarray,
     D: Difference_Matrix,
-    grid: np.ndarray,
     lambda_p: Union[None, np.ndarray] = None,
     t: Union[None, np.ndarray] = None,
+    cv_folds: int = None,
     verbose=True,
 ):
     """Cross Validation for constant TF penalty parameter lambda_p"""
+
     n = len(x)
 
     # get in-sample and out-of-sample indices
@@ -36,9 +37,19 @@ def cross_validation(
     D = Difference_Matrix(m, D.k)
     T = Time_Difference_Matrix(D, t=is_index)
 
+    # compute lambda_max to know grid boundary
+    lambda_max = compute_lambda_max(T, x_is, time=True)
+
+    # exponential grid
+    grid = np.geomspace(0.0001, lambda_max, cv_folds)
+
     best_oos_error = np.inf
-    best_lambda = None
+    best_lambda, best_predictions, best_lambda = None, None, None
+    observed = None
+
     for lambda_i in grid:
+
+        lambda_scaler = lambda_i
 
         if lambda_p is not None:
 
@@ -46,11 +57,13 @@ def cross_validation(
             assert isinstance(lambda_p, np.ndarray)
 
             # scale penalty to have mean of optimal lambda
-            # is mean the best statistic here?
+            # is mean the best statistic here
 
-            # Need to look into indexing here
-            is_index_penalty = is_index[1:-1]
-            lambda_i = lambda_p[is_index_penalty] * lambda_i / np.mean(lambda_p[is_index_penalty])
+            padded_lambda_p = np.pad(lambda_p, (1, 1), "mean")
+
+            lambda_p_is = padded_lambda_p[is_index][1:-1]
+
+            lambda_i = lambda_p_is * lambda_i / np.mean(lambda_p_is)
 
         result = adaptive_tf(x_is.reshape(-1, 1), T, t=is_index, lambda_p=lambda_i)
         status = result["status"]
@@ -62,16 +75,20 @@ def cross_validation(
                 print("Status: {}".format(status))
             continue
 
-        # compute oos error (Very Well might need to compute changepoints explicitly here )
+        # to compute oos error we need to know the functional form of our model
+        # Which means we need to select optimal changepoints
+        predictions = sol.predict(oos_index)
+        oos_error = compute_error(predictions, x_oos, type="mse")
 
-        oos_error = compute_error(sol.predict(oos_index), x_oos, type="mse")
-        print(oos_error)
         if best_oos_error > oos_error:
             best_oos_error = oos_error
-            best_lambda = lambda_i
+            best_lambda = lambda_scaler
+            best_predictions = predictions
+            observed = x_oos
+            optimal_estimate = sol.x
 
     # if all cv failed
     if best_lambda is None:
-        return None, None
+        return None, None, None, None, None
 
-    return best_lambda, best_oos_error
+    return best_lambda, lambda_max, best_oos_error, best_predictions, optimal_estimate, observed, oos_index

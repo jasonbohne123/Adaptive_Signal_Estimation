@@ -8,11 +8,11 @@ import time
 import numpy as np
 
 from simulations.generate_sims import apply_function_to_paths, generate_conditional_piecewise_paths
-from trend_filtering.tf_constants import get_simulation_constants, get_model_constants
 from trend_filtering.test_adaptive_tf import test_adaptive_tf
+from trend_filtering.tf_constants import get_model_constants, get_simulation_constants
 
 
-def run_bulk_trend_filtering(prior, sim_style,n_sims,n, verbose=True):
+def run_bulk_trend_filtering(prior, sim_style, n_sims, n, verbose=True):
     """Solves Bulk Trend Filtering problems
 
     m: Number of simulations
@@ -36,9 +36,11 @@ def run_bulk_trend_filtering(prior, sim_style,n_sims,n, verbose=True):
     flags = {"include_cv": True, "plot": True, "verbose": True, "bulk": True, "log_mlflow": True}
 
     # constant penalty
-    results = apply_function_to_paths(samples, test_adaptive_tf, exp_name=exp_name, flags=flags, true=true,lambda_p=None)
+    results = apply_function_to_paths(
+        samples, test_adaptive_tf, exp_name=exp_name, flags=flags, true=true, lambda_p=None
+    )
 
-    unpadded_prior=prior[1:-1]
+    unpadded_prior = prior[1:-1]
     # adaptive penalty
     new_results = apply_function_to_paths(
         samples, test_adaptive_tf, exp_name=exp_name, lambda_p=unpadded_prior, flags=flags, true=true
@@ -53,10 +55,10 @@ def run_bulk_trend_filtering(prior, sim_style,n_sims,n, verbose=True):
 
 # python run_bulk_tf.py
 if __name__ == "__main__":
-    n=get_model_constants().get("n")
-    n_sims=get_simulation_constants().get("n_sims")
+    n = get_model_constants().get("n")
+    n_sims = get_simulation_constants().get("n_sims")
 
-    prior = np.random.uniform(0.5,2, n)
-    sim_style = "piecewise_linear"
-    
-    run_bulk_trend_filtering(prior, sim_style,n_sims,n)
+    prior = np.random.uniform(0.5, 2, n)
+    sim_style = "piecewise_linear" if get_model_constants().get("order") == 1 else "piecewise_constant"
+
+    run_bulk_trend_filtering(prior, sim_style, n_sims, n)
