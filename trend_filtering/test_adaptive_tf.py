@@ -141,8 +141,8 @@ def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, oo
     # plot to visualize estimation
     if plot:
         plt.figure(figsize=(14, 12))
-        plt.plot(true_sol, color="orange", label="True Signal", lw=2.0)
-        plt.plot(sample, color="blue", label="Noisy Sample", lw=0.75)
+        plt.plot(true_sol, color="orange", label="True Signal", lw=4.0)
+        plt.plot(sample, color="blue", label="Noisy Sample", lw=0.25)
         plt.plot(sol, color="red", label="Reconstructed Estimate", lw=1.25)
         plt.plot(oe, color="green", label="Optimal I.S. Estimate", lw=1.25)
         plt.scatter(oos_index, op, color="green", label="Optimal Prediction", lw=0.75)
@@ -203,7 +203,7 @@ def log_to_mlflow(
     description = (
         "Linear Trend Filtering on Noisy Sample with Cross Validation of {cv_folds} folds and "
         "Cross Validation Size of {cross_validation_size}  Reference Variance of {reference_variance} "
-        " Signal to Noise Ratio of {signal_to_noise} and Penalty of {adaptive_penalty}".format(
+        " Signal to Noise Ratio of {signal_to_noise} and Adaptive Penalty of {adaptive_penalty}".format(
             cv_folds=cv_folds,
             cross_validation_size=cross_validation_size,
             reference_variance=reference_variance,
@@ -213,7 +213,7 @@ def log_to_mlflow(
     )
 
     # create mlflow experiement (if not exists) and run
-    experiment_id, run, run_tag = create_mlflow_experiment(exp_name, descritption=description, bulk=bulk)
+    experiment_id, run, run_tag = create_mlflow_experiment(exp_name, description=description, bulk=bulk)
     if log_mlflow:
         # Log params, metrics, tags, artifacts
         run_end = log_mlflow_params(
