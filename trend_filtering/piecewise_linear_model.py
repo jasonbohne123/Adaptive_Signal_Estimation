@@ -23,16 +23,16 @@ class Piecewise_Linear_Model:
         self.x = x
 
         self.k = get_model_constants()["k"]
-        self.time_enabled = False
 
+        # if D is not provided, create it either with or without time
         if not isinstance(D, Difference_Matrix) and not isinstance(D, Time_Difference_Matrix):
 
             self.D = Difference_Matrix(len(self.x), self.k)
 
             if t is not None:
-                self.T = Time_Difference_Matrix(self.D, t)
-                self.time_enabled = True
+                self.D = Time_Difference_Matrix(self.D, t)
 
+        # constants for cp selection and model
         self.threshold = get_model_constants()["cp_threshold"]
         self.K_max = get_model_constants()["K_max"]
         self.order = get_model_constants()["order"]
@@ -42,7 +42,7 @@ class Piecewise_Linear_Model:
             self.knots = self.get_knots()
 
     def predict(self, t: np.ndarray):
-        """Predict the output at time t"""
+        """Predict the output at time t using linear itnerpolation between two observed values"""
 
         rhs_val = max(len(self.x), max(t) + 1)
 
@@ -99,26 +99,21 @@ class Piecewise_Linear_Model:
     def get_knots(self):
         """Get the knots of the piecewise linear model up to a threshold"""
 
-        if self.time_enabled:
-            D = self.T.T_D
-        else:
-            D = self.D.D
-
         reshaped_x = self.x.reshape(1, -1)[0]
+
         # Extract all candidate knots up to a threshold
-        candidate_knots = extract_cp(reshaped_x, D, self.threshold)
+        candidate_knots = extract_cp(reshaped_x, self.D, self.threshold)
 
         # Apply dynamic programming to find optimal knots
-
         dp_set = dp_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
 
         # Select optimal knots via generalized cross validation
         optimal_trend_cp_mse, optimal_trend_cp_gcv = generalized_cross_validation(reshaped_x, dp_set, self.order)
 
-        print(optimal_trend_cp_mse)
-
+        # Get the optimal knots
         knots = dp_set[optimal_trend_cp_gcv[0][0]]
 
+        # flag to indicate that knots have been selected
         self.select_knots = True
 
         return knots

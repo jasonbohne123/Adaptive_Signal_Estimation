@@ -11,6 +11,7 @@ class Difference_Matrix:
         self.k = k
         self.l, self.u = k, k
         self.style = style if style is not None else "lapack"
+        self.time_enabled = False
 
         # create the kth order difference matrix (sparse)
         D = self.compose_difference_matrix(n, k)

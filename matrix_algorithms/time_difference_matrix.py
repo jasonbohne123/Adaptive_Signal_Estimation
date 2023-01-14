@@ -13,6 +13,7 @@ class Time_Difference_Matrix(Difference_Matrix):
     def __init__(self, matrix: Difference_Matrix, t=None):
         super().__init__(matrix.n, matrix.k, matrix.style)
         self.t = t
+        self.time_enabled = True
 
         # if time increments are not provided, assume they are unit spaced
         if t is None:

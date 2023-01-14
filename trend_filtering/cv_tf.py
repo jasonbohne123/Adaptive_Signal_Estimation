@@ -35,17 +35,17 @@ def cross_validation(
 
     m = len(is_index)
 
-    # account for now unequally sized arrays
+    # account for now irregular time series
     if t is None:
         t = np.arange(n)
     D = Difference_Matrix(m, D.k)
     T = Time_Difference_Matrix(D, t=t[is_index])
 
-    # compute lambda_max to know grid boundary
+    # compute lambda_max for exponential grid
     lambda_max = compute_lambda_max(T, x_is, time=True)
 
     # exponential grid
-    grid = np.geomspace(10e-4, lambda_max, cv_folds)
+    grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], lambda_max, cv_folds)
 
     best_oos_error = np.inf
     best_lambda, best_predictions, best_lambda = None, None, None
@@ -55,13 +55,14 @@ def cross_validation(
 
         lambda_scaler = lambda_i
 
+        # if prior is provided, scale lambda to have mean of candidate lambda
         if lambda_p is not None:
 
             # must be multivariate ndarray if not None
             assert isinstance(lambda_p, np.ndarray)
 
             # scale penalty to have mean of optimal lambda
-            # is mean the best statistic here
+            # (is mean the best statistic here)
 
             padded_lambda_p = np.pad(lambda_p, (1, 1), "mean")
 
@@ -79,11 +80,13 @@ def cross_validation(
                 print("Status: {}".format(status))
             continue
 
-        # to compute oos error we need to know the functional form of our model
-        # Which means we need to select optimal changepoints
+        # to compute oos error we need to make the return type callable
         predictions = sol.predict(oos_index)
+
+        # compute mse on oos test set
         oos_error = compute_error(predictions, x_oos, type="mse")
 
+        # if better than previous best, update
         if best_oos_error > oos_error:
             best_oos_error = oos_error
             best_lambda = lambda_scaler

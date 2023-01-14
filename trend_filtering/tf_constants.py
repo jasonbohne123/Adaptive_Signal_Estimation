@@ -5,11 +5,12 @@ def get_simulation_constants():
         "underlying_dist": "normal",
         "label_style": "k_maxima",
         "true_variance": 10e-3,
-        "sample_variance": 10e-1,
+        "sample_variance": 10e-2,
         "n_sims": 2,
         "shift": 100,
-        "cv_folds": 40,
-        "cross_validation_size": 0.75,
+        "cv_folds": 25,
+        "cross_validation_size": 0.90,
+        "cv_grid_lb": 10e-2,
     }
     return constants
 
@@ -27,8 +28,9 @@ def get_model_constants():
         "maxiter": 100,
         "maxlsiter": 50,
         "tol": 1e-4,
-        "K_max": 2,
+        "solve_cp": False,
+        "K_max": 5,
         "order": 1,
-        "cp_threshold": 3,
+        "cp_threshold": 0.75 * 10e-2,
     }
     return hyperparams

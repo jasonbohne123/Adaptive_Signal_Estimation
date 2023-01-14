@@ -19,6 +19,8 @@ class ConditionalSimulator(Simulator):
     ):
         self.prior = prior
         self.sim_style = sim_style
+
+        # fetch simulation constants from prespecified file (tf_constants.py)
         self.underlying_dist, self.variance_scaling, self.k_points, self.label_style, self.n_sims, self.shift = map(
             get_simulation_constants().get,
             ["underlying_dist", "true_variance", "k_points", "label_style", "n_sims", "shift"],

@@ -6,6 +6,7 @@ from trend_filtering.tf_constants import get_simulation_constants
 def generate_conditional_piecewise_paths(prior, sim_style, label_style="k_maxima"):
     """Generate piecewise constant/linear paths with changepoints at the k_maxima of the prior distribution"""
 
+    # fetch simulation constants from prespecified file (tf_constants.py)
     underlying_dist, sample_variance = map(get_simulation_constants().get, ["underlying_dist", "sample_variance"])
     sim = ConditionalSimulator(prior, sim_style)
     true = sim.simulate()
