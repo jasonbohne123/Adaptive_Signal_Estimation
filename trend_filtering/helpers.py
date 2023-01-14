@@ -23,7 +23,7 @@ def extract_cp(smooth, D: Difference_Matrix, threshold):
     """Extract changepoints via difference operator"""
     diff = np.dot(D, smooth).reshape(1, -1)[0]
 
-    x, y, index = np.where([abs(diff) > threshold])
+    x, index = np.where([abs(diff) > threshold])
     return index
 
 

@@ -18,24 +18,23 @@ class Piecewise_Linear_Model:
         x: np.ndarray,
         D: Union[Difference_Matrix, Time_Difference_Matrix, None] = None,
         t: np.ndarray = None,
-        k=2,
-        threshold=10e-4,
         select_knots=False,
     ):
         self.x = x
+        self.k = get_model_constants()["k"]
+        self.time_enabled = False
 
         if not isinstance(D, Difference_Matrix) and not isinstance(D, Time_Difference_Matrix):
 
-            self.D = Difference_Matrix(len(self.x), k)
+            self.D = Difference_Matrix(len(self.x), self.k)
 
             if t is not None:
                 self.T = Time_Difference_Matrix(self.D, t)
                 self.time_enabled = True
 
-        self.k = k
+        self.threshold = get_model_constants()["cp_threshold"]
         self.K_max = get_model_constants()["K_max"]
         self.order = get_model_constants()["order"]
-        self.threshold = threshold
         self.select_knots = select_knots
 
         if self.select_knots:
@@ -102,7 +101,7 @@ class Piecewise_Linear_Model:
         if self.time_enabled:
             D = self.T.T_D
         else:
-            D = self.D
+            D = self.D.D
 
         # Extract all candidate knots up to a threshold
         candidate_knots = extract_cp(self.x, D, self.threshold)
@@ -111,7 +110,7 @@ class Piecewise_Linear_Model:
         dp_set = dp_solver(self.x, candidate_knots, K_max=self.K_max, k=self.order)
 
         # Select optimal knots via generalized cross validation
-        optimal_trend_cp_mse, optimal_trend_cp_gcv = generalized_cross_validation(dp_set, self.x, self.order)
+        optimal_trend_cp_mse, optimal_trend_cp_gcv = generalized_cross_validation(self.x, dp_set, self.order)
 
         knots = dp_set[optimal_trend_cp_gcv[0][0]]
 

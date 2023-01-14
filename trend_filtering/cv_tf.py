@@ -8,6 +8,8 @@ from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.helpers import compute_error, compute_lambda_max
 from trend_filtering.tf_constants import get_simulation_constants
 
+### Create Cross Validation Class
+
 
 def cross_validation(
     x: np.ndarray,
@@ -34,14 +36,16 @@ def cross_validation(
     m = len(is_index)
 
     # account for now unequally sized arrays
+    if t is None:
+        t = np.arange(n)
     D = Difference_Matrix(m, D.k)
-    T = Time_Difference_Matrix(D, t=is_index)
+    T = Time_Difference_Matrix(D, t=t[is_index])
 
     # compute lambda_max to know grid boundary
     lambda_max = compute_lambda_max(T, x_is, time=True)
 
     # exponential grid
-    grid = np.geomspace(0.0001, lambda_max, cv_folds)
+    grid = np.geomspace(10e-6, lambda_max, cv_folds)
 
     best_oos_error = np.inf
     best_lambda, best_predictions, best_lambda = None, None, None

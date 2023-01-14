@@ -21,6 +21,7 @@ def adaptive_tf(
     t: Union[None, np.ndarray] = None,
     lambda_p: Union[float, np.ndarray] = None,
     k: int = 2,
+    select_knots=False,
 ):
     """
     Adaptive trend filtering algorithm
@@ -73,7 +74,7 @@ def adaptive_tf(
         if gap <= tol:
             status = "solved"
             x = y - np.dot(D.transpose(), z)
-            return {"sol": Piecewise_Linear_Model(x, D=D, t=t), "status": status, "gap": gap}
+            return {"sol": Piecewise_Linear_Model(x, D=D, t=t, select_knots=select_knots), "status": status, "gap": gap}
 
         # update step
         newz, newmu1, newmu2, newf1, newf2 = update_step(

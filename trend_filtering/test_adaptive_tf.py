@@ -46,10 +46,10 @@ def test_adaptive_tf(
             optimal_estimate,
             observed,
             oos_index,
-        ) = perform_cv(sample, D, time_flag, lambda_p, t, verbose)
+        ) = perform_cv(sample, D, lambda_p, t)
 
     # reconstruct signal
-    results = adaptive_tf(sample, D_=D, t=t, lambda_p=lambda_p)
+    results = adaptive_tf(sample, D_=D, t=t, lambda_p=lambda_p, select_knots=True)
     results["computation_time"] = time.time() - start_time
 
     if verbose:
@@ -58,7 +58,8 @@ def test_adaptive_tf(
     # extract solution information
     sol = results["sol"]
     if sol is not None:
-        sol = sol.x
+        sol.x
+        knots = sol.knots
     else:
         print("No solution found")
         return
@@ -68,7 +69,9 @@ def test_adaptive_tf(
     mse_from_true = compute_error(true_sol, sol, type="mse")
 
     # write artifacts to files
-    write_to_files(sample, true_sol, sol, plot, lambda_p, optimal_predictions, optimal_estimate, observed, oos_index)
+    write_to_files(
+        sample, true_sol, sol, knots, plot, lambda_p, optimal_predictions, optimal_estimate, observed, oos_index
+    )
 
     # log information to mlflow
     if log_mlflow:
@@ -100,7 +103,7 @@ def prep_signal(sample, true_sol, t):
     return sample, true_sol, D, time_flag
 
 
-def perform_cv(sample, D, time_flag, lambda_p, t, verbose):
+def perform_cv(sample, D, lambda_p, t):
     """Perform Cross-Validation on Lambda Penalty"""
 
     cv_folds = get_simulation_constants().get("cv_folds")
@@ -114,7 +117,7 @@ def perform_cv(sample, D, time_flag, lambda_p, t, verbose):
         optimal_estimate,
         observed,
         oos_index,
-    ) = cross_validation(sample, D, lambda_p=lambda_p, t=None, cv_folds=cv_folds, verbose=False)
+    ) = cross_validation(sample, D, lambda_p=lambda_p, t=t, cv_folds=cv_folds, verbose=False)
 
     if best_lambda is None:
         print("No Optimal lambda found via Cross Validation")
@@ -134,7 +137,7 @@ def perform_cv(sample, D, time_flag, lambda_p, t, verbose):
     return lambda_p, best_lambda, lambda_max, best_oos_error, optimal_predictions, optimal_estimate, observed, oos_index
 
 
-def write_to_files(sample, true_sol, sol, plot, lambda_p, op, oe, obs, oos_index):
+def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, oos_index):
     """Write artifacts to mlflow"""
     # plot to visualize estimation
     if plot:
@@ -145,6 +148,7 @@ def write_to_files(sample, true_sol, sol, plot, lambda_p, op, oe, obs, oos_index
         plt.plot(oe, color="green", label="Optimal I.S. Estimate", lw=1.25)
         plt.scatter(oos_index, op, color="green", label="Optimal Prediction", lw=0.75)
         plt.scatter(oos_index, obs, color="black", label="Observed", lw=0.75)
+        plt.scatter(knots, sol[knots], color="purple", label="Knots", lw=0.75)
         plt.legend()
         plt.title("Reconstruction of a noisy signal with TF penalty")
         plt.savefig("data/images/tf.png")
@@ -169,6 +173,9 @@ def write_to_files(sample, true_sol, sol, plot, lambda_p, op, oe, obs, oos_index
     with open("data/optimal_estimate.txt", "w") as f:
         f.write(str(oe))
 
+    with open("data/knots.txt", "w") as f:
+        f.write(str(knots))
+
     if isinstance(lambda_p, np.ndarray):
         with open("data/lambda_p.txt", "w") as f:
             f.write(str(lambda_p))
@@ -183,7 +190,9 @@ def log_to_mlflow(
 
     adaptive_penalty = isinstance(lambda_p, np.ndarray)
 
-    cv_folds, sample_variance = map(get_simulation_constants().get, ["cv_folds", "sample_variance"])
+    cv_folds, cross_validation_size, sample_variance = map(
+        get_simulation_constants().get, ["cv_folds", "cross_validation_size", "sample_variance"]
+    )
     k, n, maxiter, maxlsiter, tol = map(get_model_constants().get, ["k", "n", "maxiter", "maxlsiter", "tol"])
 
     # create mlflow experiement (if not exists) and run
@@ -200,6 +209,7 @@ def log_to_mlflow(
                 "tol": tol,
                 "cross_validation": include_cv,
                 "no_folds": cv_folds,
+                "cross_validation_size": cross_validation_size,
                 "adaptive_lambda_p": adaptive_penalty,
                 "sample_variance": sample_variance,
             },

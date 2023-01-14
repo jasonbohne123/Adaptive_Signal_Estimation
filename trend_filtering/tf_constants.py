@@ -5,11 +5,11 @@ def get_simulation_constants():
         "underlying_dist": "normal",
         "label_style": "k_maxima",
         "true_variance": 10e-2,
-        "sample_variance": 10e-2,
+        "sample_variance": 10e-1,
         "n_sims": 2,
         "shift": 100,
         "cv_folds": 40,
-        "cross_validation_size": 0.8,
+        "cross_validation_size": 0.75,
     }
     return constants
 
@@ -17,8 +17,6 @@ def get_simulation_constants():
 def get_model_constants():
     """Default Model Constants for Trned Filtering"""
     hyperparams = {
-        "K_max": 10,
-        "order": 1,
         "k": 2,
         "n": 500,
         "gamma": 0.5,
@@ -28,6 +26,9 @@ def get_model_constants():
         "mu_inc": 1e-10,
         "maxiter": 50,
         "maxlsiter": 50,
-        "tol": 1e-5,
+        "tol": 1e-6,
+        "K_max": 10,
+        "order": 1,
+        "cp_threshold": 5,
     }
     return hyperparams

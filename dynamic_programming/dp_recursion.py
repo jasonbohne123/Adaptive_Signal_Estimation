@@ -17,8 +17,9 @@ def best_fit_polynomial(Y, interval, order=1):
     x_range = np.arange(interval[0], interval[1], 1)
 
     # fit polynomial of order k to data
-    poly_coef = np.polyfit(x_range, y, order)
-    polynomial = poly_coef.dot(np.vstack([x_range**i for i in range(order, -1, -1)]))
+    poly_coef = np.polyfit(x_range, y, order, full=True)[0]
+
+    polynomial = poly_coef.T.dot(np.vstack([x_range**i for i in range(order, -1, -1)]))
 
     # mean squared error of fit
     mse = np.mean((y - polynomial) ** 2)
