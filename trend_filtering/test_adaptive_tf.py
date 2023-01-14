@@ -163,10 +163,10 @@ def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, is
     # plot to visualize estimation
     if plot:
         plt.figure(figsize=(14, 12))
-        plt.plot(true_sol, color="black", label="True Signal", lw=5)
+        plt.plot(true_sol, color="black", label="True Signal", lw=10)
         plt.plot(sample, color="blue", label="Noisy Sample", lw=0.5)
-        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=1.5)
-        plt.plot(is_index, oe, color="green", label="Optimal I.S. Estimate", lw=1.5)
+        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
+        plt.plot(is_index, oe, color="green", label="Optimal I.S. Estimate", lw=2.5)
         plt.scatter(oos_index, op, color="green", label="Optimal Prediction", lw=0.75)
         plt.scatter(oos_index, obs, color="orange", label="Observed", lw=0.75)
         if knots:

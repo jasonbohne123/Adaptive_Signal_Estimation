@@ -6,7 +6,17 @@ Work relevant to current research interests of conditional trend filtering and c
 
 Topics include
 
-Optimized numerical algorithms for sparse matrices and difference matrices
-Kernel Estimation Class with Robust Extensions (Median of Means)
-Simulation Class with Conditional Simulation extensions (Importance Sampling)
-Trend Filtering Algorithm via Primal Dual Optimization with adaptive extension
+- Optimized numerical algorithms for sparse matrices and difference matrices
+- Kernel Estimation Class with Robust Extensions (Median of Means)
+- Simulation Class with Conditional Simulation extensions (Importance Sampling)
+- Trend Filtering Algorithm via Primal Dual Optimization with adaptive extension
+
+
+To replicate the enviroment used for this project, run the following commands:
+
+```bash
+conda create -n ase python=3.7
+conda activate ase
+```
+
+To use precomitt hooks for this project, run git commit after install
