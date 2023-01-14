@@ -55,7 +55,7 @@ class Piecewise_Linear_Model:
 
         # else construct knots from in-sample data
         else:
-            knots = np.setdiff1d(np.arange(rhs_val), t)
+            knots = np.setdiff1d(np.arange(rhs_val + 1), t)
             knots = np.sort(knots)
 
         t = list(t)
@@ -71,15 +71,15 @@ class Piecewise_Linear_Model:
 
             # determine if left or right point is extrapolation
             if len(left_knots) == 0 and len(right_knots) > 0:
-                left_knot = 0
+                left_knot = min(knots)
                 right_knot = right_knots[0]
 
             elif len(right_knots) == 0 and len(left_knots) > 0:
                 left_knot = left_knots[-1]
-                right_knot = rhs_val - 1
+                right_knot = min(rhs_val - 1, max(knots))
             elif len(left_knots) == 0 and len(right_knots) == 0:
-                left_knot = 0
-                right_knot = rhs_val - 1
+                left_knot = min(knots)
+                right_knot = min(rhs_val - 1, max(knots))
             else:
                 left_knot = left_knots[-1]
                 right_knot = right_knots[0]
@@ -94,7 +94,7 @@ class Piecewise_Linear_Model:
                 else (self.x[-1] - self.x[-2]) * (right_knot - left_knot) + left_point
             )
 
-            slope = (right_point - left_point) / (right_knot - left_knot)
+            slope = (right_point - left_point) / (right_knot - left_knot) if right_knot != left_knot else 0
 
             # prediction for t_i is linear between left and right point
             estimate.append(left_point + slope * (t_i - left_knot))

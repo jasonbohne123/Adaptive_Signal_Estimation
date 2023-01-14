@@ -6,12 +6,12 @@ def get_simulation_constants():
         "k_points": 50,
         "underlying_dist": "normal",
         "label_style": "k_maxima",
-        "signal_to_noise": 10,
+        "signal_to_noise": 0.05,
         "reference_variance": 10e-2,
         "shift": 100,
         # cross validation params
-        "cv_folds": 40,
-        "cross_validation_size": 0.8,
+        "cv_folds": 50,
+        "cross_validation_size": 0.75,
         "cv_grid_lb": 10e-2,
     }
     return constants

@@ -19,7 +19,7 @@ def generate_conditional_piecewise_paths(prior, sim_style, label_style="k_maxima
     sampler = Sampler(underlying_dist)
 
     # (n_sims,len_sims)
-    samples = sampler.sample(true, scale=reference_variance * signal_to_noise)
+    samples = sampler.sample(true, scale=reference_variance / signal_to_noise)
 
     return true, samples
 
