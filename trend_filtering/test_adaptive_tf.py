@@ -58,19 +58,19 @@ def test_adaptive_tf(
     # extract solution information
     sol = results["sol"]
     if sol is not None:
-        sol.x
+        sol_array = sol.x
         knots = sol.knots
     else:
         print("No solution found")
         return
 
     # compute mse from sample and true
-    mse_from_sample = compute_error(sample, sol, type="mse")
-    mse_from_true = compute_error(true_sol, sol, type="mse")
+    mse_from_sample = compute_error(sample, sol_array, type="mse")
+    mse_from_true = compute_error(true_sol, sol_array, type="mse")
 
     # write artifacts to files
     write_to_files(
-        sample, true_sol, sol, knots, plot, lambda_p, optimal_predictions, optimal_estimate, observed, oos_index
+        sample, true_sol, sol_array, knots, plot, lambda_p, optimal_predictions, optimal_estimate, observed, oos_index
     )
 
     # log information to mlflow
@@ -223,5 +223,14 @@ def log_to_mlflow(
                 "gap": results["gap"],
             },
             tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": results["status"]}],
-            artifact_list=["data/images/tf.png", "data/true_sol.txt", "data/noisy_sample.txt", "data/sol.txt"],
+            artifact_list=[
+                "data/images/tf.png",
+                "data/true_sol.txt",
+                "data/noisy_sample.txt",
+                "data/sol.txt",
+                "data/optimal_predictions.txt",
+                "data/observed.txt",
+                "data/optimal_estimate.txt",
+                "data/knots.txt",
+            ],
         )

@@ -45,7 +45,7 @@ def cross_validation(
     lambda_max = compute_lambda_max(T, x_is, time=True)
 
     # exponential grid
-    grid = np.geomspace(10e-6, lambda_max, cv_folds)
+    grid = np.geomspace(10e-4, lambda_max, cv_folds)
 
     best_oos_error = np.inf
     best_lambda, best_predictions, best_lambda = None, None, None

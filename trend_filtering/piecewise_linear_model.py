@@ -21,6 +21,7 @@ class Piecewise_Linear_Model:
         select_knots=False,
     ):
         self.x = x
+
         self.k = get_model_constants()["k"]
         self.time_enabled = False
 
@@ -103,14 +104,18 @@ class Piecewise_Linear_Model:
         else:
             D = self.D.D
 
+        reshaped_x = self.x.reshape(1, -1)[0]
         # Extract all candidate knots up to a threshold
-        candidate_knots = extract_cp(self.x, D, self.threshold)
+        candidate_knots = extract_cp(reshaped_x, D, self.threshold)
 
         # Apply dynamic programming to find optimal knots
-        dp_set = dp_solver(self.x, candidate_knots, K_max=self.K_max, k=self.order)
+
+        dp_set = dp_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
 
         # Select optimal knots via generalized cross validation
-        optimal_trend_cp_mse, optimal_trend_cp_gcv = generalized_cross_validation(self.x, dp_set, self.order)
+        optimal_trend_cp_mse, optimal_trend_cp_gcv = generalized_cross_validation(reshaped_x, dp_set, self.order)
+
+        print(optimal_trend_cp_mse)
 
         knots = dp_set[optimal_trend_cp_gcv[0][0]]
 

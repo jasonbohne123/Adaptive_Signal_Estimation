@@ -104,15 +104,17 @@ def convert_observed_cp(optimal_segment, indices):
     return all_segments
 
 
-def dp_solver(Y, indices, K_max, k=1):
+def dp_solver(Y, indices, K_max, k, verbose=False):
     """DP Management function to determine optimal changepoints per fixed size"""
 
     if K_max > len(indices):
-        print("K_max must be less than or equal to the number of candidate changepoints")
+        if verbose:
+            print("K_max must be less than or equal to the number of candidate changepoints")
         K_max = len(indices)
 
     indices = np.unique(np.concatenate([[0], indices, [len(Y)]]))
-    print("Candidate Indices are {}".format(indices))
+    if verbose:
+        print("Candidate Indices are {}".format(indices))
 
     # map the indices to the intervals of the data
     cp_mappings = map_intervals(Y, indices)
