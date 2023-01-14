@@ -23,7 +23,7 @@ class ConditionalSimulator(Simulator):
         # fetch simulation constants from prespecified file (tf_constants.py)
         self.underlying_dist, self.variance_scaling, self.k_points, self.label_style, self.n_sims, self.shift = map(
             get_simulation_constants().get,
-            ["underlying_dist", "true_variance", "k_points", "label_style", "n_sims", "shift"],
+            ["underlying_dist", "reference_variance", "k_points", "label_style", "n_sims", "shift"],
         )
 
         if self.k_points > len(prior):

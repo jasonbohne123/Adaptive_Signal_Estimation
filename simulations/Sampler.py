@@ -17,7 +17,7 @@ class Sampler(Simulator):
             self.rng = rng
 
         if variance_scaling is None:
-            self.variance_scaling = get_simulation_constants().get("true_variance")
+            self.variance_scaling = get_simulation_constants().get("reference_variance")
         else:
             self.variance_scaling = variance_scaling
 

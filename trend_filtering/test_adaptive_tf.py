@@ -150,7 +150,7 @@ def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, oo
         if knots:
             plt.scatter(knots, sol[knots], color="purple", label="Knots", marker="*", lw=10.0)
         plt.legend()
-        plt.title("Reconstruction of a noisy signal with TF penalty")
+        plt.title("Linear Trend Filtering Estimate on Noisy Sample")
         plt.savefig("data/images/tf.png")
         plt.close()
 
@@ -192,16 +192,28 @@ def log_to_mlflow(
     adaptive_penalty = isinstance(lambda_p, np.ndarray)
 
     # extract params and constants for logging
-    cv_folds, cross_validation_size, sample_variance, true_variance = map(
-        get_simulation_constants().get, ["cv_folds", "cross_validation_size", "sample_variance", "true_variance"]
+    cv_folds, cross_validation_size, reference_variance, signal_to_noise = map(
+        get_simulation_constants().get, ["cv_folds", "cross_validation_size", "reference_variance", "signal_to_noise"]
     )
 
     k, n, maxiter, maxlsiter, tol, K_max, order = map(
-        get_model_constants().get, ["k", "n", "maxiter", "maxsliter", "tol", "K_max", "order"]
+        get_model_constants().get, ["k", "n", "maxiter", "maxlsiter", "tol", "K_max", "order"]
+    )
+
+    description = (
+        "Linear Trend Filtering on Noisy Sample with Cross Validation of {cv_folds} folds and "
+        "Cross Validation Size of {cross_validation_size}  Reference Variance of {reference_variance} "
+        " Signal to Noise Ratio of {signal_to_noise} and Penalty of {adaptive_penalty}".format(
+            cv_folds=cv_folds,
+            cross_validation_size=cross_validation_size,
+            reference_variance=reference_variance,
+            signal_to_noise=signal_to_noise,
+            adaptive_penalty=adaptive_penalty,
+        )
     )
 
     # create mlflow experiement (if not exists) and run
-    experiment_id, run, run_tag = create_mlflow_experiment(exp_name, bulk=bulk)
+    experiment_id, run, run_tag = create_mlflow_experiment(exp_name, descritption=description, bulk=bulk)
     if log_mlflow:
         # Log params, metrics, tags, artifacts
         run_end = log_mlflow_params(
@@ -217,8 +229,8 @@ def log_to_mlflow(
                 "no_folds": cv_folds,
                 "cross_validation_size": cross_validation_size,
                 "adaptive_lambda_p": adaptive_penalty,
-                "sample_variance": sample_variance,
-                "true_variance": true_variance,
+                "signal_to_noise": signal_to_noise,
+                "reference_variance": reference_variance,
                 "k_max": K_max,
             },
             metrics={
