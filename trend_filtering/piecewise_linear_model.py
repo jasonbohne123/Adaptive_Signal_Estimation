@@ -41,6 +41,9 @@ class Piecewise_Linear_Model:
         if self.select_knots:
             self.knots = self.get_knots()
 
+    ##########################
+    # Further Work is required for optimization of below
+
     def predict(self, t: np.ndarray):
         """Predict the output at time t using linear itnerpolation between two observed values"""
 
@@ -50,9 +53,10 @@ class Piecewise_Linear_Model:
         if self.select_knots:
             knots = self.knots
 
-        # else use naive values
+        # else construct knots from in-sample data
         else:
-            knots = np.arange(rhs_val)
+            knots = np.setdiff1d(np.arange(rhs_val), t)
+            knots = np.sort(knots)
 
         t = list(t)
         estimate = []
@@ -65,6 +69,7 @@ class Piecewise_Linear_Model:
             # index of farthest left right point of t_i
             right_knots = knots[np.where(knots > t_i)[0]]
 
+            # determine if left or right point is extrapolation
             if len(left_knots) == 0 and len(right_knots) > 0:
                 left_knot = 0
                 right_knot = right_knots[0]
@@ -79,13 +84,13 @@ class Piecewise_Linear_Model:
                 left_knot = left_knots[-1]
                 right_knot = right_knots[0]
 
-            # left point will always be observed (even if extrapolation)
-            left_point = self.x[min(left_knot, len(self.x) - 1)]
+            # determine farthest right left state of t_i
+            left_point = self.x[np.where(knots == left_knot)[0][0]]
 
-            # right point sometimes is extrapolation
+            # determine farthest left right state of t_i (might be extrapolation)
             right_point = (
-                self.x[right_knot]
-                if right_knot < len(self.x)
+                self.x[np.where(knots == right_knot)[0][0]]
+                if right_knot < max(knots)
                 else (self.x[-1] - self.x[-2]) * (right_knot - left_knot) + left_point
             )
 

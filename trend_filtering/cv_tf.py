@@ -98,4 +98,4 @@ def cross_validation(
     if best_lambda is None:
         return None, None, None, None, None
 
-    return best_lambda, lambda_max, best_oos_error, best_predictions, optimal_estimate, observed, oos_index
+    return best_lambda, lambda_max, best_oos_error, best_predictions, optimal_estimate, observed, is_index, oos_index

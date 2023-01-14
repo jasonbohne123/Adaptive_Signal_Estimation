@@ -45,6 +45,7 @@ def test_adaptive_tf(
             optimal_predictions,
             optimal_estimate,
             observed,
+            is_index,
             oos_index,
         ) = perform_cv(sample, D, lambda_p, t)
 
@@ -70,7 +71,17 @@ def test_adaptive_tf(
 
     # write artifacts to files
     write_to_files(
-        sample, true_sol, sol_array, knots, plot, lambda_p, optimal_predictions, optimal_estimate, observed, oos_index
+        sample,
+        true_sol,
+        sol_array,
+        knots,
+        plot,
+        lambda_p,
+        optimal_predictions,
+        optimal_estimate,
+        observed,
+        is_index,
+        oos_index,
     )
 
     # log information to mlflow
@@ -115,6 +126,7 @@ def perform_cv(sample, D, lambda_p, t):
         optimal_predictions,
         optimal_estimate,
         observed,
+        is_index,
         oos_index,
     ) = cross_validation(sample, D, lambda_p=lambda_p, t=t, cv_folds=cv_folds, verbose=False)
 
@@ -133,20 +145,30 @@ def perform_cv(sample, D, lambda_p, t):
         else:
             lambda_p = lambda_p * best_lambda
 
-    return lambda_p, best_lambda, lambda_max, best_oos_error, optimal_predictions, optimal_estimate, observed, oos_index
+    return (
+        lambda_p,
+        best_lambda,
+        lambda_max,
+        best_oos_error,
+        optimal_predictions,
+        optimal_estimate,
+        observed,
+        is_index,
+        oos_index,
+    )
 
 
-def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, oos_index):
+def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, is_index, oos_index):
     """Write artifacts to mlflow"""
     # plot to visualize estimation
     if plot:
         plt.figure(figsize=(14, 12))
-        plt.plot(true_sol, color="orange", label="True Signal", lw=4.0)
-        plt.plot(sample, color="blue", label="Noisy Sample", lw=0.25)
-        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=1.25)
-        plt.plot(oe, color="green", label="Optimal I.S. Estimate", lw=1.25)
+        plt.plot(true_sol, color="black", label="True Signal", lw=5)
+        plt.plot(sample, color="blue", label="Noisy Sample", lw=0.5)
+        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=1.5)
+        plt.plot(is_index, oe, color="green", label="Optimal I.S. Estimate", lw=1.5)
         plt.scatter(oos_index, op, color="green", label="Optimal Prediction", lw=0.75)
-        plt.scatter(oos_index, obs, color="black", label="Observed", lw=0.75)
+        plt.scatter(oos_index, obs, color="orange", label="Observed", lw=0.75)
         if knots:
             plt.scatter(knots, sol[knots], color="purple", label="Knots", marker="*", lw=10.0)
         plt.legend()
