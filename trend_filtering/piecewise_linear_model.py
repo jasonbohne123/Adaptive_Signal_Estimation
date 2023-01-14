@@ -96,6 +96,9 @@ class Piecewise_Linear_Model:
 
         return np.array(estimate)
 
+    ##################################################################
+    ## Issues below with the optimal knots being selected are none. Need to look into why
+
     def get_knots(self):
         """Get the knots of the piecewise linear model up to a threshold"""
 

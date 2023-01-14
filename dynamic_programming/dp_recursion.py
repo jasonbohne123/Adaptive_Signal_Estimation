@@ -10,6 +10,10 @@ def map_intervals(Y, indices):
     return intervals
 
 
+###########################################################################################
+### There are issues here with poor fit when linear; need to confirm this is as expected
+
+
 def best_fit_polynomial(Y, interval, order=1):
     """Fits a polynomial of order k to the data Y across a given interval"""
     # partitions x and y of interval
