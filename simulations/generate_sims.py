@@ -5,11 +5,12 @@ from trend_filtering.tf_constants import get_simulation_constants
 
 def generate_conditional_piecewise_paths(prior, sim_style, label_style="k_maxima"):
     """Generate piecewise constant/linear paths with changepoints at the k_maxima of the prior distribution"""
-    k_points, underlying_dist, n_sims, sample_variance, shift = map(
-        get_simulation_constants().get, ["k_points", "underlying_dist", "n_sims", "sample_variance", "shift"]
-    )
 
-    sim = ConditionalSimulator(prior, sim_style, label_style, k_points, underlying_dist, n_sims=n_sims, shift=shift)
+    # fetch simulation constants from prespecified file (tf_constants.py)
+    underlying_dist, signal_to_noise, reference_variance = map(
+        get_simulation_constants().get, ["underlying_dist", "signal_to_noise", "reference_variance"]
+    )
+    sim = ConditionalSimulator(prior, sim_style)
     true = sim.simulate()
 
     # (n_sims,len_sims)
@@ -18,14 +19,14 @@ def generate_conditional_piecewise_paths(prior, sim_style, label_style="k_maxima
     sampler = Sampler(underlying_dist)
 
     # (n_sims,len_sims)
-    samples = sampler.sample(true, scale=sample_variance)
-    
+    samples = sampler.sample(true, scale=reference_variance * signal_to_noise)
+
     return true, samples
 
 
-def apply_function_to_paths(paths, function, exp_name, flags, true,lambda_p = None):
+def apply_function_to_paths(paths, function, exp_name, flags, true, lambda_p=None):
     """Apply a function to each path in a set of simulations"""
-    
+
     for i, sample_path in enumerate(paths):
         function(sample_path, exp_name=exp_name, flags=flags, true_sol=true[i], lambda_p=lambda_p)
 

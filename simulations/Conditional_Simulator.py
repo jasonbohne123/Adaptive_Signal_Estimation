@@ -3,6 +3,7 @@ import math
 import numpy as np
 
 from trend_filtering.label_changepoints import label_changepoints
+from trend_filtering.tf_constants import get_simulation_constants
 
 from .Simulator import Simulator
 
@@ -14,34 +15,30 @@ class ConditionalSimulator(Simulator):
         self,
         prior,
         sim_style,
-        label_style,
-        k_points,
-        underlying_dist=None,
-        n_sims=1000,
-        variance_scaling=10e-3,
         rng=None,
-        shift=100,
     ):
         self.prior = prior
         self.sim_style = sim_style
-        self.label_style = label_style
-        self.shift = shift
 
-        if k_points > len(prior):
+        # fetch simulation constants from prespecified file (tf_constants.py)
+        self.underlying_dist, self.variance_scaling, self.k_points, self.label_style, self.n_sims, self.shift = map(
+            get_simulation_constants().get,
+            ["underlying_dist", "reference_variance", "k_points", "label_style", "n_sims", "shift"],
+        )
+
+        if self.k_points > len(prior):
             print("k_points is greater than the length of the prior. Setting k_points to half of length of the prior")
-            k_points = math.floor(len(prior) / 2)
-
-        self.k_points = k_points
+            self.k_points = math.floor(len(prior) / 2)
 
         if rng is None:
             self.rng = np.random.RandomState()
         else:
             self.rng = rng
 
-        self.underlying_simulator = Simulator(underlying_dist, self.rng, variance_scaling)
-        self.n_sims = n_sims
+        self.underlying_simulator = Simulator(self.underlying_dist, self.rng, self.variance_scaling)
+        self.n_sims = self.n_sims
 
-        self.cp_index = label_changepoints(prior, label_style, k_points)
+        self.cp_index = label_changepoints(prior, self.label_style, self.k_points)
 
     def simulate(self):
         """Sample from the prior distribution at cp_index"""

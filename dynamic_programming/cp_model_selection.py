@@ -3,7 +3,7 @@ import numpy as np
 from dynamic_programming.dp_recursion import best_fit_polynomial, map_intervals
 
 
-def generalized_cross_validation(Y, optimal_indices, order=1):
+def generalized_cross_validation(Y, optimal_indices, order, verbose=False):
     """Determines optimal number of changepoints based on generalized cross validation"""
 
     mse_dict = {}
@@ -38,7 +38,8 @@ def generalized_cross_validation(Y, optimal_indices, order=1):
 
     # if optimal cp is first index; no cp are found
     if sorted_gcv[0][0] == 0:
-        print("No changepoints found")
+        if verbose:
+            print("No changepoints found")
         sorted_mse, None
 
     return sorted_mse, sorted_gcv

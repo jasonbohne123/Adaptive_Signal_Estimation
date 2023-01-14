@@ -11,9 +11,10 @@ Big Idea: Determine Linear Trend in a time series. Can be used to identify chang
 
 
 ### Ideas for Simulation Design
-- Examine performance across a range of SNR values (sample_varaince)
-- For fixed distributions across grid of variance
+- Examine performance across a range of SNR values 
+- For fixed distributions across grid of reference variance 
     - Performance across distribution of samples from true process
+- Get CP Selection working (Issues here)
 - Quantifying the optimality of piecewise constant vs piecewise linear?
 - Across a grid of grid sizes. How important is a large candidate grid in CV
 - Across a range of system sizes

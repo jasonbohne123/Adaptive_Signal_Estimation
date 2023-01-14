@@ -3,7 +3,7 @@ from typing import Dict, List
 import mlflow
 
 
-def create_mlflow_experiment(experiment_name, bulk=False):
+def create_mlflow_experiment(experiment_name, bulk=False, description=""):
     """Creates New MLFlow Experiment"""
 
     exp = mlflow.get_experiment_by_name(name=experiment_name)
@@ -17,7 +17,7 @@ def create_mlflow_experiment(experiment_name, bulk=False):
         experiment_id = mlflow.create_experiment(experiment_name)
 
     # Start MLFlow Run
-    mlflow_run = mlflow.start_run(experiment_id=experiment_id)
+    mlflow_run = mlflow.start_run(experiment_id=experiment_id, description=description)
 
     # Get MLFlow Run ID
     mlflow_tag = mlflow_run.info.run_id

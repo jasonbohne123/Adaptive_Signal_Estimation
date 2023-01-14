@@ -1,6 +1,9 @@
+from typing import Union
+
 import numpy as np
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
+from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 
 
 def compute_lambda_max(diff_mat, y, time=False):
@@ -19,14 +22,18 @@ def compute_lambda_max(diff_mat, y, time=False):
     return lambda_max
 
 
-def extract_cp(smooth, k=2, threshold=1e-6):
+def extract_cp(smooth, D: Union[Difference_Matrix, Time_Difference_Matrix], threshold):
     """Extract changepoints via difference operator"""
-    n = len(smooth)
-    diff_mat = Difference_Matrix(n, k)
-    D = diff_mat.D
+
+    # if time enabled, use time difference matrix
+    if D.time_enabled:
+        D = D.T_D
+    else:
+        D = D.D
+
     diff = np.dot(D, smooth).reshape(1, -1)[0]
 
-    x, y, index = np.where([abs(diff) > threshold])
+    x, index = np.where([abs(diff) > threshold])
     return index
 
 
