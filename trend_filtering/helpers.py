@@ -39,7 +39,7 @@ def extract_cp(smooth, D: Union[Difference_Matrix, Time_Difference_Matrix], thre
 
 
 def compute_error(x, x_hat, type="mse"):
-    assert type in ["mse", "mae"]
+    assert type in ["mse", "mae", "epe"]
 
     assert x.shape == x_hat.shape
 
