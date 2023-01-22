@@ -12,3 +12,4 @@ profiling/__pycache__/
 .vscode/
 trend_filtering/mlruns/
 trend_filtering/data/
+prior_models/__pycache__
