@@ -69,6 +69,8 @@ def test_adaptive_tf(
     mse_from_sample = compute_error(sample, sol_array, type="mse")
     mse_from_true = compute_error(true_sol, sol_array, type="mse")
 
+    expected_prediction_error = compute_error(true_sol, sol_array, type="epe")
+
     # write artifacts to files
     write_to_files(
         sample,
@@ -87,7 +89,16 @@ def test_adaptive_tf(
     # log information to mlflow
     if log_mlflow:
         log_to_mlflow(
-            exp_name, results, lambda_p, lambda_max, best_lambda, best_oos_error, mse_from_sample, mse_from_true, flags
+            exp_name,
+            results,
+            lambda_p,
+            lambda_max,
+            best_lambda,
+            best_oos_error,
+            mse_from_sample,
+            mse_from_true,
+            expected_prediction_error,
+            flags,
         )
 
     return
@@ -205,7 +216,16 @@ def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, is
 
 
 def log_to_mlflow(
-    exp_name, results, lambda_p, lambda_max, best_lambda, best_oos_error, mse_from_sample, mse_from_true, flags
+    exp_name,
+    results,
+    lambda_p,
+    lambda_max,
+    best_lambda,
+    best_oos_error,
+    mse_from_sample,
+    mse_from_true,
+    expected_prediction_error,
+    flags,
 ):
     """Logs params, metrics, and tags to mlflow"""
 
@@ -262,6 +282,7 @@ def log_to_mlflow(
                 "oos_error": best_oos_error,
                 "mse_from_sample": mse_from_sample,
                 "mse_from_true": mse_from_true,
+                "integrated_squared_prediction_error": expected_prediction_error,
                 "gap": results["gap"],
             },
             tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": results["status"]}],

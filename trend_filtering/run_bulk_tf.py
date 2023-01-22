@@ -40,7 +40,7 @@ def run_bulk_trend_filtering(prior, sim_style, n_sims, n, verbose=True):
         samples, test_adaptive_tf, exp_name=exp_name, flags=flags, true=true, lambda_p=None
     )
 
-    unpadded_prior = prior[1:-1]
+    unpadded_prior = 1 / prior[1:-1]
     # adaptive penalty
     new_results = apply_function_to_paths(
         samples, test_adaptive_tf, exp_name=exp_name, lambda_p=unpadded_prior, flags=flags, true=true
