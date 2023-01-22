@@ -5,14 +5,13 @@ import random
 import string
 import time
 
-import numpy as np
-
+from prior_models.uniform_prior import UniformPrior
 from simulations.generate_sims import apply_function_to_paths, generate_conditional_piecewise_paths
 from trend_filtering.test_adaptive_tf import test_adaptive_tf
 from trend_filtering.tf_constants import get_model_constants, get_simulation_constants
 
 
-def run_bulk_trend_filtering(prior, sim_style, n_sims, n, verbose=True):
+def run_bulk_trend_filtering(prior_model, sim_style, n_sims, n, verbose=True):
     """Solves Bulk Trend Filtering problems
 
     m: Number of simulations
@@ -20,7 +19,11 @@ def run_bulk_trend_filtering(prior, sim_style, n_sims, n, verbose=True):
 
     """
     start_time = time.time()
-    prior = prior[:n]
+    prior = prior_model.get_prior()[:n]
+
+    assert (
+        prior_model.get_time_flag() == False
+    ), "Time flag must be false as we cannot simulate irregularly based on time for bulk trend filtering at this time"
 
     # generate samples
     true, samples = generate_conditional_piecewise_paths(prior, sim_style)
@@ -58,7 +61,9 @@ if __name__ == "__main__":
     n = get_model_constants().get("n")
     n_sims = get_simulation_constants().get("n_sims")
 
-    prior = np.random.uniform(0.5, 2, n)
+    # generate prior; eventually can be it's own estimator
+    prior_model = UniformPrior(n)
+
     sim_style = "piecewise_linear" if get_model_constants().get("order") == 1 else "piecewise_constant"
 
-    run_bulk_trend_filtering(prior, sim_style, n_sims, n)
+    run_bulk_trend_filtering(prior_model, sim_style, n_sims, n)
