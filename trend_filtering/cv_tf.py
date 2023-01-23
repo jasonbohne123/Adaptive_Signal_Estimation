@@ -2,10 +2,11 @@ from typing import Union
 
 import numpy as np
 
+from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from trend_filtering.adaptive_tf import adaptive_tf
-from trend_filtering.helpers import compute_error, compute_lambda_max
+from trend_filtering.helpers import compute_lambda_max
 from trend_filtering.tf_constants import get_simulation_constants
 
 ### Create Cross Validation Class

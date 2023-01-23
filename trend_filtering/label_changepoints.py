@@ -24,4 +24,4 @@ def label_changepoints(prior, cp_label_style, k_points):
         raise ValueError("Invalid changepoint labeling style")
 
     concat_index = np.unique(np.concatenate((np.array([0]), cp_index, np.array([len(prior)]) - 1)))
-    return sorted(concat_index)
+    return np.array(sorted(concat_index))

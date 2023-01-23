@@ -18,8 +18,12 @@ def best_fit_polynomial(Y, interval, order=1):
     """Fits a polynomial of order k to the data Y across a given interval"""
     # partitions x and y of interval
     y = Y[interval[0] : interval[1]]
-    x_range = np.arange(interval[0], interval[1], 1)
 
+    # if interval is too small to fit polynomial of order k, return infinity as mse is undefined
+    if len(y) < order + 1:
+        return np.inf
+
+    x_range = np.arange(interval[0], interval[1], 1)
     # fit polynomial of order k to data
     poly_coef = np.polyfit(x_range, y, order, full=True)[0]
 
@@ -93,7 +97,7 @@ def optimal_segmentation(optimal_loc, indices, K_max):
     return total_loc
 
 
-def convert_observed_cp(optimal_segment, indices):
+def convert_observed_cp(Y, optimal_segment, indices):
     """Converts the optimal changepoints to the observed indices"""
     all_segments = optimal_segment.copy()
 
@@ -101,11 +105,22 @@ def convert_observed_cp(optimal_segment, indices):
     for i in range(len(all_segments)):
         indices_dict = dict(zip([i for i in range(0, len(indices))], indices))
 
-        all_segments[i] = [indices_dict[int(i) + 1] for i in all_segments[i]]
+        index_list = [indices_dict[int(i) + 1] for i in all_segments[i]]
+        index_list = index_list.remove(len(Y)) if len(Y) in index_list else index_list
+        index_list = index_list.remove(0) if 0 in index_list else index_list
+
+        all_segments[i] = index_list
     all_segments = {i + 1: all_segments[i] for i in range(len(all_segments))}
+
     # include case where zero changepoints are optimal
-    all_segments[0] = [0]
-    return all_segments
+    all_segments[0] = []
+
+    # no changepoints
+    if len(all_segments) == 1:
+        return None
+
+    else:
+        return all_segments
 
 
 def dp_solver(Y, indices, K_max, k, verbose=False):
@@ -116,7 +131,16 @@ def dp_solver(Y, indices, K_max, k, verbose=False):
             print("K_max must be less than or equal to the number of candidate changepoints")
         K_max = len(indices)
 
-    indices = np.unique(np.concatenate([[0], indices, [len(Y)]]))
+    if len(indices) == 0:
+        if verbose:
+            print("No candidate changepoints provided")
+        return None
+
+    # add endpoints to indices
+    lb = int(min(indices) + 1) if min(indices) < 1 else 0
+    ub = int(max(indices) - 1) if max(indices) == len(Y) else len(Y)
+
+    indices = np.unique(np.concatenate([[lb], indices, [ub]]))
     if verbose:
         print("Candidate Indices are {}".format(indices))
 
@@ -132,6 +156,6 @@ def dp_solver(Y, indices, K_max, k, verbose=False):
     # Compute optimal segmentation
     optimal_segment = optimal_segmentation(optimal_loc, indices, K_max)
 
-    optimal_indices = convert_observed_cp(optimal_segment, indices)
+    optimal_indices = convert_observed_cp(Y, optimal_segment, indices)
 
     return optimal_indices

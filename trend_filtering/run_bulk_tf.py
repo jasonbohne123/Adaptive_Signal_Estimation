@@ -26,7 +26,7 @@ def run_bulk_trend_filtering(prior_model, sim_style, n_sims, n, verbose=True):
     ), "Time flag must be false as we cannot simulate irregularly based on time for bulk trend filtering at this time"
 
     # generate samples
-    true, samples = generate_conditional_piecewise_paths(prior, sim_style)
+    true, samples, true_knots = generate_conditional_piecewise_paths(prior, sim_style)
 
     random_letters = "".join(random.choice(string.ascii_uppercase) for i in range(5))
     exp_name = f"L1_Trend_Filter_{random_letters}"
@@ -40,7 +40,7 @@ def run_bulk_trend_filtering(prior_model, sim_style, n_sims, n, verbose=True):
 
     # constant penalty
     results = apply_function_to_paths(
-        samples, test_adaptive_tf, exp_name=exp_name, flags=flags, true=true, lambda_p=None
+        samples, test_adaptive_tf, exp_name=exp_name, flags=flags, true=true, true_knots=true_knots, lambda_p=None
     )
 
     unpadded_prior = 1 / prior[1:-1]
