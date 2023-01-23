@@ -111,6 +111,8 @@ def test_adaptive_tf(
             mse_from_true,
             expected_prediction_error,
             hausdorff_distance,
+            len(true_knots),
+            len(knots),
             flags,
         )
 
@@ -257,6 +259,8 @@ def log_to_mlflow(
     mse_from_true,
     expected_prediction_error,
     hausdorff_distance,
+    len_true_knots,
+    len_reconstructed_knots,
     flags,
 ):
     """Logs params, metrics, and tags to mlflow"""
@@ -316,6 +320,9 @@ def log_to_mlflow(
                 "mse_from_true": mse_from_true,
                 "hausdorff_distance": hausdorff_distance,
                 "integrated_squared_prediction_error": expected_prediction_error,
+                "len_true_knots": len_true_knots,
+                "len_reconstructed_knots": len_reconstructed_knots,
+                "knot_difference": len_true_knots - len_reconstructed_knots,
                 "gap": results["gap"],
             },
             tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": results["status"]}],

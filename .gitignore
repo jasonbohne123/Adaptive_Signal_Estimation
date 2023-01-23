@@ -14,3 +14,4 @@ trend_filtering/mlruns/
 trend_filtering/data/
 prior_models/__pycache__
 ../evaluation_metrics/__pycache__/loss_functions.cpython-310.pyc
+evaluation_metrics/__pycache__/

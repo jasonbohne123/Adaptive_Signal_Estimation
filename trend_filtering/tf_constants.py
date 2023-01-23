@@ -3,7 +3,7 @@ def get_simulation_constants():
     constants = {
         "n_sims": 100,
         # simulation params
-        "k_points": 5,
+        "k_points": 3,
         "underlying_dist": "normal",
         "label_style": "k_maxima",
         "signal_to_noise": 0.05,
@@ -33,7 +33,7 @@ def get_model_constants():
         "tol": 1e-4,
         # model params
         "solve_cp": True,
-        "K_max": 5,
+        "K_max": 6,
         "order": 1,
         "cp_threshold": 0.75 * 10e-2,
     }
