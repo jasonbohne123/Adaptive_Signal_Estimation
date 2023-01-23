@@ -193,18 +193,26 @@ def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p, op,
         plt.plot(is_index, oe, color="green", label="Optimal I.S. Estimate", lw=2.5)
         plt.scatter(oos_index, op, color="green", label="Optimal Prediction", lw=0.75)
         plt.scatter(oos_index, obs, color="orange", label="Observed", lw=0.75)
-
-        # vertical lines for regime changes
-        if knots:
-            for knot in knots:
-                plt.axvline(x=knot, color="purple", linestyle="--", lw=1)
-
-            for knot in true_knots:
-                plt.axvline(x=knot, color="black", linestyle="--", lw=1)
-
         plt.legend()
         plt.title("Linear Trend Filtering Estimate on Noisy Sample")
         plt.savefig("data/images/tf.png")
+        plt.close()
+
+        plt.figure(figsize=(14, 12))
+        plt.plot(true_sol, color="black", label="True Signal", lw=10)
+        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
+        # vertical lines for regime changes
+        if knots:
+            for knot in knots:
+                plt.axvline(x=knot, color="purple", linestyle="--", lw=2.5, label="Estimated Regime Change")
+
+            for knot in true_knots:
+                plt.axvline(x=knot, color="black", linestyle="--", lw=2.5, label="True Regime Change")
+
+        plt.title("Estimated Regime Changes")
+        plt.xlabel("Time")
+        plt.ylabel("Observation")
+        plt.savefig("data/images/knots.png")
         plt.close()
 
     # save files (eventually refactor custom model)
@@ -313,6 +321,7 @@ def log_to_mlflow(
             tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": results["status"]}],
             artifact_list=[
                 "data/images/tf.png",
+                "data/images/knots.png",
                 "data/true_sol.txt",
                 "data/noisy_sample.txt",
                 "data/sol.txt",
