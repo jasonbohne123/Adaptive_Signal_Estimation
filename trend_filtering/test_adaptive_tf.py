@@ -71,7 +71,7 @@ def test_adaptive_tf(
 
     expected_prediction_error = compute_error(true_sol, sol_array, type="epe")
 
-    if get_model_constants()["solve_cp"]:
+    if get_model_constants()["solve_cp"] and knots is not None:
         hausdorff_distance = compute_error(knots, true_knots, type="hausdorff")
 
         if verbose:

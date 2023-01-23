@@ -117,7 +117,7 @@ class Piecewise_Linear_Model:
 
         # If no knots are selected, return None
         if dp_set is None:
-            return None
+            return []
 
         optimal_trend_cp_mse, optimal_trend_cp_gcv = generalized_cross_validation(reshaped_x, dp_set, self.order)
 

@@ -3,7 +3,7 @@ def get_simulation_constants():
     constants = {
         "n_sims": 100,
         # simulation params
-        "k_points": 25,
+        "k_points": 5,
         "underlying_dist": "normal",
         "label_style": "k_maxima",
         "signal_to_noise": 0.05,
