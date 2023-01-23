@@ -10,9 +10,10 @@ def get_simulation_constants():
         "reference_variance": 10e-2,
         "shift": 100,
         # cross validation params
-        "cv_folds": 50,
+        "cv_folds": 25,
         "cross_validation_size": 0.75,
         "cv_grid_lb": 10e-2,
+        "cv_iterations": 5,
     }
     return constants
 
