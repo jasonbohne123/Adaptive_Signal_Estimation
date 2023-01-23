@@ -4,7 +4,6 @@ import numpy as np
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
-from trend_filtering.tf_constants import get_simulation_constants
 
 
 def compute_lambda_max(diff_mat, y, time=False):
@@ -36,25 +35,3 @@ def extract_cp(smooth, D: Union[Difference_Matrix, Time_Difference_Matrix], thre
 
     x, index = np.where([abs(diff) > threshold])
     return index
-
-
-def compute_error(x, x_hat, type="mse"):
-    assert type in ["mse", "mae", "epe"]
-
-    assert x.shape == x_hat.shape
-
-    if type == "mse":
-        return np.sum(np.abs(x - x_hat) ** 2) / len(x)
-
-    elif type == "mae":
-        return np.sum(np.abs(x - x_hat)) / len(x)
-
-    elif type == "epe":
-        var_y = get_simulation_constants().get("reference_variance")
-
-        mse = compute_error(x, x_hat, type="mse")
-
-        return var_y + mse
-
-    else:
-        raise ValueError("Error type not recognized")

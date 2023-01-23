@@ -115,7 +115,10 @@ class Piecewise_Linear_Model:
         # Apply dynamic programming to find optimal knots
         dp_set = dp_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
 
-        # Select optimal knots via generalized cross validation
+        # If no knots are selected, return None
+        if dp_set is None:
+            return None
+
         optimal_trend_cp_mse, optimal_trend_cp_gcv = generalized_cross_validation(reshaped_x, dp_set, self.order)
 
         # Get the optimal knots

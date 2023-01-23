@@ -4,12 +4,12 @@ from typing import Dict, Union
 import matplotlib.pyplot as plt
 import numpy as np
 
+from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
 from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.cv_tf import cross_validation
-from trend_filtering.helpers import compute_error
 from trend_filtering.tf_constants import get_model_constants, get_simulation_constants
 
 
@@ -17,6 +17,7 @@ def test_adaptive_tf(
     sample: np.ndarray,
     t: Union[None, np.ndarray] = None,
     true_sol: Union[None, np.ndarray] = None,
+    true_knots: Union[None, np.ndarray] = None,
     lambda_p: Union[np.ndarray, None] = None,
     exp_name="DEFAULT",
     flags: Dict[str, bool] = None,
@@ -24,7 +25,6 @@ def test_adaptive_tf(
     """Test adaptive_tf function"""
 
     start_time = time.time()
-
     include_cv, plot, verbose, bulk, log_mlflow = map(
         flags.get, ["include_cv", "plot", "verbose", "bulk", "log_mlflow"]
     )
@@ -71,11 +71,23 @@ def test_adaptive_tf(
 
     expected_prediction_error = compute_error(true_sol, sol_array, type="epe")
 
+    if get_model_constants()["solve_cp"]:
+        hausdorff_distance = compute_error(knots, true_knots, type="hausdorff")
+
+        if verbose:
+            print(f"True knots: {true_knots}")
+            print(f"Estimated knots: {knots}")
+            print(f"Hausdorff distance: {hausdorff_distance}")
+
+    if verbose:
+        print(" ")
+
     # write artifacts to files
     write_to_files(
         sample,
         true_sol,
         sol_array,
+        true_knots,
         knots,
         plot,
         lambda_p,
@@ -98,6 +110,7 @@ def test_adaptive_tf(
             mse_from_sample,
             mse_from_true,
             expected_prediction_error,
+            hausdorff_distance,
             flags,
         )
 
@@ -169,7 +182,7 @@ def perform_cv(sample, D, lambda_p, t):
     )
 
 
-def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, is_index, oos_index):
+def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p, op, oe, obs, is_index, oos_index):
     """Write artifacts to mlflow"""
     # plot to visualize estimation
     if plot:
@@ -180,8 +193,15 @@ def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, is
         plt.plot(is_index, oe, color="green", label="Optimal I.S. Estimate", lw=2.5)
         plt.scatter(oos_index, op, color="green", label="Optimal Prediction", lw=0.75)
         plt.scatter(oos_index, obs, color="orange", label="Observed", lw=0.75)
+
+        # vertical lines for regime changes
         if knots:
-            plt.scatter(knots, sol[knots], color="purple", label="Knots", marker="*", lw=10.0)
+            for knot in knots:
+                plt.axvline(x=knot, color="purple", linestyle="--", lw=1)
+
+            for knot in true_knots:
+                plt.axvline(x=knot, color="black", linestyle="--", lw=1)
+
         plt.legend()
         plt.title("Linear Trend Filtering Estimate on Noisy Sample")
         plt.savefig("data/images/tf.png")
@@ -210,6 +230,9 @@ def write_to_files(sample, true_sol, sol, knots, plot, lambda_p, op, oe, obs, is
         with open("data/knots.txt", "w") as f:
             f.write(str(knots))
 
+        with open("data/true_knots.txt", "w") as f:
+            f.write(str(true_knots))
+
     if isinstance(lambda_p, np.ndarray):
         with open("data/lambda_p.txt", "w") as f:
             f.write(str(lambda_p))
@@ -225,6 +248,7 @@ def log_to_mlflow(
     mse_from_sample,
     mse_from_true,
     expected_prediction_error,
+    hausdorff_distance,
     flags,
 ):
     """Logs params, metrics, and tags to mlflow"""
@@ -282,6 +306,7 @@ def log_to_mlflow(
                 "oos_error": best_oos_error,
                 "mse_from_sample": mse_from_sample,
                 "mse_from_true": mse_from_true,
+                "hausdorff_distance": hausdorff_distance,
                 "integrated_squared_prediction_error": expected_prediction_error,
                 "gap": results["gap"],
             },
@@ -294,5 +319,7 @@ def log_to_mlflow(
                 "data/optimal_predictions.txt",
                 "data/observed.txt",
                 "data/optimal_estimate.txt",
+                "data/knots.txt",
+                "data/lambda_p.txt",
             ],
         )

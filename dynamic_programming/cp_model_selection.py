@@ -16,9 +16,9 @@ def generalized_cross_validation(Y, optimal_indices, order, verbose=False):
     for k_i, cps in optimal_indices.items():
 
         # pad cps
-        cps = np.unique(np.concatenate([[0], cps, [len(Y)]]))
+        temp_cps = np.unique(np.concatenate([[0], cps, [len(Y)]])).astype(int)
 
-        fixed_intervals = map_intervals(Y, cps)
+        fixed_intervals = map_intervals(Y, temp_cps)
 
         K = len(cps)
         M = r + c * K
@@ -40,6 +40,5 @@ def generalized_cross_validation(Y, optimal_indices, order, verbose=False):
     if sorted_gcv[0][0] == 0:
         if verbose:
             print("No changepoints found")
-        sorted_mse, None
 
     return sorted_mse, sorted_gcv

@@ -40,6 +40,9 @@ class ConditionalSimulator(Simulator):
 
         self.cp_index = label_changepoints(prior, self.label_style, self.k_points)
 
+        # index of interior points (knots)
+        self.interior_index = np.setdiff1d(self.cp_index, np.array([0, len(prior) - 1]))
+
     def simulate(self):
         """Sample from the prior distribution at cp_index"""
 
