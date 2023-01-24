@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Union
 
 import numpy as np
@@ -26,9 +27,13 @@ def cross_validation(
     n = len(x)
     cv_size = int(n * get_simulation_constants()["cross_validation_size"])
 
-    best_lambda_dict = dict.fromkeys(np.arange(cv_iterations))
+    # relative exponential grid
+    grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], 1, cv_folds)
 
-    # iterate over multiple cross validation indices
+    # dictionary to store average oos error for each relative lambda
+    lambda_i_dict = defaultdict(float)
+
+    # iterate over multiple cross validation indices to prevent overfitting  to oos data
     for i in range(cv_iterations):
 
         # get in-sample and out-of-sample indices per each iteration
@@ -50,15 +55,7 @@ def cross_validation(
         # compute lambda_max for exponential grid; specific to each index
         lambda_max = compute_lambda_max(T, x_is, time=True)
 
-        # exponential grid
-        grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], lambda_max, cv_folds)
-
-        best_oos_error = np.inf
-        best_lambda, best_predictions, best_lambda = None, None, None
-
         for lambda_i in grid:
-
-            lambda_scaler = lambda_i
 
             # if prior is provided, scale lambda to have mean of candidate lambda
             if lambda_p is not None:
@@ -75,7 +72,8 @@ def cross_validation(
 
                 lambda_i = lambda_p_is * lambda_i / np.mean(lambda_p_is)
 
-            result = adaptive_tf(x_is.reshape(-1, 1), T, t=is_index, lambda_p=lambda_i)
+            # scale relative to lambda_max
+            result = adaptive_tf(x_is.reshape(-1, 1), T, t=is_index, lambda_p=lambda_i * lambda_max)
             status = result["status"]
             sol = result["sol"]
 
@@ -91,18 +89,11 @@ def cross_validation(
             # compute mse on oos test set
             oos_error = compute_error(predictions, x_oos, type="mse")
 
-            # if better than previous best, update
-            if best_oos_error > oos_error:
-                best_oos_error = oos_error
-                best_lambda = lambda_scaler
-                sol.x
-        best_lambda_dict[i] = best_lambda
+            # add to average oos error for each lambda
+            lambda_i_dict[lambda_i] += oos_error
 
-    # if all cv failed
-    if best_lambda is None:
-        return None
-
-    else:
-        best_lambda = np.mean(list(best_lambda_dict.values()))
+    # get best lambda from average of all cv iterations
+    best_lambda_dict = {k: v / cv_iterations for k, v in lambda_i_dict.items()}
+    best_lambda = min(best_lambda_dict, key=best_lambda_dict.get)
 
     return best_lambda

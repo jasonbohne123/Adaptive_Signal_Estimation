@@ -12,7 +12,7 @@ def get_simulation_constants():
         # cross validation params
         "cv_folds": 25,
         "cross_validation_size": 0.75,
-        "cv_grid_lb": 10e-2,
+        "cv_grid_lb": 10e-8,
         "cv_iterations": 5,
     }
     return constants
