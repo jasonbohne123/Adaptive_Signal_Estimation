@@ -37,17 +37,7 @@ def test_adaptive_tf(
 
     # perform cross validation if flagged
     if include_cv:
-        (
-            lambda_p,
-            best_lambda,
-            lambda_max,
-            best_oos_error,
-            optimal_predictions,
-            optimal_estimate,
-            observed,
-            is_index,
-            oos_index,
-        ) = perform_cv(sample, D, lambda_p, t)
+        lambda_p, best_lambda = perform_cv(sample, D, lambda_p, t)
 
     # reconstruct signal
     results = adaptive_tf(sample, D_=D, t=t, lambda_p=lambda_p, select_knots=get_model_constants()["solve_cp"])
@@ -83,20 +73,7 @@ def test_adaptive_tf(
         print(" ")
 
     # write artifacts to files
-    write_to_files(
-        sample,
-        true_sol,
-        sol_array,
-        true_knots,
-        knots,
-        plot,
-        lambda_p,
-        optimal_predictions,
-        optimal_estimate,
-        observed,
-        is_index,
-        oos_index,
-    )
+    write_to_files(sample, true_sol, sol_array, true_knots, knots, plot, lambda_p)
 
     # log information to mlflow
     if log_mlflow:
@@ -104,9 +81,7 @@ def test_adaptive_tf(
             exp_name,
             results,
             lambda_p,
-            lambda_max,
             best_lambda,
-            best_oos_error,
             mse_from_sample,
             mse_from_true,
             expected_prediction_error,
@@ -144,17 +119,12 @@ def perform_cv(sample, D, lambda_p, t):
     """Perform Cross-Validation on Lambda Penalty"""
 
     cv_folds = get_simulation_constants().get("cv_folds")
+    cv_iterations = get_simulation_constants().get("cv_iterations")
+
     # perform CV
-    (
-        best_lambda,
-        lambda_max,
-        best_oos_error,
-        optimal_predictions,
-        optimal_estimate,
-        observed,
-        is_index,
-        oos_index,
-    ) = cross_validation(sample, D, lambda_p=lambda_p, t=t, cv_folds=cv_folds, verbose=False)
+    best_lambda = cross_validation(
+        sample, D, lambda_p=lambda_p, t=t, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=False
+    )
 
     if best_lambda is None:
         print("No Optimal lambda found via Cross Validation")
@@ -171,20 +141,10 @@ def perform_cv(sample, D, lambda_p, t):
         else:
             lambda_p = lambda_p * best_lambda
 
-    return (
-        lambda_p,
-        best_lambda,
-        lambda_max,
-        best_oos_error,
-        optimal_predictions,
-        optimal_estimate,
-        observed,
-        is_index,
-        oos_index,
-    )
+    return (lambda_p, best_lambda)
 
 
-def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p, op, oe, obs, is_index, oos_index):
+def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p):
     """Write artifacts to mlflow"""
     # plot to visualize estimation
     if plot:
@@ -192,9 +152,6 @@ def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p, op,
         plt.plot(true_sol, color="black", label="True Signal", lw=10)
         plt.plot(sample, color="blue", label="Noisy Sample", lw=0.5)
         plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
-        plt.plot(is_index, oe, color="green", label="Optimal I.S. Estimate", lw=2.5)
-        plt.scatter(oos_index, op, color="green", label="Optimal Prediction", lw=0.75)
-        plt.scatter(oos_index, obs, color="orange", label="Observed", lw=0.75)
         plt.legend()
         plt.title("Linear Trend Filtering Estimate on Noisy Sample")
         plt.savefig("data/images/tf.png")
@@ -227,15 +184,6 @@ def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p, op,
     with open("data/sol.txt", "w") as f:
         f.write(str(sol))
 
-    with open("data/optimal_predictions.txt", "w") as f:
-        f.write(str(op))
-
-    with open("data/observed.txt", "w") as f:
-        f.write(str(obs))
-
-    with open("data/optimal_estimate.txt", "w") as f:
-        f.write(str(oe))
-
     if knots:
         with open("data/knots.txt", "w") as f:
             f.write(str(knots))
@@ -252,9 +200,7 @@ def log_to_mlflow(
     exp_name,
     results,
     lambda_p,
-    lambda_max,
     best_lambda,
-    best_oos_error,
     mse_from_sample,
     mse_from_true,
     expected_prediction_error,
@@ -313,9 +259,7 @@ def log_to_mlflow(
             },
             metrics={
                 "computation_time": results["computation_time"],
-                "lambda_max": lambda_max,
-                "optimal_lambda": best_lambda,
-                "oos_error": best_oos_error,
+                "optimal_relative_lambda": best_lambda,
                 "mse_from_sample": mse_from_sample,
                 "mse_from_true": mse_from_true,
                 "hausdorff_distance": hausdorff_distance,
@@ -332,10 +276,8 @@ def log_to_mlflow(
                 "data/true_sol.txt",
                 "data/noisy_sample.txt",
                 "data/sol.txt",
-                "data/optimal_predictions.txt",
-                "data/observed.txt",
-                "data/optimal_estimate.txt",
                 "data/knots.txt",
+                "data/true_knots.txt",
                 "data/lambda_p.txt",
             ],
         )
