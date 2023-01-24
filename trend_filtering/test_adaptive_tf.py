@@ -259,7 +259,7 @@ def log_to_mlflow(
             },
             metrics={
                 "computation_time": results["computation_time"],
-                "optimal_lambda": best_lambda,
+                "optimal_relative_lambda": best_lambda,
                 "mse_from_sample": mse_from_sample,
                 "mse_from_true": mse_from_true,
                 "hausdorff_distance": hausdorff_distance,

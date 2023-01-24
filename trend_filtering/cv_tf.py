@@ -96,4 +96,12 @@ def cross_validation(
     best_lambda_dict = {k: v / cv_iterations for k, v in lambda_i_dict.items()}
     best_lambda = min(best_lambda_dict, key=best_lambda_dict.get)
 
-    return best_lambda
+    # rescale by lambda max of entire time series
+    if t is None:
+        t = np.arange(n)
+    D = Difference_Matrix(n, D.k)
+    T = Time_Difference_Matrix(D, t=t)
+
+    lambda_max_all = compute_lambda_max(T, x, time=True)
+
+    return best_lambda * lambda_max_all
