@@ -277,6 +277,7 @@ def log_to_mlflow(
                 "data/noisy_sample.txt",
                 "data/sol.txt",
                 "data/knots.txt",
+                "data/true_knots.txt",
                 "data/lambda_p.txt",
             ],
         )

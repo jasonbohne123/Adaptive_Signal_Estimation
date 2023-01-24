@@ -27,11 +27,20 @@ def cross_validation(
     n = len(x)
     cv_size = int(n * get_simulation_constants()["cross_validation_size"])
 
-    # relative exponential grid
-    grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], 1, cv_folds)
+    # determine lambda_max for original problem
+    if t is not None:
+        T=Time_Difference_Matrix(D,t=t)
 
-    # dictionary to store average oos error for each relative lambda
-    lambda_i_dict = defaultdict(float)
+        lambda_max = compute_lambda_max(T, x, time=True)
+    else:
+        lambda_max = compute_lambda_max(D, x)
+    
+
+    # relative exponential grid
+    grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], lambda_max, cv_folds)
+
+    # initialize dictionary to store results
+    results = defaultdict(float)
 
     # iterate over multiple cross validation indices to prevent overfitting  to oos data
     for i in range(cv_iterations):
@@ -47,13 +56,12 @@ def cross_validation(
         m = len(is_index)
 
         # account for now irregular time series
+        # lambda_max_i < lambda_max as infinity norm 
         if t is None:
             t = np.arange(n)
         D = Difference_Matrix(m, D.k)
         T = Time_Difference_Matrix(D, t=t[is_index])
 
-        # compute lambda_max for exponential grid; specific to each index
-        lambda_max = compute_lambda_max(T, x_is, time=True)
 
         for lambda_i in grid:
 
@@ -73,7 +81,7 @@ def cross_validation(
                 lambda_i = lambda_p_is * lambda_i / np.mean(lambda_p_is)
 
             # scale relative to lambda_max
-            result = adaptive_tf(x_is.reshape(-1, 1), T, t=is_index, lambda_p=lambda_i * lambda_max)
+            result = adaptive_tf(x_is.reshape(-1, 1), T, t=is_index, lambda_p=lambda_i )
             status = result["status"]
             sol = result["sol"]
 
@@ -90,18 +98,10 @@ def cross_validation(
             oos_error = compute_error(predictions, x_oos, type="mse")
 
             # add to average oos error for each lambda
-            lambda_i_dict[lambda_i] += oos_error
+            results[lambda_i] += oos_error
 
-    # get best lambda from average of all cv iterations
-    best_lambda_dict = {k: v / cv_iterations for k, v in lambda_i_dict.items()}
+    # get best lambda from all iterations 
+    best_lambda_dict = {k: v/cv_iterations for k, v in results.items()}
     best_lambda = min(best_lambda_dict, key=best_lambda_dict.get)
 
-    # rescale by lambda max of entire time series
-    if t is None:
-        t = np.arange(n)
-    D = Difference_Matrix(n, D.k)
-    T = Time_Difference_Matrix(D, t=t)
-
-    lambda_max_all = compute_lambda_max(T, x, time=True)
-
-    return best_lambda * lambda_max_all
+    return best_lambda
