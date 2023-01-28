@@ -46,6 +46,9 @@ def test_adaptive_tf(
     if verbose:
         print(f"Solved TF problem with status: {results['status']}")
 
+        max_iter = get_model_constants()["maxiter"]
+        print(f" Total Iterations: {results['iters']} out of {max_iter}")
+
     # extract solution information
     sol = results["sol"]
     if sol is not None:
@@ -120,10 +123,11 @@ def perform_cv(sample, D, lambda_p, t):
 
     cv_folds = get_simulation_constants().get("cv_folds")
     cv_iterations = get_simulation_constants().get("cv_iterations")
+    verbose_cv = get_simulation_constants().get("verbose_cv")
 
     # perform CV
     best_lambda = cross_validation(
-        sample, D, lambda_p=lambda_p, t=t, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=False
+        sample, D, lambda_p=lambda_p, t=t, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
     )
 
     if best_lambda is None:

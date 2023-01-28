@@ -50,8 +50,6 @@ def adaptive_tf(
     mu1 = np.ones((m, 1))
     mu2 = np.ones((m, 1))
 
-    np.inf
-    dobj = 0
     step = np.inf
     f1 = z[0] - lambda_p
     f2 = -z[0] - lambda_p
@@ -68,13 +66,18 @@ def adaptive_tf(
         if gap < 0:
             status = "negative duality gap"
             x = y - np.dot(D.transpose(), z)
-            return {"sol": None, "status": status, "gap": -1}
+            return {"sol": None, "status": status, "gap": -1, "iters": iters}
 
         # if duality gap is small enough
         if gap <= tol:
             status = "solved"
             x = y - np.dot(D.transpose(), z)
-            return {"sol": Piecewise_Linear_Model(x, D=D, t=t, select_knots=select_knots), "status": status, "gap": gap}
+            return {
+                "sol": Piecewise_Linear_Model(x, D=D, t=t, select_knots=select_knots),
+                "status": status,
+                "gap": gap,
+                "iters": iters,
+            }
 
         # update step
         newz, newmu1, newmu2, newf1, newf2 = update_step(
@@ -91,7 +94,7 @@ def adaptive_tf(
         f2 = newf2
 
     status = "maxiter exceeded"
-    return {"sol": None, "status": status, "gap": -1}
+    return {"sol": None, "status": status, "gap": -1, "iters": iters}
 
 
 def prep_penalty(lambda_p: Union[float, np.ndarray], m):
@@ -122,12 +125,12 @@ def prep_difference_matrix(D_, t=None):
 
 
 @njit(fastmath=True, cache=True)
-def prep_matrices(D, Dy, z, mu, mu2):
+def prep_matrices(D, Dy, z, mu1, mu2):
     """Prep matrices for objective computation"""
 
     DTz = np.dot(D.T, z)
     DDTz = np.dot(D, DTz)
-    w = Dy - (mu - mu2)
+    w = Dy - (mu1 - mu2)
     return DTz, DDTz, w
 
 

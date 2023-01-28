@@ -29,12 +29,11 @@ def cross_validation(
 
     # determine lambda_max for original problem
     if t is not None:
-        T=Time_Difference_Matrix(D,t=t)
+        T = Time_Difference_Matrix(D, t=t)
 
         lambda_max = compute_lambda_max(T, x, time=True)
     else:
         lambda_max = compute_lambda_max(D, x)
-    
 
     # relative exponential grid
     grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], lambda_max, cv_folds)
@@ -43,7 +42,10 @@ def cross_validation(
     results = defaultdict(float)
 
     # iterate over multiple cross validation indices to prevent overfitting  to oos data
+
     for i in range(cv_iterations):
+        if verbose:
+            print(f"Performing  {i} out of {cv_iterations} iterations of cross validation")
 
         # get in-sample and out-of-sample indices per each iteration
         is_index = np.sort(np.random.choice(n, size=cv_size, replace=False))
@@ -55,15 +57,19 @@ def cross_validation(
 
         m = len(is_index)
 
-        # account for now irregular time series
-        # lambda_max_i < lambda_max as infinity norm 
+        # account for now irregular time series in cv tf subproblem
+        # lambda_max_i < lambda_max as infinity norm
         if t is None:
             t = np.arange(n)
         D = Difference_Matrix(m, D.k)
         T = Time_Difference_Matrix(D, t=t[is_index])
 
-
         for lambda_i in grid:
+
+            if verbose:
+                print(f"Performing cross validation for lambda = {lambda_i}")
+
+            lambda_scaler = lambda_i
 
             # if prior is provided, scale lambda to have mean of candidate lambda
             if lambda_p is not None:
@@ -81,7 +87,7 @@ def cross_validation(
                 lambda_i = lambda_p_is * lambda_i / np.mean(lambda_p_is)
 
             # scale relative to lambda_max
-            result = adaptive_tf(x_is.reshape(-1, 1), T, t=is_index, lambda_p=lambda_i )
+            result = adaptive_tf(x_is.reshape(-1, 1), T, t=is_index, lambda_p=lambda_i)
             status = result["status"]
             sol = result["sol"]
 
@@ -98,10 +104,10 @@ def cross_validation(
             oos_error = compute_error(predictions, x_oos, type="mse")
 
             # add to average oos error for each lambda
-            results[lambda_i] += oos_error
+            results[lambda_scaler] += oos_error
 
-    # get best lambda from all iterations 
-    best_lambda_dict = {k: v/cv_iterations for k, v in results.items()}
+    # get best lambda from all iterations
+    best_lambda_dict = {k: v / cv_iterations for k, v in results.items()}
     best_lambda = min(best_lambda_dict, key=best_lambda_dict.get)
 
     return best_lambda
