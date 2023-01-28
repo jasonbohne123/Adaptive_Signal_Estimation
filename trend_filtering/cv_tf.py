@@ -93,7 +93,7 @@ def cross_validation(
 
             if sol is None:
                 if verbose:
-                    print("No solution found for lambda = {}".format(lambda_i))
+                    print("No solution found for lambda = {}".format(lambda_scaler))
                     print("Status: {}".format(status))
                 continue
 
