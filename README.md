@@ -14,9 +14,10 @@ Topics include
 
 To replicate the enviroment used for this project, run the following commands:
 
-```bash
-conda create -n ase python=3.7
-conda activate ase
-```
+Create a conda env using the environment.yml file
 
-To use precomitt hooks for this project, run git commit after install
+```conda env create -f environment.yml```
+
+Setup Pre-commit Hooks for formatting
+
+```conda install isort autoflake black pre-commit pre-commit install```
