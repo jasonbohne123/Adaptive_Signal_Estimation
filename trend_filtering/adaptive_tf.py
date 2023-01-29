@@ -54,7 +54,7 @@ def adaptive_tf(
     f1 = z[0] - lambda_p
     f2 = -z[0] - lambda_p
 
-    # main loop of iteration
+    # main loop of iteration; solving a sequence of equality constrained quadratic programs
     for iters in range(maxiter + 1):
 
         DTz, DDTz, w = prep_matrices(D, Dy, z, mu1, mu2)
