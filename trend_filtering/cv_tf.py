@@ -27,27 +27,19 @@ def cross_validation(
     n = len(x)
     cv_size = int(n * get_simulation_constants()["cross_validation_size"])
 
-    # determine lambda_max for original problem
-    if t is not None:
-        T = Time_Difference_Matrix(D, t=t)
-
-        lambda_max = compute_lambda_max(T, x, time=True)
-    else:
-        lambda_max = compute_lambda_max(D, x)
-
     # relative exponential grid
-    grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], lambda_max, cv_folds)
+    grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], 1, cv_folds)
 
     # initialize dictionary to store results
     results = defaultdict(float)
 
     # iterate over multiple cross validation indices to prevent overfitting  to oos data
-
     for i in range(cv_iterations):
         if verbose:
             print(f"Performing  {i} out of {cv_iterations} iterations of cross validation")
 
         # get in-sample and out-of-sample indices per each iteration
+        # (randomly select cv_size indices which is ideal otherwise is just extrapolation)
         is_index = np.sort(np.random.choice(n, size=cv_size, replace=False))
         oos_index = np.sort(np.setdiff1d(np.arange(n), is_index))
 
@@ -57,19 +49,19 @@ def cross_validation(
 
         m = len(is_index)
 
-        # account for now irregular time series in cv tf subproblem
-        # lambda_max_i < lambda_max as infinity norm
-        if t is None:
-            t = np.arange(n)
+        # compute difference matrix (more stable if equal time)
+
         D = Difference_Matrix(m, D.k)
-        T = Time_Difference_Matrix(D, t=t[is_index])
+
+        # compute lambda_max for each subproblem
+        lambda_max = compute_lambda_max(D, x_is, time=False)
 
         for lambda_i in grid:
 
-            if verbose:
-                print(f"Performing cross validation for lambda = {lambda_i}")
+            lambda_scaler = lambda_i * lambda_max
 
-            lambda_scaler = lambda_i
+            if verbose:
+                print(f"Performing cross validation for lambda = {lambda_scaler}")
 
             # if prior is provided, scale lambda to have mean of candidate lambda
             if lambda_p is not None:
@@ -84,10 +76,10 @@ def cross_validation(
 
                 lambda_p_is = padded_lambda_p[is_index][1:-1]
 
-                lambda_i = lambda_p_is * lambda_i / np.mean(lambda_p_is)
+                lambda_scaler = lambda_p_is * lambda_scaler / np.mean(lambda_p_is)
 
-            # scale relative to lambda_max
-            result = adaptive_tf(x_is.reshape(-1, 1), T, t=is_index, lambda_p=lambda_i)
+            # solve tf subproblem
+            result = adaptive_tf(x_is.reshape(-1, 1), D, t=None, lambda_p=lambda_scaler)
             status = result["status"]
             sol = result["sol"]
 
@@ -104,10 +96,19 @@ def cross_validation(
             oos_error = compute_error(predictions, x_oos, type="mse")
 
             # add to average oos error for each lambda
-            results[lambda_scaler] += oos_error
+            results[lambda_i] += oos_error
 
     # get best lambda from all iterations
     best_lambda_dict = {k: v / cv_iterations for k, v in results.items()}
     best_lambda = min(best_lambda_dict, key=best_lambda_dict.get)
 
-    return best_lambda
+    # compute lambda_max for original problem
+    D = Difference_Matrix(n, D.k)
+
+    if t is None:
+        orig_lambda_max = compute_lambda_max(D, x, time=False)
+    else:
+        T = Time_Difference_Matrix(D, t=t)
+        orig_lambda_max = compute_lambda_max(T, x, time=True)
+
+    return best_lambda * orig_lambda_max

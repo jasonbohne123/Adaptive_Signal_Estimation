@@ -24,6 +24,9 @@ def test_adaptive_tf(
 ):
     """Test adaptive_tf function"""
 
+    # right now we don't want to simulate with time
+    assert t == None
+
     start_time = time.time()
     include_cv, plot, verbose, bulk, log_mlflow = map(
         flags.get, ["include_cv", "plot", "verbose", "bulk", "log_mlflow"]
@@ -165,6 +168,7 @@ def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p):
         plt.plot(true_sol, color="black", label="True Signal", lw=10)
         plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
         # vertical lines for regime changes
+        print(knots)
         if knots:
             for knot in knots:
                 plt.axvline(x=knot, color="purple", linestyle="--", lw=2.5, label="Estimated Regime Change")
@@ -282,6 +286,14 @@ def log_to_mlflow(
                 "data/sol.txt",
                 "data/knots.txt",
                 "data/true_knots.txt",
+                "data/lambda_p.txt",
+            ]
+            if len_reconstructed_knots > 0
+            else [
+                "data/images/tf.png",
+                "data/true_sol.txt",
+                "data/noisy_sample.txt",
+                "data/sol.txt",
                 "data/lambda_p.txt",
             ],
         )
