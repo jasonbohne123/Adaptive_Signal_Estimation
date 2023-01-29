@@ -87,6 +87,9 @@ def cross_validation(
                 if verbose:
                     print("No solution found for lambda = {}".format(lambda_scaler))
                     print("Status: {}".format(status))
+
+                # ignore cases where no solution is found
+                results[lambda_i] += np.inf
                 continue
 
             # to compute oos error we need to make the return type callable
