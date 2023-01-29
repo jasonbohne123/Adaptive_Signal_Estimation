@@ -152,7 +152,7 @@ def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
 def update_step(
     DDT, DDTz, Dy, DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
 ):
-    """Update step for z, mu1, mu2, f1, f2"""
+    """Update Newton's step for z, mu1, mu2, f1, f2"""
 
     # Update scheme for mu
 
