@@ -19,7 +19,7 @@ def adaptive_tf(
     y: np.ndarray,
     D_: Difference_Matrix,
     t: Union[None, np.ndarray] = None,
-    lambda_p: Union[float, np.ndarray] = None,
+    prior: Union[float, np.ndarray] = None,
     k: int = 2,
     select_knots=False,
 ):
@@ -35,7 +35,7 @@ def adaptive_tf(
     n = len(y)
     m = n - k
 
-    lambda_p = prep_penalty(lambda_p, m)
+    prior = prep_penalty(prior, m)
 
     D, DDT, DDT_inv = prep_difference_matrix(D_, t)
 
@@ -51,8 +51,8 @@ def adaptive_tf(
     mu2 = np.ones((m, 1))
 
     step = np.inf
-    f1 = z[0] - lambda_p
-    f2 = -z[0] - lambda_p
+    f1 = z[0] - prior
+    f2 = -z[0] - prior
 
     # main loop of iteration; solving a sequence of equality constrained quadratic programs
     for iters in range(maxiter + 1):
@@ -60,7 +60,7 @@ def adaptive_tf(
         DTz, DDTz, w = prep_matrices(D, Dy, z, mu1, mu2)
 
         # compute objectives
-        pobj1, pobj2, dobj, gap = compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p)
+        pobj1, pobj2, dobj, gap = compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, prior)
 
         # if duality gap becomes negative
         if gap < 0:
@@ -81,7 +81,7 @@ def adaptive_tf(
 
         # update step
         newz, newmu1, newmu2, newf1, newf2 = update_step(
-            DDT, DDTz, Dy, DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
+            DDT, DDTz, Dy, DDT_inv, prior, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
         )
 
         # adaptive stepsize of mu with ratio gamma
@@ -97,14 +97,14 @@ def adaptive_tf(
     return {"sol": None, "status": status, "gap": -1, "iters": iters}
 
 
-def prep_penalty(lambda_p: Union[float, np.ndarray], m):
+def prep_penalty(prior: Union[float, np.ndarray], m):
 
-    if isinstance(lambda_p, np.ndarray):
-        return lambda_p.reshape(-1, 1)
-    elif isinstance(lambda_p, float):
-        return lambda_p * np.ones((m, 1))
+    if isinstance(prior, np.ndarray):
+        return prior.reshape(-1, 1)
+    elif isinstance(prior, float):
+        return prior * np.ones((m, 1))
     else:
-        raise ValueError("lambda_p must be a float or numpy array")
+        raise ValueError("prior must be a float or numpy array")
 
 
 def prep_difference_matrix(D_, t=None):
@@ -124,7 +124,7 @@ def prep_difference_matrix(D_, t=None):
         return D, DDT, DDT_inv
 
 
-@njit(fastmath=True, cache=True)
+@njit(fastmath=False, cache=True)
 def prep_matrices(D, Dy, z, mu1, mu2):
     """Prep matrices for objective computation"""
 
@@ -134,11 +134,11 @@ def prep_matrices(D, Dy, z, mu1, mu2):
     return DTz, DDTz, w
 
 
-@njit(fastmath=True, cache=True)
-def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
+@njit(fastmath=False, cache=True)
+def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, prior):
     """Computes Primal and Dual objectives and duality gap"""
-    pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
-    pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, np.abs(Dy - DDTz)))
+    pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(prior.T, (mu1 + mu2)))
+    pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(prior.T, np.abs(Dy - DDTz)))
     pobj1 = pobj1.item()
     pobj2 = pobj2.item()
     pobj = min(pobj1, pobj2)
@@ -148,9 +148,9 @@ def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     return pobj1, pobj2, dobj, gap
 
 
-@njit(fastmath=True, cache=True)
+@njit(fastmath=False, cache=True)
 def update_step(
-    DDT, DDTz, Dy, DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
+    DDT, DDTz, Dy, DDT_inv, prior, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
 ):
     """Update Newton's step for z, mu1, mu2, f1, f2"""
 
@@ -193,8 +193,8 @@ def update_step(
         newz = z + step * dz
         newmu1 = mu1 + step * dmu1
         newmu2 = mu2 + step * dmu2
-        newf1 = newz - lambda_p
-        newf2 = -newz - lambda_p
+        newf1 = newz - prior
+        newf2 = -newz - prior
 
         newResidual = np.vstack(
             (np.dot(DDT, newz) - Dy + newmu1 - newmu2, -newmu1 * newf1 - 1 / mu_inc, -newmu2 * newf2 - 1 / mu_inc)
@@ -212,7 +212,7 @@ def update_step(
     return newz, newmu1, newmu2, newf1, newf2
 
 
-@njit(fastmath=True, cache=True, nogil=True)
+@njit(fastmath=False, cache=True, nogil=True)
 def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
     """Adaptive step size of mu with ratio gamma"""
     if 2 * pobj1 > pobj2:

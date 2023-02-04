@@ -16,7 +16,7 @@ from trend_filtering.tf_constants import get_simulation_constants
 def cross_validation(
     x: np.ndarray,
     D: Difference_Matrix,
-    lambda_p: Union[None, np.ndarray] = None,
+    prior: Union[None, np.ndarray] = None,
     t: Union[None, np.ndarray] = None,
     cv_folds: int = None,
     cv_iterations: int = None,
@@ -54,38 +54,38 @@ def cross_validation(
         D = Difference_Matrix(m, D.k)
 
         # compute lambda_max for each subproblem
-        lambda_max = compute_lambda_max(D, x_is, time=False)
+        prior_max = compute_lambda_max(D, x_is, time=False)
 
         for lambda_i in grid:
 
-            lambda_scaler = lambda_i * lambda_max
+            best_scaler = lambda_i * prior_max
 
             if verbose:
-                print(f"Performing cross validation for lambda = {lambda_scaler}")
+                print(f"Performing cross validation for lambda = {best_scaler}")
 
             # if prior is provided, scale lambda to have mean of candidate lambda
-            if lambda_p is not None:
+            if prior is not None:
 
                 # must be multivariate ndarray if not None
-                assert isinstance(lambda_p, np.ndarray)
+                assert isinstance(prior, np.ndarray)
 
                 # scale penalty to have mean of optimal lambda
                 # (is mean the best statistic here)
 
-                padded_lambda_p = np.pad(lambda_p, (1, 1), "mean")
+                padded_prior = np.pad(prior, (1, 1), "mean")
 
-                lambda_p_is = padded_lambda_p[is_index][1:-1]
+                prior_is = padded_prior[is_index][1:-1]
 
-                lambda_scaler = lambda_p_is * lambda_scaler / np.mean(lambda_p_is)
+                best_scaler = prior_is * best_scaler / np.mean(prior_is)
 
             # solve tf subproblem
-            result = adaptive_tf(x_is.reshape(-1, 1), D, t=None, lambda_p=lambda_scaler)
+            result = adaptive_tf(x_is.reshape(-1, 1), D, t=None, prior=best_scaler)
             status = result["status"]
             sol = result["sol"]
 
             if sol is None:
                 if verbose:
-                    print("No solution found for lambda = {}".format(lambda_scaler))
+                    print("No solution found for lambda = {}".format(best_scaler))
                     print("Status: {}".format(status))
 
                 # ignore cases where no solution is found
@@ -102,16 +102,16 @@ def cross_validation(
             results[lambda_i] += oos_error
 
     # get best lambda from all iterations
-    best_lambda_dict = {k: v / cv_iterations for k, v in results.items()}
-    best_lambda = min(best_lambda_dict, key=best_lambda_dict.get)
+    best_prior_dict = {k: v / cv_iterations for k, v in results.items()}
+    best_prior = min(best_prior_dict, key=best_prior_dict.get)
 
     # compute lambda_max for original problem
     D = Difference_Matrix(n, D.k)
 
     if t is None:
-        orig_lambda_max = compute_lambda_max(D, x, time=False)
+        orig_scaler_max = compute_lambda_max(D, x, time=False)
     else:
         T = Time_Difference_Matrix(D, t=t)
-        orig_lambda_max = compute_lambda_max(T, x, time=True)
+        orig_scaler_max = compute_lambda_max(T, x, time=True)
 
-    return best_lambda * orig_lambda_max
+    return best_prior * orig_scaler_max

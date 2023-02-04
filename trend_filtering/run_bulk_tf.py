@@ -40,7 +40,7 @@ def run_bulk_trend_filtering(prior_model, sim_style, n_sims, n, verbose=True):
 
     # constant penalty
     results = apply_function_to_paths(
-        samples, test_adaptive_tf, exp_name=exp_name, flags=flags, true=true, true_knots=true_knots, lambda_p=None
+        samples, test_adaptive_tf, exp_name=exp_name, flags=flags, true=true, true_knots=true_knots, prior=None
     )
 
     unpadded_prior = 1 / prior[1:-1]
@@ -49,7 +49,7 @@ def run_bulk_trend_filtering(prior_model, sim_style, n_sims, n, verbose=True):
         samples,
         test_adaptive_tf,
         exp_name=exp_name,
-        lambda_p=unpadded_prior,
+        prior=unpadded_prior,
         flags=flags,
         true=true,
         true_knots=true_knots,

@@ -11,7 +11,7 @@
 def get_simulation_constants():
     """Default Simulation Constants for Trend Filtering"""
     constants = {
-        "n_sims": 50,
+        "n_sims": 5,
         # simulation params
         "k_points": 10,
         "underlying_dist": "normal",

@@ -18,7 +18,7 @@ def test_adaptive_tf(
     t: Union[None, np.ndarray] = None,
     true_sol: Union[None, np.ndarray] = None,
     true_knots: Union[None, np.ndarray] = None,
-    lambda_p: Union[np.ndarray, None] = None,
+    prior: Union[np.ndarray, None] = None,
     exp_name="DEFAULT",
     flags: Dict[str, bool] = None,
 ):
@@ -34,16 +34,17 @@ def test_adaptive_tf(
 
     sample, true_sol, D, time_flag = prep_signal(sample, true_sol, t)
 
-    if not include_cv and not lambda_p:
-        print(" No lambda_p provided and no cross validation")
+    if not include_cv and not prior:
+        print(" No prior provided and no cross validation")
         return
 
     # perform cross validation if flagged
+    orig_prior=prior if include_cv else []
     if include_cv:
-        lambda_p, best_lambda = perform_cv(sample, D, lambda_p, t)
+        prior, best_scaler = perform_cv(sample, D, prior, t)
 
     # reconstruct signal
-    results = adaptive_tf(sample, D_=D, t=t, lambda_p=lambda_p, select_knots=get_model_constants()["solve_cp"])
+    results = adaptive_tf(sample, D_=D, t=t, prior=prior, select_knots=get_model_constants()["solve_cp"])
     results["computation_time"] = time.time() - start_time
 
     if verbose:
@@ -79,15 +80,15 @@ def test_adaptive_tf(
         print(" ")
 
     # write artifacts to files
-    write_to_files(sample, true_sol, sol_array, true_knots, knots, plot, lambda_p)
+    write_to_files(sample, true_sol, sol_array, orig_prior,true_knots, knots, plot)
 
     # log information to mlflow
     if log_mlflow:
         log_to_mlflow(
             exp_name,
             results,
-            lambda_p,
-            best_lambda,
+            orig_prior,
+            best_scaler,
             mse_from_sample,
             mse_from_true,
             expected_prediction_error,
@@ -121,7 +122,7 @@ def prep_signal(sample, true_sol, t):
     return sample, true_sol, D, time_flag
 
 
-def perform_cv(sample, D, lambda_p, t):
+def perform_cv(sample, D, prior, t):
     """Perform Cross-Validation on Lambda Penalty"""
 
     cv_folds = get_simulation_constants().get("cv_folds")
@@ -129,30 +130,32 @@ def perform_cv(sample, D, lambda_p, t):
     verbose_cv = get_simulation_constants().get("verbose_cv")
 
     # perform CV
-    best_lambda = cross_validation(
-        sample, D, lambda_p=lambda_p, t=t, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
+    scaled_prior = cross_validation(
+        sample, D, prior=prior, t=t, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
     )
 
-    if best_lambda is None:
-        print("No Optimal lambda found via Cross Validation")
+    if scaled_prior is None:
+        print("No Optimal Scaled Prior found via Cross Validation")
 
-        if lambda_p is None:
-            print("No predefined lambda_p provided")
+        if prior is None:
+            print("No predefined prior provided")
             return
         else:
-            print("Using predefined lambda_p")
+            print("Using predefined prior")
 
     else:
-        if lambda_p is None:
-            lambda_p = best_lambda
+        if prior is None:
+            prior = scaled_prior
         else:
-            lambda_p = lambda_p * best_lambda
+            prior = prior * scaled_prior
+    return (prior, scaled_prior)
 
-    return (lambda_p, best_lambda)
 
-
-def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p):
+def write_to_files(sample, true_sol, sol, orig_prior,true_knots, knots, plot):
     """Write artifacts to mlflow"""
+
+    adaptive_penalty = isinstance(orig_prior, np.ndarray)
+
     # plot to visualize estimation
     if plot:
         plt.figure(figsize=(14, 12))
@@ -167,8 +170,16 @@ def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p):
         plt.figure(figsize=(14, 12))
         plt.plot(true_sol, color="black", label="True Signal", lw=10)
         plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
+
+        if adaptive_penalty:
+            plt.figure(figsize=(14, 12))
+            plt.plot(orig_prior, color="black", label="Original Prior", lw=2.5)
+            plt.legend()
+            plt.title("Original Prior")
+            plt.savefig("data/images/prior.png")
+            plt.close()
+        
         # vertical lines for regime changes
-        print(knots)
         if knots:
             for knot in knots:
                 plt.axvline(x=knot, color="purple", linestyle="--", lw=2.5, label="Estimated Regime Change")
@@ -199,16 +210,16 @@ def write_to_files(sample, true_sol, sol, true_knots, knots, plot, lambda_p):
         with open("data/true_knots.txt", "w") as f:
             f.write(str(true_knots))
 
-    if isinstance(lambda_p, np.ndarray):
-        with open("data/lambda_p.txt", "w") as f:
-            f.write(str(lambda_p))
+    if isinstance(orig_prior, np.ndarray):
+        with open("data/prior.txt", "w") as f:
+            f.write(str(orig_prior))
 
 
 def log_to_mlflow(
     exp_name,
     results,
-    lambda_p,
-    best_lambda,
+    orig_prior,
+    best_scaler,
     mse_from_sample,
     mse_from_true,
     expected_prediction_error,
@@ -221,7 +232,7 @@ def log_to_mlflow(
 
     log_mlflow, bulk, include_cv = map(flags.get, ["log_mlflow", "bulk", "include_cv"])
 
-    adaptive_penalty = isinstance(lambda_p, np.ndarray)
+    adaptive_penalty = isinstance(orig_prior, np.ndarray)
 
     # extract params and constants for logging
     cv_folds, cross_validation_size, reference_variance, signal_to_noise = map(
@@ -247,6 +258,19 @@ def log_to_mlflow(
     # create mlflow experiement (if not exists) and run
     experiment_id, run, run_tag = create_mlflow_experiment(exp_name, description=description, bulk=bulk)
     if log_mlflow:
+
+        artifact_list=[
+            "data/images/tf.png",
+            "data/true_sol.txt",
+            "data/noisy_sample.txt",
+            "data/sol.txt",
+        ]
+        if adaptive_penalty:
+            artifact_list.append("data/images/prior.png")
+        
+        if len_true_knots:
+            artifact_list.extend(["data/images/knots.png", "data/knots.txt", "data/true_knots.txt"])
+
         # Log params, metrics, tags, artifacts
         run_end = log_mlflow_params(
             run,
@@ -267,7 +291,7 @@ def log_to_mlflow(
             },
             metrics={
                 "computation_time": results["computation_time"],
-                "optimal_relative_lambda": best_lambda,
+                "optimal_relative_lambda": best_scaler,
                 "mse_from_sample": mse_from_sample,
                 "mse_from_true": mse_from_true,
                 "hausdorff_distance": hausdorff_distance,
@@ -278,22 +302,5 @@ def log_to_mlflow(
                 "gap": results["gap"],
             },
             tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": results["status"]}],
-            artifact_list=[
-                "data/images/tf.png",
-                "data/images/knots.png",
-                "data/true_sol.txt",
-                "data/noisy_sample.txt",
-                "data/sol.txt",
-                "data/knots.txt",
-                "data/true_knots.txt",
-                "data/lambda_p.txt",
-            ]
-            if len_reconstructed_knots > 0
-            else [
-                "data/images/tf.png",
-                "data/true_sol.txt",
-                "data/noisy_sample.txt",
-                "data/sol.txt",
-                "data/lambda_p.txt",
-            ],
+            artifact_list=artifact_list
         )
