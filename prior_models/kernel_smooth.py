@@ -3,6 +3,7 @@ from prior_models.prior_model import Prior
 
 
 class Kernel_Smooth_Prior(Prior):
+    """ This class is used to create a prior model from a kernel smoother"""
     def __init__(self, model: Prior):
 
         # initialize the prior model off real data

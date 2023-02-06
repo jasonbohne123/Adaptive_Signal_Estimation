@@ -11,7 +11,7 @@
 def get_simulation_constants():
     """Default Simulation Constants for Trend Filtering"""
     constants = {
-        "n_sims": 10,
+        "n_sims": 25,
         # simulation params
         # "k_points": 3, (only required for k_maxima and k_minima)
         "underlying_dist": "normal",
@@ -48,7 +48,7 @@ def get_model_constants():
     hyperparams = {
         # Optimization params
         "k": 2,
-        "n": 500,
+        "n": 1000,
         "gamma": 0.5,
         "alpha": 0.01,
         "beta": 0.5,
@@ -59,7 +59,7 @@ def get_model_constants():
         "tol": 1e-5,
         # model params
         "solve_cp": True,
-        "K_max": 5,
+        "K_max": 10,
         "order": 1,
         "cp_threshold": 1e-2,
     }

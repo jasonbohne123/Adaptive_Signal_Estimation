@@ -19,7 +19,11 @@ def test_adaptive_tf(
     exp_name="DEFAULT",
     flags: Dict[str, bool] = None,
 ):
-    """Test adaptive_tf function"""
+    """Wrapper function to apply trend filtering to a single path
+
+    For Adaptive TF, the prior is a Prior Model object. For Constant TF, the prior is None
+    
+    """
 
     start_time = time.time()
     include_cv, plot, verbose, bulk, log_mlflow = map(

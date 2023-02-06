@@ -14,7 +14,6 @@ class Prior(abc.ABC):
         self.orig_data = prior
 
         # account for time
-
         self.t = t
 
         # flags
