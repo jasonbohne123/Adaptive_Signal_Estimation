@@ -115,3 +115,32 @@ def cross_validation(
         orig_scaler_max = compute_lambda_max(T, x, time=True)
 
     return best_prior * orig_scaler_max
+
+
+def perform_cv(sample, D, prior, t):
+    """Perform Cross-Validation on Lambda Penalty"""
+
+    cv_folds = get_simulation_constants().get("cv_folds")
+    cv_iterations = get_simulation_constants().get("cv_iterations")
+    verbose_cv = get_simulation_constants().get("verbose_cv")
+
+    # perform CV
+    scaled_prior = cross_validation(
+        sample, D, prior=prior, t=t, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
+    )
+
+    if scaled_prior is None:
+        print("No Optimal Scaled Prior found via Cross Validation")
+
+        if prior is None:
+            print("No predefined prior provided")
+            return
+        else:
+            print("Using predefined prior")
+
+    else:
+        if prior is None:
+            prior = scaled_prior
+        else:
+            prior = prior * scaled_prior
+    return (prior, scaled_prior)

@@ -6,7 +6,8 @@ import numpy as np
 from evaluation_metrics.loss_functions import compute_error
 from prior_models.prior_model import Prior
 from trend_filtering.adaptive_tf import adaptive_tf
-from trend_filtering.helpers import log_to_mlflow, perform_cv, prep_signal, write_to_files
+from trend_filtering.cv_tf import perform_cv
+from trend_filtering.test_helpers import log_to_mlflow, prep_signal, write_to_files
 from trend_filtering.tf_constants import get_model_constants
 
 
@@ -22,7 +23,7 @@ def test_adaptive_tf(
     """Wrapper function to apply trend filtering to a single path
 
     For Adaptive TF, the prior is a Prior Model object. For Constant TF, the prior is None
-    
+
     """
 
     start_time = time.time()
@@ -38,7 +39,7 @@ def test_adaptive_tf(
 
     # prep numerial prior if adaptive
     if prior_model:
-        prior = prior_model.prior[1:-1]
+        prior = 1 / prior_model.prior[1:-1]
 
     else:
         prior = None

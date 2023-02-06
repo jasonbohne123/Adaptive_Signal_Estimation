@@ -1,5 +1,6 @@
 import sys
 
+import numpy as np
 import pandas as pd
 
 from prior_models.prior_model import Prior
@@ -17,12 +18,8 @@ class Volume_Prior(Prior):
         # initialize the prior model off real data
         market_data = pd.read_csv(PATH + DATA_FILE, index_col=0, nrows=2 * n)
 
-        volume_data = market_data["Trade_Volume"][market_data["Trade_Volume"] < 10000][-n:]
-
-        # update the prior
-        super().__init__(volume_data.values, t)
-        self.name = "Volume_Prior"
-        self.prior = volume_data.values
+        # fetch the last n volume data; log transform
+        volume_data = np.log(market_data["Trade_Volume"][market_data["Trade_Volume"] < 1000][-n:])
 
         # fetch time series if time_flag is true
         if time_flag:
@@ -32,6 +29,11 @@ class Volume_Prior(Prior):
             # update time_flag and t
             self.time_flag = time_flag
             self.t = t
+
+        # update the prior
+        super().__init__(volume_data.values, t)
+        self.name = "Volume_Prior"
+        self.prior = volume_data.values
 
     def get_prior(self):
 

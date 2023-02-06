@@ -3,13 +3,14 @@ from prior_models.prior_model import Prior
 
 
 class Kernel_Smooth_Prior(Prior):
-    """ This class is used to create a prior model from a kernel smoother"""
+    """This class is used to create a prior model from a kernel smoother"""
+
     def __init__(self, model: Prior):
 
         # initialize the prior model off real data
-        prior = KernelSmoother(model.t, 1 / model.prior, bandwidth_style=0)
+        prior = KernelSmoother(model.t, model.prior, bandwidth_style=0)
 
-        # perform the kernel smoothing
+        # perform the kernel smoothing on the prior (here is log volume)
         prior = prior.smooth_series(prior.fit())
 
         # update the prior from defaults

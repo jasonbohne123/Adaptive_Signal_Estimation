@@ -11,12 +11,12 @@
 def get_simulation_constants():
     """Default Simulation Constants for Trend Filtering"""
     constants = {
-        "n_sims": 25,
+        "n_sims": 60,
         # simulation params
         # "k_points": 3, (only required for k_maxima and k_minima)
         "underlying_dist": "normal",
         "label_style": "k_local_spikes",
-        "signal_to_noise": 0.075,
+        "signal_to_noise": 0.05,
         "reference_variance": 1e-2,
         "shift": 100,
         # cross validation params
@@ -48,7 +48,7 @@ def get_model_constants():
     hyperparams = {
         # Optimization params
         "k": 2,
-        "n": 1000,
+        "n": 250,
         "gamma": 0.5,
         "alpha": 0.01,
         "beta": 0.5,
@@ -56,7 +56,7 @@ def get_model_constants():
         "mu_inc": 1e-10,
         "maxiter": 50,
         "maxlsiter": 50,
-        "tol": 1e-5,
+        "tol": 1e-4,
         # model params
         "solve_cp": True,
         "K_max": 10,
