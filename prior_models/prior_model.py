@@ -9,8 +9,10 @@ class Prior(abc.ABC):
 
     def __init__(self, prior, t=None):
         self.prior = prior
+        self.orig_data = prior
         self.t = t
         self.time_flag = False if t is None else True
+        self.adaptive_penalty = False
         self.name = self.__class__.__name__
 
     @abc.abstractmethod

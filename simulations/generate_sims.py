@@ -23,14 +23,3 @@ def generate_conditional_piecewise_paths(prior, sim_style, label_style="k_maxima
     samples = sampler.sample(true, scale=reference_variance / signal_to_noise)
 
     return true, samples, true_knots
-
-
-def apply_function_to_paths(paths, function, exp_name, flags, true, true_knots, prior=None):
-    """Apply a function to each path in a set of simulations"""
-
-    for i, sample_path in enumerate(paths):
-        function(
-            sample_path, exp_name=exp_name, flags=flags, true_sol=true[i], true_knots=true_knots, prior=prior
-        )
-
-    return

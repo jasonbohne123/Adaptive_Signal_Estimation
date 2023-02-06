@@ -7,6 +7,7 @@ import numpy as np
 from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
+from prior_models.prior_model import Prior
 from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
 from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.cv_tf import cross_validation
@@ -18,14 +19,11 @@ def test_adaptive_tf(
     t: Union[None, np.ndarray] = None,
     true_sol: Union[None, np.ndarray] = None,
     true_knots: Union[None, np.ndarray] = None,
-    prior: Union[np.ndarray, None] = None,
+    prior_model: Prior = None,
     exp_name="DEFAULT",
     flags: Dict[str, bool] = None,
 ):
     """Test adaptive_tf function"""
-
-    # right now we don't want to simulate with time
-    assert t == None
 
     start_time = time.time()
     include_cv, plot, verbose, bulk, log_mlflow = map(
@@ -38,8 +36,10 @@ def test_adaptive_tf(
         print(" No prior provided and no cross validation")
         return
 
+    # prep numerial prior from model
+    prior = 1 / prior_model.prior[1:-1]
+
     # perform cross validation if flagged
-    orig_prior=prior if include_cv else []
     if include_cv:
         prior, best_scaler = perform_cv(sample, D, prior, t)
 
@@ -80,14 +80,14 @@ def test_adaptive_tf(
         print(" ")
 
     # write artifacts to files
-    write_to_files(sample, true_sol, sol_array, orig_prior,true_knots, knots, plot)
+    write_to_files(sample, true_sol, sol_array, prior_model, true_knots, knots, plot)
 
     # log information to mlflow
     if log_mlflow:
         log_to_mlflow(
             exp_name,
             results,
-            orig_prior,
+            prior_model,
             best_scaler,
             mse_from_sample,
             mse_from_true,
@@ -115,6 +115,7 @@ def prep_signal(sample, true_sol, t):
     D = Difference_Matrix(n, k)
 
     if t is not None:
+        print("Correct")
         t = t[:n]
         D = Time_Difference_Matrix(D, t)
         time_flag = True
@@ -151,10 +152,10 @@ def perform_cv(sample, D, prior, t):
     return (prior, scaled_prior)
 
 
-def write_to_files(sample, true_sol, sol, orig_prior,true_knots, knots, plot):
+def write_to_files(sample, true_sol, sol, prior_model, true_knots, knots, plot):
     """Write artifacts to mlflow"""
 
-    adaptive_penalty = isinstance(orig_prior, np.ndarray)
+    adaptive_penalty = prior_model.adaptive_penalty
 
     # plot to visualize estimation
     if plot:
@@ -172,13 +173,15 @@ def write_to_files(sample, true_sol, sol, orig_prior,true_knots, knots, plot):
         plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
 
         if adaptive_penalty:
-            plt.figure(figsize=(14, 12))
-            plt.plot(orig_prior, color="black", label="Original Prior", lw=2.5)
+            fig, ax = plt.subplots(figsize=(14, 12))
+            ax.plot(prior_model.t, prior_model.prior, color="green", label="Original Prior", lw=2.5)  # 1/prior
+            ax_twin = ax.twinx()
+            ax_twin.plot(prior_model.t, prior_model.orig_data, color="red", label="Original Data", lw=2.5)  # 1/data
             plt.legend()
             plt.title("Original Prior")
             plt.savefig("data/images/prior.png")
             plt.close()
-        
+
         # vertical lines for regime changes
         if knots:
             for knot in knots:
@@ -210,15 +213,15 @@ def write_to_files(sample, true_sol, sol, orig_prior,true_knots, knots, plot):
         with open("data/true_knots.txt", "w") as f:
             f.write(str(true_knots))
 
-    if isinstance(orig_prior, np.ndarray):
+    if isinstance(prior_model.orig_data, np.ndarray):
         with open("data/prior.txt", "w") as f:
-            f.write(str(orig_prior))
+            f.write(str(prior_model.orig_data))
 
 
 def log_to_mlflow(
     exp_name,
     results,
-    orig_prior,
+    prior_model,
     best_scaler,
     mse_from_sample,
     mse_from_true,
@@ -232,7 +235,7 @@ def log_to_mlflow(
 
     log_mlflow, bulk, include_cv = map(flags.get, ["log_mlflow", "bulk", "include_cv"])
 
-    adaptive_penalty = isinstance(orig_prior, np.ndarray)
+    adaptive_penalty = prior_model.adaptive_penalty
 
     # extract params and constants for logging
     cv_folds, cross_validation_size, reference_variance, signal_to_noise = map(
@@ -259,7 +262,7 @@ def log_to_mlflow(
     experiment_id, run, run_tag = create_mlflow_experiment(exp_name, description=description, bulk=bulk)
     if log_mlflow:
 
-        artifact_list=[
+        artifact_list = [
             "data/images/tf.png",
             "data/true_sol.txt",
             "data/noisy_sample.txt",
@@ -267,7 +270,7 @@ def log_to_mlflow(
         ]
         if adaptive_penalty:
             artifact_list.append("data/images/prior.png")
-        
+
         if len_true_knots:
             artifact_list.extend(["data/images/knots.png", "data/knots.txt", "data/true_knots.txt"])
 
@@ -302,5 +305,5 @@ def log_to_mlflow(
                 "gap": results["gap"],
             },
             tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": results["status"]}],
-            artifact_list=artifact_list
+            artifact_list=artifact_list,
         )
