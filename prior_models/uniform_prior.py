@@ -9,9 +9,14 @@ class UniformPrior(Prior):
     def __init__(self, n, lb=0.5, ub=2, t=None):
         prior = np.random.uniform(lb, ub, n)
 
+        # update prior from defaults
         super().__init__(prior, t)
         self.name = "Uniform_Prior"
         self.prior = prior
+
+        if t is not None:
+            self.time_flag = True
+            self.t = t
 
     def get_prior(self):
         return self.prior

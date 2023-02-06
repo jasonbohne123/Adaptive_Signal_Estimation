@@ -13,10 +13,10 @@ def get_simulation_constants():
     constants = {
         "n_sims": 10,
         # simulation params
-        "k_points": 10,
+        # "k_points": 3, (only required for k_maxima and k_minima)
         "underlying_dist": "normal",
-        "label_style": "k_maxima",
-        "signal_to_noise": 0.05,
+        "label_style": "k_local_spikes",
+        "signal_to_noise": 0.075,
         "reference_variance": 1e-2,
         "shift": 100,
         # cross validation params
@@ -48,7 +48,7 @@ def get_model_constants():
     hyperparams = {
         # Optimization params
         "k": 2,
-        "n": 250,
+        "n": 500,
         "gamma": 0.5,
         "alpha": 0.01,
         "beta": 0.5,
@@ -59,7 +59,7 @@ def get_model_constants():
         "tol": 1e-5,
         # model params
         "solve_cp": True,
-        "K_max": 12,
+        "K_max": 5,
         "order": 1,
         "cp_threshold": 1e-2,
     }

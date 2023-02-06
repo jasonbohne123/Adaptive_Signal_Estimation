@@ -9,9 +9,14 @@ class Normal_Prior(Prior):
     def __init__(self, n, mu=1, sigma=0.25, t=None):
         prior = np.random.normal(mu, sigma, n)
 
+        # update prior from defaults
         super().__init__(prior, t)
         self.name = "Normal_Prior"
         self.prior = prior
+
+        if t is not None:
+            self.time_flag = True
+            self.t = t
 
     def get_prior(self):
         return self.prior

@@ -22,8 +22,9 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
     """
     start_time = time.time()
 
-    # generate samples ( is this from smoothed or original??)
-    true, samples, true_knots = generate_conditional_piecewise_paths(prior_model.orig_model.prior, sim_style)
+    # generate samples
+    # this uses local maximas to generate the paths on the smooth prior
+    true, samples, true_knots = generate_conditional_piecewise_paths(prior_model.prior, sim_style)
 
     random_letters = "".join(random.choice(string.ascii_uppercase) for i in range(5))
     exp_name = f"L1_Trend_Filter_{random_letters}"
@@ -43,8 +44,8 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
         flags=flags,
         true=true,
         true_knots=true_knots,
-        prior_model=prior_model,
-        t=prior_model.t,
+        prior_model=None,
+        t=None,
     )
 
     # adaptive penalty
@@ -53,7 +54,7 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
         test_adaptive_tf,
         exp_name=exp_name,
         prior_model=prior_model,
-        t=prior_model.t,
+        t=None,
         flags=flags,
         true=true,
         true_knots=true_knots,
@@ -88,7 +89,11 @@ if __name__ == "__main__":
     n = get_model_constants().get("n")
     n_sims = get_simulation_constants().get("n_sims")
 
-    # generate prior; eventually can be it's own estimator
+    # simulation priors
+    # prior_model = Normal_Prior(n, time_flag=True)
+    # prior_model = Uniform_Prior(n, time_flag=True)
+
+    # real data prior
     prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=True))
 
     sim_style = "piecewise_linear" if get_model_constants().get("order") == 1 else "piecewise_constant"

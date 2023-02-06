@@ -8,19 +8,30 @@ class Prior(abc.ABC):
     """
 
     def __init__(self, prior, t=None):
+
+        # set prior and original data
         self.prior = prior
         self.orig_data = prior
+
+        # account for time
+
         self.t = t
-        self.time_flag = False if t is None else True
-        self.adaptive_penalty = False
+
+        # flags
+        self.time_flag = False
+        self.adaptive_penalty = True
+        self.estimator = False
+
         self.name = self.__class__.__name__
 
     @abc.abstractmethod
     def get_prior(self):
         return self.prior
 
+    @abc.abstractmethod
     def get_name(self):
         return self.name
 
+    @abc.abstractmethod
     def get_time_flag(self):
         return self.time_flag
