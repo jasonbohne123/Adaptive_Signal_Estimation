@@ -95,7 +95,7 @@ if __name__ == "__main__":
     #prior_model = Uniform_Prior(n)
 
     # real data prior
-    prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=True))
+    prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=False))
 
     sim_style = "piecewise_linear" if get_model_constants().get("order") == 1 else "piecewise_constant"
 

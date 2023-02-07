@@ -36,7 +36,7 @@ class Volume_Prior(Prior):
             super().__init__(volume_data.values, t)
 
         else:
-            super().__init__(volume_data.values, t)
+            super().__init__(volume_data.values)
 
 
     def get_prior(self):
