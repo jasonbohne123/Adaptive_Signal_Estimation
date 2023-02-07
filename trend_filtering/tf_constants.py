@@ -30,7 +30,6 @@ def get_simulation_constants():
 
 
 ### Model Hyperparameters
-# gamma : Adaptive Step Size for Newton's Method
 # alpha : Line Search Parameter for Newton's Method
 # beta : Line Search Parameter for Newton's Method
 # mu : Initial Step Parameter for Newton's Method
@@ -49,7 +48,6 @@ def get_model_constants():
         # Optimization params
         "k": 2,
         "n": 500,
-        "gamma": 0.5,
         "alpha": 0.01,
         "beta": 0.5,
         "mu": 2,

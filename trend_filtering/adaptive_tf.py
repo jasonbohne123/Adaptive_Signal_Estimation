@@ -28,8 +28,8 @@ def adaptive_tf(
     """
 
     hyperparams = get_model_constants()
-    alpha, beta, gamma, mu, mu_inc, maxiter, maxlsiter, tol = map(
-        hyperparams.get, ["alpha", "beta", "gamma", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
+    alpha, beta,  mu, mu_inc, maxiter, maxlsiter, tol = map(
+        hyperparams.get, ["alpha", "beta", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
     )
 
     n = len(y)
@@ -214,19 +214,3 @@ def update_step(
         step *= beta
 
     return newz, newmu1, newmu2, newf1, newf2
-
-
-# Need to confirm this is working as expected
-
-# @njit(fastmath=False, cache=True, nogil=True)
-# def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
-#     """Adaptive step size of mu with ratio gamma"""
-#     if 2 * pobj1 > pobj2:
-#         newmu1 = newmu1 / gamma
-#         newmu2 = newmu2 * gamma
-#     elif 2 * pobj2 > pobj1:
-#         newmu1 = newmu1 * gamma
-#         newmu2 = newmu2 * gamma
-#     else:
-#         pass
-#     return newmu1, newmu2
