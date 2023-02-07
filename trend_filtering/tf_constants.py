@@ -16,7 +16,7 @@ def get_simulation_constants():
         # "k_points": 3, (only required for k_maxima and k_minima)
         "underlying_dist": "normal",
         "label_style": "k_local_spikes",
-        "signal_to_noise": 0.025,
+        "signal_to_noise": 0.05,
         "reference_variance": 1e-1,
         "shift": 100,
         # cross validation params
