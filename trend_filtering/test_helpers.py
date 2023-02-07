@@ -37,7 +37,7 @@ def write_to_files(sample, true_sol, sol, spline, prior_model, true_knots, knots
         plt.plot(true_sol, color="black", label="True Signal", lw=10)
         plt.plot(sample, color="blue", label="Noisy Sample", lw=0.5)
         plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
-        plt.plot(spline, color="green", label="Spline Estimate", lw=5)
+        plt.plot(spline, color="green", label="Spline Estimate", lw=3)
         plt.legend()
         plt.title("Linear Trend Filtering Estimate on Noisy Sample")
         plt.savefig("data/images/tf.png")

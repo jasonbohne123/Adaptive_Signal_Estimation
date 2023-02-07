@@ -119,8 +119,8 @@ def convert_observed_cp(Y, optimal_segment, indices):
         return all_segments
 
 
-def dp_solver(Y, indices, K_max, k, verbose=False):
-    """DP Management function to determine optimal changepoints per fixed size"""
+def partition_solver(Y, indices, K_max, k, verbose=False):
+    """Management function to determine optimal changepoints per fixed size"""
 
     if K_max > len(indices):
         if verbose:

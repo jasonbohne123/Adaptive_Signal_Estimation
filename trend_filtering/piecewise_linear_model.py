@@ -3,10 +3,10 @@ from typing import Union
 import numpy as np
 from scipy.interpolate import LSQUnivariateSpline
 
-from dynamic_programming.cp_model_selection import generalized_cross_validation
-from dynamic_programming.dp_recursion import dp_solver
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
+from model_selection.cp_model_selection import generalized_cross_validation
+from model_selection.partition import partition_solver
 from trend_filtering.helpers import extract_cp
 from trend_filtering.tf_constants import get_model_constants
 
@@ -108,7 +108,7 @@ class Piecewise_Linear_Model:
         candidate_knots = extract_cp(reshaped_x, self.D, self.threshold)
 
         # Apply dynamic programming to find optimal knots
-        dp_set = dp_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
+        dp_set = partition_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
 
         # If no knots are selected, return None
         if dp_set is None:
@@ -139,4 +139,4 @@ class Piecewise_Linear_Model:
         # fits a linear spline to the data with fixed changepoints and order
         spline = LSQUnivariateSpline(t, self.x, t=self.knots, k=self.order)
 
-        return spline(t)
+        return spline(t).reshape(-1, 1)
