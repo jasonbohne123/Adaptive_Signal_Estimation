@@ -74,9 +74,10 @@ def cross_validation(
 
                 padded_prior = np.pad(prior, (1, 1), "mean")
 
+                # what if our prior is an estimator???
                 prior_is = padded_prior[is_index][1:-1]
 
-                best_scaler = prior_is * best_scaler / np.mean(prior_is)
+                best_scaler = prior_is * best_scaler 
 
             # solve tf subproblem
             result = adaptive_tf(x_is.reshape(-1, 1), D, t=None, prior=best_scaler)

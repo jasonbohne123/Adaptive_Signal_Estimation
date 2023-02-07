@@ -20,7 +20,7 @@ def get_simulation_constants():
         "reference_variance": 1e-2,
         "shift": 100,
         # cross validation params
-        "cv_folds": 10,
+        "cv_folds": 20,
         "cross_validation_size": 0.75,
         "cv_grid_lb": 1e-8,
         "cv_iterations": 5,
@@ -48,7 +48,7 @@ def get_model_constants():
     hyperparams = {
         # Optimization params
         "k": 2,
-        "n": 250,
+        "n": 500,
         "gamma": 0.5,
         "alpha": 0.01,
         "beta": 0.5,

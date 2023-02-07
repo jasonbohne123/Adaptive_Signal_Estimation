@@ -3,7 +3,7 @@ import numpy as np
 from prior_models.prior_model import Prior
 
 
-class UniformPrior(Prior):
+class Uniform_Prior(Prior):
     """Prior Model sampling from a uniform distribution"""
 
     def __init__(self, n, lb=0.5, ub=2, t=None):

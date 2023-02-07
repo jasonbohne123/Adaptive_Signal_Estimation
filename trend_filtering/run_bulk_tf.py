@@ -8,6 +8,7 @@ import time
 from prior_models.kernel_smooth import Kernel_Smooth_Prior
 from prior_models.prior_model import Prior
 from prior_models.volume_prior import Volume_Prior
+from prior_models.uniform_prior import Uniform_Prior
 from simulations.generate_sims import generate_conditional_piecewise_paths
 from trend_filtering.test_adaptive_tf import test_adaptive_tf
 from trend_filtering.tf_constants import get_model_constants, get_simulation_constants
@@ -91,7 +92,7 @@ if __name__ == "__main__":
 
     # simulation priors
     # prior_model = Normal_Prior(n, time_flag=True)
-    # prior_model = Uniform_Prior(n, time_flag=True)
+    #prior_model = Uniform_Prior(n)
 
     # real data prior
     prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=True))
