@@ -1,6 +1,6 @@
 import numpy as np
 
-from dynamic_programming.dp_recursion import best_fit_polynomial, map_intervals
+from model_selection.partition import best_fit_polynomial, map_intervals
 
 
 def generalized_cross_validation(Y, optimal_indices, order, verbose=False):

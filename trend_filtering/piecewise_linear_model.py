@@ -1,11 +1,12 @@
 from typing import Union
 
 import numpy as np
+from scipy.interpolate import LSQUnivariateSpline
 
-from dynamic_programming.cp_model_selection import generalized_cross_validation
-from dynamic_programming.dp_recursion import dp_solver
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
+from model_selection.cp_model_selection import generalized_cross_validation
+from model_selection.partition import partition_solver
 from trend_filtering.helpers import extract_cp
 from trend_filtering.tf_constants import get_model_constants
 
@@ -40,9 +41,6 @@ class Piecewise_Linear_Model:
 
         if self.select_knots:
             self.knots = self.get_knots()
-
-    ##########################
-    # Further Work is required for optimization of below
 
     def predict(self, t: np.ndarray):
         """Predict the output at time t using linear itnerpolation between two observed values"""
@@ -101,9 +99,6 @@ class Piecewise_Linear_Model:
 
         return np.array(estimate)
 
-    ##################################################################
-    ## Issues below with the optimal knots being selected are none. Need to look into why
-
     def get_knots(self):
         """Get the knots of the piecewise linear model up to a threshold"""
 
@@ -113,7 +108,7 @@ class Piecewise_Linear_Model:
         candidate_knots = extract_cp(reshaped_x, self.D, self.threshold)
 
         # Apply dynamic programming to find optimal knots
-        dp_set = dp_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
+        dp_set = partition_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
 
         # If no knots are selected, return None
         if dp_set is None:
@@ -128,3 +123,20 @@ class Piecewise_Linear_Model:
         self.select_knots = True
 
         return knots
+
+    def fit_linear_spline(self):
+        """Fits a linear spline to the data using the optimal changepoints
+
+        Allows for a Continous Fit of the data
+
+        """
+
+        if not self.select_knots:
+            self.knots = self.get_knots()
+
+        t = np.arange(0, len(self.x), 1)
+
+        # fits a linear spline to the data with fixed changepoints and order
+        spline = LSQUnivariateSpline(t, self.x, t=self.knots, k=self.order)
+
+        return spline(t).reshape(-1, 1)

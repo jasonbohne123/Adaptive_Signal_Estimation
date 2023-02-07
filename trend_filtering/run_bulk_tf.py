@@ -5,10 +5,12 @@ import random
 import string
 import time
 
+import numpy as np
+
+from prior_models.deterministic_prior import Deterministic_Prior
 from prior_models.kernel_smooth import Kernel_Smooth_Prior
 from prior_models.prior_model import Prior
 from prior_models.volume_prior import Volume_Prior
-from prior_models.uniform_prior import Uniform_Prior
 from simulations.generate_sims import generate_conditional_piecewise_paths
 from trend_filtering.test_adaptive_tf import test_adaptive_tf
 from trend_filtering.tf_constants import get_model_constants, get_simulation_constants
@@ -26,6 +28,12 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
     # generate samples
     # this uses local maximas to generate the paths on the smooth prior
     true, samples, true_knots = generate_conditional_piecewise_paths(prior_model.prior, sim_style)
+
+    # indicator Prior Model on true knots
+    # difference of 1000 is arbitrary
+    indicator = 0.01 * np.ones(n)
+    indicator[true_knots] = 10
+    updated_prior = Deterministic_Prior(indicator)
 
     random_letters = "".join(random.choice(string.ascii_uppercase) for i in range(5))
     exp_name = f"L1_Trend_Filter_{random_letters}"
@@ -54,7 +62,7 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
         samples,
         test_adaptive_tf,
         exp_name=exp_name,
-        prior_model=prior_model,
+        prior_model=updated_prior,
         t=None,
         flags=flags,
         true=true,
@@ -92,7 +100,7 @@ if __name__ == "__main__":
 
     # simulation priors
     # prior_model = Normal_Prior(n, time_flag=True)
-    #prior_model = Uniform_Prior(n)
+    # prior_model = Uniform_Prior(n)
 
     # real data prior
     prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=False))

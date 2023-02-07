@@ -33,15 +33,15 @@ def test_adaptive_tf(
 
     sample, true_sol, D = prep_signal(sample, true_sol, t)
 
-    # cross validation is time independent atm 
+    # cross validation is time independent atm
     if prior_model:
         # adaptive tf
-        best_scaler = perform_cv(sample, D, prior_model.submodel)
-        prior = 1/prior_model.prior[1:-1] * best_scaler
-    
+        best_scaler = perform_cv(sample, D, prior_model)  # be careful with submodel here
+        prior = 1 / prior_model.prior[1:-1] * best_scaler
+
     else:
         # constant tf
-        best_scaler=perform_cv(sample,D,None)
+        best_scaler = perform_cv(sample, D, None)
         prior = best_scaler
 
     # reconstruct signal (allows for time)
@@ -58,6 +58,8 @@ def test_adaptive_tf(
     if sol is not None:
         sol_array = sol.x
         knots = sol.knots if get_model_constants()["solve_cp"] else None
+        spline = sol.fit_linear_spline()
+
     else:
         print("No solution found")
         return
@@ -65,6 +67,7 @@ def test_adaptive_tf(
     # compute mse from sample and true
     mse_from_sample = compute_error(sample, sol_array, type="mse")
     mse_from_true = compute_error(true_sol, sol_array, type="mse")
+    spline_mse = compute_error(true_sol, spline, type="mse")
 
     expected_prediction_error = compute_error(true_sol, sol_array, type="epe")
 
@@ -76,11 +79,10 @@ def test_adaptive_tf(
             print(f"Estimated knots: {knots}")
             print(f"Hausdorff distance: {hausdorff_distance}")
 
-   
     print(" ")
 
     # write artifacts to files
-    write_to_files(sample, true_sol, sol_array, prior_model, true_knots, knots, plot)
+    write_to_files(sample, true_sol, sol_array, spline, prior_model, true_knots, knots, plot)
 
     # log information to mlflow
     if log_mlflow:
@@ -91,6 +93,7 @@ def test_adaptive_tf(
             best_scaler,
             mse_from_sample,
             mse_from_true,
+            spline_mse,
             expected_prediction_error,
             hausdorff_distance,
             len(true_knots),

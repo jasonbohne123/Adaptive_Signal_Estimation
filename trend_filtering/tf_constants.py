@@ -21,7 +21,7 @@ def get_simulation_constants():
         "shift": 100,
         # cross validation params
         "cv_folds": 20,
-        "cross_validation_size": 0.75,
+        "cross_validation_size": 0.9,
         "cv_grid_lb": 1e-8,
         "cv_iterations": 5,
         "verbose_cv": True,
@@ -54,7 +54,7 @@ def get_model_constants():
         "mu_inc": 1e-10,
         "maxiter": 40,
         "maxlsiter": 20,
-        "tol": 1e-4,
+        "tol": 1e-6,
         # model params
         "solve_cp": True,
         "K_max": 10,
