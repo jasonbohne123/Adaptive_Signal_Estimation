@@ -20,6 +20,9 @@ class Kernel_Smooth_Prior(Prior):
         self.estimator = True
         self.orig_data = model.orig_data
 
+        # store the submodel (properties for estimator)
+        self.submodel = model
+
     def get_prior(self):
 
         return self.prior

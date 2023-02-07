@@ -1,5 +1,5 @@
 import abc
-
+import numpy as np
 
 class Prior(abc.ABC):
     """Abstract class for prior models
@@ -14,10 +14,15 @@ class Prior(abc.ABC):
         self.orig_data = prior
 
         # account for time
-        self.t = t
+        if t is not None:
+            self.time_flag = True
+            self.t = t
+
+        else:
+            self.time_flag = False
+            self.t=np.arange(len(prior)) # uniform time
 
         # flags
-        self.time_flag = False
         self.adaptive_penalty = True
         self.estimator = False
 

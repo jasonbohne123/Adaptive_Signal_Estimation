@@ -7,10 +7,9 @@ from prior_models.prior_model import Prior
 from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
 
 
-def prep_signal(sample, true_sol, t):
+def prep_signal(sample, true_sol, t=None):
     """Generates and preps our signal"""
 
-    time_flag = False
     n, k = get_model_constants().get("n"), get_model_constants().get("k")
     if n is None:
         n = len(sample)
@@ -23,9 +22,8 @@ def prep_signal(sample, true_sol, t):
     if t is not None:
         t = t[:n]
         D = Time_Difference_Matrix(D, t)
-        time_flag = True
 
-    return sample, true_sol, D, time_flag
+    return sample, true_sol, D
 
 
 def write_to_files(sample, true_sol, sol, prior_model, true_knots, knots, plot):

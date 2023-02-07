@@ -31,30 +31,25 @@ def test_adaptive_tf(
         flags.get, ["include_cv", "plot", "verbose", "bulk", "log_mlflow"]
     )
 
-    sample, true_sol, D, time_flag = prep_signal(sample, true_sol, t)
+    sample, true_sol, D = prep_signal(sample, true_sol, t)
 
-    if not include_cv and not prior:
-        print(" No prior provided and no cross validation")
-        return
-
-    # prep numerial prior if adaptive
+    # cross validation is time independent atm 
     if prior_model:
-        prior = 1 / prior_model.prior[1:-1]
-
+        # adaptive tf
+        best_scaler = perform_cv(sample, D, prior_model.submodel)
+        prior = 1/prior_model.prior[1:-1] * best_scaler
+    
     else:
-        prior = None
+        # constant tf
+        best_scaler=perform_cv(sample,D,None)
+        prior = best_scaler
 
-    # perform cross validation if flagged
-    if include_cv:
-        prior, best_scaler = perform_cv(sample, D, prior, t)
-
-    # reconstruct signal
+    # reconstruct signal (allows for time)
     results = adaptive_tf(sample, D_=D, t=t, prior=prior, select_knots=get_model_constants()["solve_cp"])
     results["computation_time"] = time.time() - start_time
 
     if verbose:
         print(f"Solved TF problem with status: {results['status']}")
-
         max_iter = get_model_constants()["maxiter"]
         print(f" Total Iterations: {results['iters']} out of {max_iter}")
 
@@ -81,8 +76,8 @@ def test_adaptive_tf(
             print(f"Estimated knots: {knots}")
             print(f"Hausdorff distance: {hausdorff_distance}")
 
-    if verbose:
-        print(" ")
+   
+    print(" ")
 
     # write artifacts to files
     write_to_files(sample, true_sol, sol_array, prior_model, true_knots, knots, plot)

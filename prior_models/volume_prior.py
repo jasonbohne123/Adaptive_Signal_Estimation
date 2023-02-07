@@ -21,6 +21,10 @@ class Volume_Prior(Prior):
         # fetch the last n volume data; log transform
         volume_data = np.log(market_data["Trade_Volume"][market_data["Trade_Volume"] < 1000][-n:])
 
+        self.name = "Volume_Prior"
+        self.prior = volume_data.values
+
+
         # fetch time series if time_flag is true
         if time_flag:
             volume_data.index = pd.to_datetime(volume_data.index)
@@ -29,11 +33,11 @@ class Volume_Prior(Prior):
             # update time_flag and t
             self.time_flag = time_flag
             self.t = t
+            super().__init__(volume_data.values, t)
 
-        # update the prior
-        super().__init__(volume_data.values, t)
-        self.name = "Volume_Prior"
-        self.prior = volume_data.values
+        else:
+            super().__init__(volume_data.values, t)
+
 
     def get_prior(self):
 
