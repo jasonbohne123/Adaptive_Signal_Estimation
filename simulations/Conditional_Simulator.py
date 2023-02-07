@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 
 from trend_filtering.label_changepoints import label_changepoints
@@ -25,10 +23,6 @@ class ConditionalSimulator(Simulator):
             get_simulation_constants().get,
             ["underlying_dist", "reference_variance", "k_points", "label_style", "n_sims", "shift"],
         )
-
-        if self.k_points > len(prior):
-            print("k_points is greater than the length of the prior. Setting k_points to half of length of the prior")
-            self.k_points = math.floor(len(prior) / 2)
 
         if rng is None:
             self.rng = np.random.RandomState()

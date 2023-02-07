@@ -5,27 +5,25 @@ import numpy as np
 
 from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.helpers import compute_lambda_max
 from trend_filtering.tf_constants import get_simulation_constants
-
-### TO-DO Create Cross Validation Class
+from prior_models.kernel_smooth import Kernel_Smooth_Prior
+from prior_models.prior_model import Prior
+from prior_models.deterministic_prior import Deterministic_Prior
 
 
 def cross_validation(
     x: np.ndarray,
     D: Difference_Matrix,
-    prior: Union[None, np.ndarray] = None,
-    t: Union[None, np.ndarray] = None,
+    prior: Union[None, Prior] = None,
     cv_folds: int = None,
     cv_iterations: int = None,
     verbose=True,
 ):
     """Cross Validation for constant TF penalty parameter lambda_p"""
 
-    n = len(x)
-    cv_size = int(n * get_simulation_constants()["cross_validation_size"])
+    cv_size = int(len(x)* get_simulation_constants()["cross_validation_size"])
 
     # relative exponential grid
     grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], 1, cv_folds)
@@ -40,24 +38,24 @@ def cross_validation(
 
         # get in-sample and out-of-sample indices per each iteration
         # (randomly select cv_size indices which is ideal otherwise is just extrapolation)
-        is_index = np.sort(np.random.choice(n, size=cv_size, replace=False))
-        oos_index = np.sort(np.setdiff1d(np.arange(n), is_index))
+        is_index = np.sort(np.random.choice(len(x), size=cv_size, replace=False))
+        oos_index = np.sort(np.setdiff1d(np.arange(len(x)), is_index))
 
         # get in-sample and out-of-sample data
         x_is = x[is_index]
         x_oos = x[oos_index]
 
-        m = len(is_index)
 
         # compute difference matrix (more stable if equal time)
-
+        m = len(is_index)
         D = Difference_Matrix(m, D.k)
 
         # compute lambda_max for each subproblem
         prior_max = compute_lambda_max(D, x_is, time=False)
 
         for lambda_i in grid:
-
+            
+            # relative lambda scaled to max
             best_scaler = lambda_i * prior_max
 
             if verbose:
@@ -66,17 +64,16 @@ def cross_validation(
             # if prior is provided, scale lambda to have mean of candidate lambda
             if prior is not None:
 
-                # must be multivariate ndarray if not None
-                assert isinstance(prior, np.ndarray)
+                # must be an instance of a prior model
+                assert isinstance(prior, Prior)
 
-                # scale penalty to have mean of optimal lambda
-                # (is mean the best statistic here)
+                # get prior for in-sample data
+                volume_is=Deterministic_Prior(prior.prior[is_index],t=prior.t[is_index])
 
-                padded_prior = np.pad(prior, (1, 1), "mean")
+                # get kernel estimator for our prior
+                kernel_estimator=Kernel_Smooth_Prior(volume_is)
 
-                prior_is = padded_prior[is_index][1:-1]
-
-                best_scaler = prior_is * best_scaler / np.mean(prior_is)
+                best_scaler = 1/kernel_estimator.prior[1:-1] * best_scaler 
 
             # solve tf subproblem
             result = adaptive_tf(x_is.reshape(-1, 1), D, t=None, prior=best_scaler)
@@ -106,12 +103,23 @@ def cross_validation(
     best_prior = min(best_prior_dict, key=best_prior_dict.get)
 
     # compute lambda_max for original problem
-    D = Difference_Matrix(n, D.k)
+    D = Difference_Matrix(len(x), D.k)
 
-    if t is None:
-        orig_scaler_max = compute_lambda_max(D, x, time=False)
-    else:
-        T = Time_Difference_Matrix(D, t=t)
-        orig_scaler_max = compute_lambda_max(T, x, time=True)
+    orig_scaler_max = compute_lambda_max(D, x, time=False)
 
     return best_prior * orig_scaler_max
+
+
+def perform_cv(sample, D, prior: Union[None, Prior] = None):
+    """Perform Cross-Validation on Lambda Penalty"""
+
+    cv_folds = get_simulation_constants().get("cv_folds")
+    cv_iterations = get_simulation_constants().get("cv_iterations")
+    verbose_cv = get_simulation_constants().get("verbose_cv")
+
+    # best relative lambda scaled by lambda_max
+    scaled_prior = cross_validation(
+        sample, D, prior=prior,  cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
+    )
+
+    return scaled_prior

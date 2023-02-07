@@ -11,16 +11,16 @@
 def get_simulation_constants():
     """Default Simulation Constants for Trend Filtering"""
     constants = {
-        "n_sims": 5,
+        "n_sims": 50,
         # simulation params
-        "k_points": 10,
+        # "k_points": 3, (only required for k_maxima and k_minima)
         "underlying_dist": "normal",
-        "label_style": "k_maxima",
+        "label_style": "k_local_spikes",
         "signal_to_noise": 0.05,
-        "reference_variance": 1e-2,
+        "reference_variance": 1e-1,
         "shift": 100,
         # cross validation params
-        "cv_folds": 10,
+        "cv_folds": 20,
         "cross_validation_size": 0.75,
         "cv_grid_lb": 1e-8,
         "cv_iterations": 5,
@@ -30,7 +30,6 @@ def get_simulation_constants():
 
 
 ### Model Hyperparameters
-# gamma : Adaptive Step Size for Newton's Method
 # alpha : Line Search Parameter for Newton's Method
 # beta : Line Search Parameter for Newton's Method
 # mu : Initial Step Parameter for Newton's Method
@@ -49,17 +48,16 @@ def get_model_constants():
         # Optimization params
         "k": 2,
         "n": 500,
-        "gamma": 0.5,
         "alpha": 0.01,
         "beta": 0.5,
         "mu": 2,
         "mu_inc": 1e-10,
-        "maxiter": 50,
-        "maxlsiter": 50,
-        "tol": 1e-5,
+        "maxiter": 40,
+        "maxlsiter": 20,
+        "tol": 1e-4,
         # model params
         "solve_cp": True,
-        "K_max": 12,
+        "K_max": 10,
         "order": 1,
         "cp_threshold": 1e-2,
     }

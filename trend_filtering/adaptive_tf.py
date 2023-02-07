@@ -28,8 +28,8 @@ def adaptive_tf(
     """
 
     hyperparams = get_model_constants()
-    alpha, beta, gamma, mu, mu_inc, maxiter, maxlsiter, tol = map(
-        hyperparams.get, ["alpha", "beta", "gamma", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
+    alpha, beta,  mu, mu_inc, maxiter, maxlsiter, tol = map(
+        hyperparams.get, ["alpha", "beta", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
     )
 
     n = len(y)
@@ -51,8 +51,10 @@ def adaptive_tf(
     mu2 = np.ones((m, 1))
 
     step = np.inf
-    f1 = z[0] - prior
-    f2 = -z[0] - prior
+ 
+    
+    f1 = z - prior
+    f2 = -z - prior
 
     # main loop of iteration; solving a sequence of equality constrained quadratic programs
     for iters in range(maxiter + 1):
@@ -85,7 +87,7 @@ def adaptive_tf(
         )
 
         # adaptive stepsize of mu with ratio gamma
-        newmu1, newmu2 = adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma)
+        #newmu1, newmu2 = adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma)
 
         z = newz
         mu1 = newmu1
@@ -137,6 +139,8 @@ def prep_matrices(D, Dy, z, mu1, mu2):
 @njit(fastmath=False, cache=True)
 def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, prior):
     """Computes Primal and Dual objectives and duality gap"""
+
+    # evaluates primal with dual variable of dual and optimality condition
     pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(prior.T, (mu1 + mu2)))
     pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(prior.T, np.abs(Dy - DDTz)))
     pobj1 = pobj1.item()
@@ -210,17 +214,3 @@ def update_step(
         step *= beta
 
     return newz, newmu1, newmu2, newf1, newf2
-
-
-@njit(fastmath=False, cache=True, nogil=True)
-def adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma):
-    """Adaptive step size of mu with ratio gamma"""
-    if 2 * pobj1 > pobj2:
-        newmu1 = newmu1 / gamma
-        newmu2 = newmu2 * gamma
-    elif 2 * pobj2 > pobj1:
-        newmu1 = newmu1 * gamma
-        newmu2 = newmu2 * gamma
-    else:
-        pass
-    return newmu1, newmu2
