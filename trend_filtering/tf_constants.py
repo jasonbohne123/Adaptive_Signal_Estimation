@@ -52,7 +52,7 @@ def get_model_constants():
         "beta": 0.5,
         "mu": 2,
         "mu_inc": 1e-10,
-        "maxiter": 50,
+        "maxiter": 40,
         "maxlsiter": 20,
         "tol": 1e-4,
         # model params
