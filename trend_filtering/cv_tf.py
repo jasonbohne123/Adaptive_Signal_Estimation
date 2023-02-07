@@ -5,12 +5,11 @@ import numpy as np
 
 from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
+from prior_models.deterministic_prior import Deterministic_Prior
+from prior_models.prior_model import Prior
 from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.helpers import compute_lambda_max
 from trend_filtering.tf_constants import get_simulation_constants
-from prior_models.kernel_smooth import Kernel_Smooth_Prior
-from prior_models.prior_model import Prior
-from prior_models.deterministic_prior import Deterministic_Prior
 
 
 def cross_validation(
@@ -23,7 +22,7 @@ def cross_validation(
 ):
     """Cross Validation for constant TF penalty parameter lambda_p"""
 
-    cv_size = int(len(x)* get_simulation_constants()["cross_validation_size"])
+    cv_size = int(len(x) * get_simulation_constants()["cross_validation_size"])
 
     # relative exponential grid
     grid = np.geomspace(get_simulation_constants()["cv_grid_lb"], 1, cv_folds)
@@ -45,7 +44,6 @@ def cross_validation(
         x_is = x[is_index]
         x_oos = x[oos_index]
 
-
         # compute difference matrix (more stable if equal time)
         m = len(is_index)
         D = Difference_Matrix(m, D.k)
@@ -54,7 +52,7 @@ def cross_validation(
         prior_max = compute_lambda_max(D, x_is, time=False)
 
         for lambda_i in grid:
-            
+
             # relative lambda scaled to max
             best_scaler = lambda_i * prior_max
 
@@ -67,13 +65,14 @@ def cross_validation(
                 # must be an instance of a prior model
                 assert isinstance(prior, Prior)
 
-                # get prior for in-sample data
-                volume_is=Deterministic_Prior(prior.prior[is_index],t=prior.t[is_index])
+                # get prior for in-sample data (time independent)
+                volume_is = Deterministic_Prior(prior.prior[is_index])
 
                 # get kernel estimator for our prior
-                kernel_estimator=Kernel_Smooth_Prior(volume_is)
+                # kernel_estimator=Kernel_Smooth_Prior(volume_is)
 
-                best_scaler = 1/kernel_estimator.prior[1:-1] * best_scaler 
+                # in sample prior
+                best_scaler = 1 / volume_is.prior[1:-1] * best_scaler
 
             # solve tf subproblem
             result = adaptive_tf(x_is.reshape(-1, 1), D, t=None, prior=best_scaler)
@@ -119,7 +118,7 @@ def perform_cv(sample, D, prior: Union[None, Prior] = None):
 
     # best relative lambda scaled by lambda_max
     scaled_prior = cross_validation(
-        sample, D, prior=prior,  cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
+        sample, D, prior=prior, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
     )
 
     return scaled_prior

@@ -26,7 +26,7 @@ def prep_signal(sample, true_sol, t=None):
     return sample, true_sol, D
 
 
-def write_to_files(sample, true_sol, sol, prior_model, true_knots, knots, plot):
+def write_to_files(sample, true_sol, sol, spline, prior_model, true_knots, knots, plot):
     """Write artifacts to mlflow"""
 
     adaptive_penalty = isinstance(prior_model, Prior)
@@ -37,6 +37,7 @@ def write_to_files(sample, true_sol, sol, prior_model, true_knots, knots, plot):
         plt.plot(true_sol, color="black", label="True Signal", lw=10)
         plt.plot(sample, color="blue", label="Noisy Sample", lw=0.5)
         plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
+        plt.plot(spline, color="green", label="Spline Estimate", lw=5)
         plt.legend()
         plt.title("Linear Trend Filtering Estimate on Noisy Sample")
         plt.savefig("data/images/tf.png")
@@ -105,6 +106,7 @@ def log_to_mlflow(
     best_scaler,
     mse_from_sample,
     mse_from_true,
+    spline_mse,
     expected_prediction_error,
     hausdorff_distance,
     len_true_knots,
@@ -177,6 +179,7 @@ def log_to_mlflow(
                 "optimal_relative_lambda": best_scaler,
                 "mse_from_sample": mse_from_sample,
                 "mse_from_true": mse_from_true,
+                "spline_mse": spline_mse,
                 "hausdorff_distance": hausdorff_distance,
                 "integrated_squared_prediction_error": expected_prediction_error,
                 "len_true_knots": len_true_knots,

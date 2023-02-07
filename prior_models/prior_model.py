@@ -1,5 +1,7 @@
 import abc
+
 import numpy as np
+
 
 class Prior(abc.ABC):
     """Abstract class for prior models
@@ -20,11 +22,12 @@ class Prior(abc.ABC):
 
         else:
             self.time_flag = False
-            self.t=np.arange(len(prior)) # uniform time
+            self.t = np.arange(len(prior))  # uniform time
 
         # flags
         self.adaptive_penalty = True
         self.estimator = False
+        self.submodel = None
 
         self.name = self.__class__.__name__
 
