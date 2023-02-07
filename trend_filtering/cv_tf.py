@@ -54,7 +54,8 @@ def cross_validation(
         prior_max = compute_lambda_max(D, x_is, time=False)
 
         for lambda_i in grid:
-
+            
+            # relative lambda scaled to max
             best_scaler = lambda_i * prior_max
 
             if verbose:

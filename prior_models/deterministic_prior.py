@@ -4,15 +4,21 @@ from prior_models.prior_model import Prior
 class Deterministic_Prior(Prior):
     """Deterministic Prior Model"""
 
-    def __init__(self, prior,t):
+    def __init__(self, prior,t=None):
+
+        if t is not None:
+            self.time_flag = True
+            self.t = t
+            super().__init__(prior, t)
+        
+        else:
+            self.time_flag = False
+            super().__init__(prior)
  
         # update prior from defaults
-        super().__init__(prior, t)
         self.name = "Deterministic_Prior"
         self.prior = prior
-        self.time_flag = True
-        self.t = t
-
+ 
 
     def get_prior(self):
         return self.prior
