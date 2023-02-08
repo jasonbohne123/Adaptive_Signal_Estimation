@@ -25,6 +25,8 @@ def best_fit_polynomial(Y, interval, order=1):
 
     polynomial = poly_coef.T.dot(np.vstack([x_range**i for i in range(order, -1, -1)]))
 
+    assert len(y) == len(polynomial)
+
     # mean squared error of fit
     mse = np.mean((y - polynomial) ** 2)
 
@@ -45,6 +47,7 @@ def compute_J(Y, indices, cp_mappings, order):
         for j in range(i, len(mapping_indices)):
 
             interval = [cp_mappings[i][0], cp_mappings[j][1]]
+
             cost_matrix[i, j] = best_fit_polynomial(Y, interval, order=order)
 
     return cost_matrix
@@ -64,7 +67,6 @@ def compute_V(cost_matrix, K_max, indices):
         optimal_cost[0, i] = cost_matrix[0, i]
 
     # loop over number of possible changepoints calculating optimal cost and location of indices
-    # utilizes dynamic programming structure to build solution from subproblems solution
     for k_i in range(1, K_max + 1):
         for j in range(k_i + 1, k + 1):
 

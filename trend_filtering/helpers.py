@@ -34,4 +34,6 @@ def extract_cp(smooth, D: Union[Difference_Matrix, Time_Difference_Matrix], thre
     diff = np.dot(D, smooth).reshape(1, -1)[0]
 
     x, index = np.where([abs(diff) > threshold])
+
+    print(x, index)
     return index
