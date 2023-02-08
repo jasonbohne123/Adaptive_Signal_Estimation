@@ -17,7 +17,7 @@ def get_simulation_constants():
         "underlying_dist": "normal",
         "label_style": "k_local_spikes",
         "signal_to_noise": 0.05,
-        "reference_variance": 1e-1,
+        "reference_variance": 1e-2,
         "shift": 100,
         # cross validation params
         "cv_folds": 20,
@@ -31,12 +31,12 @@ def get_simulation_constants():
 
 
 ### Model Hyperparameters
-# alpha : Line Search Parameter for Newton's Method
-# beta : Line Search Parameter for Newton's Method
-# mu : Initial Step Parameter for Newton's Method
-# mu_inc : Step Parameter Increment for Newton's Method
-# maxiter : Maximum Number of Iterations for Newton's Method
-# maxlsiter : Maximum Number of Iterations for Line Search
+# alpha : Line Search Parameter for Newton's Method (Boyd)
+# beta : Line Search Parameter for Newton's Method (Boyd)
+# mu : Initial Step Parameter for Newton's Method (Boyd)
+# mu_inc : Step Parameter Increment for Newton's Method (Boyd)
+# maxiter : Maximum Number of Iterations for Newton's Method (Boyd)
+# maxlsiter : Maximum Number of Iterations for Line Search (Boyd)
 
 # solve_cp : Whether to solve the changepoint problem
 # K_max : Maximum Number of Changepoints
@@ -60,6 +60,6 @@ def get_model_constants():
         "solve_cp": True,
         "K_max": 10,
         "order": 1,
-        "cp_threshold": 1e-2,
+        "cp_threshold": 1e-3,  # good proxy is 0.1 * variance of true process
     }
     return hyperparams
