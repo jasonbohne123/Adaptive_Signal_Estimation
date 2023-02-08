@@ -71,7 +71,7 @@ def generalized_cross_validation(Y, optimal_indices, order, true_knots, verbose=
 
         eff_param = (k_i + 1) * (order + 1)
 
-        gcv[k_i] = mse + (2 * eff_param * biased_cv_epe[k_i])
+        gcv[k_i] = mse / (len(Y) - eff_param) ** 2
 
     sorted_gcv = sorted(gcv.items(), key=lambda x: x[1])
 
