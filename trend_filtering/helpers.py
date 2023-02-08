@@ -4,6 +4,7 @@ import numpy as np
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
+from trend_filtering.tf_constants import get_model_constants
 
 
 def compute_lambda_max(diff_mat, y, time=False):
@@ -35,5 +36,24 @@ def extract_cp(smooth, D: Union[Difference_Matrix, Time_Difference_Matrix], thre
 
     x, index = np.where([abs(diff) > threshold])
 
-    print(x, index)
+    # returns rhs of index for close pairs
+    close_pairs = index[1:][np.diff(index) < get_model_constants()["min_cp_distance"]]
+
+    index_to_remove = []
+
+    # remove close pairs
+    for rhs_index in close_pairs:
+        i = diff[index[index < rhs_index][-1]]
+        j = diff[rhs_index]
+
+        # remove index with smaller absolute value
+        if abs(i) > abs(j):
+            index_to_remove.append(index[index < rhs_index][-1])
+
+        # remove index with smaller absolute value
+        else:
+            index_to_remove.append(rhs_index)
+
+    # return index with close pairs removed
+    index = np.setdiff1d(index, index_to_remove)
     return index
