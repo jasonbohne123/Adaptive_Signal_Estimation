@@ -45,7 +45,9 @@ def test_adaptive_tf(
         prior = best_scaler
 
     # reconstruct signal (allows for time)
-    results = adaptive_tf(sample, D_=D, t=t, prior=prior, select_knots=get_model_constants()["solve_cp"])
+    results = adaptive_tf(
+        sample, D_=D, t=t, prior=prior, select_knots=get_model_constants()["solve_cp"], true_knots=true_knots
+    )
     results["computation_time"] = time.time() - start_time
 
     if verbose:

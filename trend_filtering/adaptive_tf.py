@@ -22,13 +22,14 @@ def adaptive_tf(
     prior: Union[float, np.ndarray] = None,
     k: int = 2,
     select_knots=False,
+    true_knots=None,
 ):
     """
     Adaptive trend filtering algorithm
     """
 
     hyperparams = get_model_constants()
-    alpha, beta,  mu, mu_inc, maxiter, maxlsiter, tol = map(
+    alpha, beta, mu, mu_inc, maxiter, maxlsiter, tol = map(
         hyperparams.get, ["alpha", "beta", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
     )
 
@@ -51,8 +52,7 @@ def adaptive_tf(
     mu2 = np.ones((m, 1))
 
     step = np.inf
- 
-    
+
     f1 = z - prior
     f2 = -z - prior
 
@@ -75,7 +75,7 @@ def adaptive_tf(
             status = "solved"
             x = y - np.dot(D.transpose(), z)
             return {
-                "sol": Piecewise_Linear_Model(x, D=D, t=t, select_knots=select_knots),
+                "sol": Piecewise_Linear_Model(x, D=D, t=t, select_knots=select_knots, true_knots=true_knots),
                 "status": status,
                 "gap": gap,
                 "iters": iters,
@@ -87,7 +87,7 @@ def adaptive_tf(
         )
 
         # adaptive stepsize of mu with ratio gamma
-        #newmu1, newmu2 = adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma)
+        # newmu1, newmu2 = adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma)
 
         z = newz
         mu1 = newmu1
