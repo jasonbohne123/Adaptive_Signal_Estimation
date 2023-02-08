@@ -44,22 +44,23 @@ def generalized_cross_validation(Y, optimal_indices, order, true_knots, verbose=
     # max deviation between candidate prior and true prior
     # here we use the haussdorf distance
     max_deviation = 0
-
+    max_deviation_dict = {}
     for k_i, cps in optimal_indices.items():
         deviation = compute_error(np.array(true_knots), np.array(cps), type="hausdorff")
+        max_deviation_dict[k_i] = deviation
 
         if deviation > max_deviation:
             max_deviation = deviation
             max_deviation_set = cps
 
+    max_distance = compute_error(np.array(true_knots), np.array(max_deviation_set), type="hausdorff")
     cv_bias = get_simulation_constants()["cv_bias"]
 
     # compute the biased cross validation error for each k
     for k_i, mse in model_mse.items():
 
         # perhaps instead of using the max deviation, we use the number of parameters as a measure of simplicity
-        current_distance = compute_error(np.array(true_knots), np.array(optimal_indices[k_i]), type="hausdorff")
-        max_distance = compute_error(np.array(true_knots), np.array(max_deviation_set), type="hausdorff")
+        current_distance = max_deviation_dict[k_i]
 
         relative_accuracy = cv_bias * (mse / true_mse)
         in_sample_simplicity = (1 - cv_bias) * (current_distance / max_distance) ** 2
