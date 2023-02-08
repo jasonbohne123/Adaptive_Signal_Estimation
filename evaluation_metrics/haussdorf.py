@@ -19,17 +19,17 @@ def compute_haussdorf_distance(candidate_set, true_set):
         The Haussdorf distance between the two sets of points
     """
 
-    # Check that the candidate set and the true set are not empty
-    if len(candidate_set) == 0 or len(true_set) == 0:
-        return np.inf
+    # each set always is closed on both ends (bound haussdorf distance by len(y)/2)
+    padded_candidate_set = np.unique(np.concatenate([[0], candidate_set, [len(true_set)]]))
+    padded_true_set = np.unique(np.concatenate([[0], true_set, [len(candidate_set)]]))
 
     # Compute the distance between each point in the candidate set and the true set
-    distances = np.array([np.min(abs(candidate_set - true_point)) for true_point in true_set])
+    distances = np.array([np.min(abs(padded_candidate_set - true_point)) for true_point in padded_true_set])
 
     # Compute the distance between each point in the true set and the candidate set
     distances = np.append(
         distances,
-        np.array([np.min(abs(true_set - candidate_point)) for candidate_point in candidate_set]),
+        np.array([np.min(abs(padded_true_set - candidate_point)) for candidate_point in padded_candidate_set]),
     )
 
     # Compute the Haussdorf distance

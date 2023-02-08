@@ -20,6 +20,7 @@ class Piecewise_Linear_Model:
         D: Union[Difference_Matrix, Time_Difference_Matrix, None] = None,
         t: np.ndarray = None,
         select_knots=False,
+        true_knots=None,
     ):
         self.x = x
 
@@ -38,6 +39,7 @@ class Piecewise_Linear_Model:
         self.K_max = get_model_constants()["K_max"]
         self.order = get_model_constants()["order"]
         self.select_knots = select_knots
+        self.true_knots = true_knots
 
         if self.select_knots:
             self.knots = self.get_knots()
@@ -114,7 +116,9 @@ class Piecewise_Linear_Model:
         if dp_set is None:
             return []
 
-        optimal_trend_cp_mse, optimal_trend_cp_gcv = generalized_cross_validation(reshaped_x, dp_set, self.order)
+        optimal_trend_cp_gcv = generalized_cross_validation(
+            reshaped_x, dp_set, self.order, self.true_knots, verbose=True
+        )
 
         # Get the optimal knots
         knots = dp_set[optimal_trend_cp_gcv[0][0]]

@@ -24,6 +24,7 @@ def get_simulation_constants():
         "cross_validation_size": 0.9,
         "cv_grid_lb": 1e-8,
         "cv_iterations": 5,
+        "cv_bias": 0.5,
         "verbose_cv": True,
     }
     return constants
