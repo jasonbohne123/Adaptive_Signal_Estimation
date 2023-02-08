@@ -61,6 +61,6 @@ def get_model_constants():
         "K_max": 10,
         "order": 1,
         "cp_threshold": 1e-3,  # good proxy is 0.1 * variance of true process
-        "min_cp_distance": 10,
+        "min_cp_distance": 25,
     }
     return hyperparams
