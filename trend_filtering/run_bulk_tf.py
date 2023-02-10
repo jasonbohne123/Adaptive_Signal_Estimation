@@ -31,9 +31,21 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
 
     # indicator Prior Model on true knots
     # difference of 1000 is arbitrary
+    # indicator = np.random.uniform(0,2,n)
+
+    # # pin cp at true knots
     indicator = 0.01 * np.ones(n)
     indicator[true_knots] = 10
+    indicator[0] = 10
+    indicator[-1] = 10
+
+    # reverse_indicator = 1/indicator
+
+    # biased prior
     updated_prior = Deterministic_Prior(indicator)
+
+    # inverse indicator to see if it works
+    # updated_prior = Deterministic_Prior(reverse_indicator)
 
     random_letters = "".join(random.choice(string.ascii_uppercase) for i in range(5))
     exp_name = f"L1_Trend_Filter_{random_letters}"

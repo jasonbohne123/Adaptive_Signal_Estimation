@@ -7,8 +7,8 @@ def generate_conditional_piecewise_paths(prior, sim_style, label_style="k_maxima
     """Generate piecewise constant/linear paths with changepoints at the k_maxima of the prior distribution"""
 
     # fetch simulation constants from prespecified file (tf_constants.py)
-    underlying_dist, signal_to_noise, reference_variance = map(
-        get_simulation_constants().get, ["underlying_dist", "signal_to_noise", "reference_variance"]
+    underlying_dist, signal_to_noise, reference_variance, n_samples = map(
+        get_simulation_constants().get, ["underlying_dist", "signal_to_noise", "reference_variance", "n_samples"]
     )
     sim = ConditionalSimulator(prior, sim_style)
     true = sim.simulate()
@@ -19,7 +19,7 @@ def generate_conditional_piecewise_paths(prior, sim_style, label_style="k_maxima
 
     sampler = Sampler(underlying_dist)
 
-    # (n_sims,len_sims)
-    samples = sampler.sample(true, scale=reference_variance / signal_to_noise)
+    # (n_sims,len_sims), (n_sims*n_samples,len_sims)
+    samples, adjusted_true = sampler.sample(true, n_samples=n_samples, scale=reference_variance / signal_to_noise)
 
-    return true, samples, true_knots
+    return adjusted_true, samples, true_knots

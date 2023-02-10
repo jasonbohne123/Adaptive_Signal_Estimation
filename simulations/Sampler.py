@@ -30,7 +30,20 @@ class Sampler(Simulator):
         if scale is None:
             scale = np.std(true_processes)
 
-        if n_samples == 1:
-            n_samples = true_processes.shape
+        # if no number of samples is given, use the number of true processes
+        if n_samples is None:
+            n_samples = 1
 
-        return self.underlying_simulator.simulate(n=n_samples, loc=true_processes, scale=scale, rng=self.rng)
+        # this requires us to repeat the true processes n_samples times (t_1, t_2, ...t_n) repeated n_samples times
+        adjusted_true = np.repeat(true_processes, n_samples, axis=0)
+
+        # (n_sims,len_sims), (n_sims*n_samples,len_sims)
+        return (
+            self.underlying_simulator.simulate(
+                (n_samples * true_processes.shape[0], true_processes.shape[1]),
+                loc=adjusted_true,
+                scale=scale,
+                rng=self.rng,
+            ),
+            adjusted_true,
+        )

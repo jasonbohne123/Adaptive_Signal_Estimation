@@ -11,7 +11,8 @@
 def get_simulation_constants():
     """Default Simulation Constants for Trend Filtering"""
     constants = {
-        "n_sims": 50,
+        "n_sims": 10,
+        "n_samples": 10,
         # simulation params
         # "k_points": 3, (only required for k_maxima and k_minima)
         "underlying_dist": "normal",
@@ -58,9 +59,9 @@ def get_model_constants():
         "tol": 1e-6,
         # model params
         "solve_cp": True,
-        "K_max": 10,
+        "K_max": 5,
         "order": 1,
-        "cp_threshold": 1e-3,  # good proxy is 0.1 * variance of true process
+        "cp_threshold": 0.05 * 1e-1,  # good proxy is 0.1 of variance of true process
         "min_cp_distance": 25,
     }
     return hyperparams

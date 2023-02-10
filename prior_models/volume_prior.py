@@ -7,7 +7,7 @@ from prior_models.prior_model import Prior
 
 PATH = "../../../taq_db/TAQ-Query-Scripts/data/raw_data/2020-01-02/"
 sys.path.append(PATH)
-DATA_FILE = "AMZN_trades_cleaned.csv"
+DATA_FILE = "AAPL_trades_cleaned.csv"
 
 
 class Volume_Prior(Prior):
@@ -24,7 +24,6 @@ class Volume_Prior(Prior):
         self.name = "Volume_Prior"
         self.prior = volume_data.values
 
-
         # fetch time series if time_flag is true
         if time_flag:
             volume_data.index = pd.to_datetime(volume_data.index)
@@ -37,7 +36,6 @@ class Volume_Prior(Prior):
 
         else:
             super().__init__(volume_data.values)
-
 
     def get_prior(self):
 
