@@ -103,6 +103,7 @@ def log_to_mlflow(
     exp_name,
     results,
     prior_model,
+    snr,
     best_scaler,
     mse_from_sample,
     mse_from_true,
@@ -123,6 +124,7 @@ def log_to_mlflow(
     cv_folds, cross_validation_size, reference_variance, signal_to_noise = map(
         get_simulation_constants().get, ["cv_folds", "cross_validation_size", "reference_variance", "signal_to_noise"]
     )
+    signal_to_noise = snr if snr else signal_to_noise
 
     k, n, maxiter, maxlsiter, tol, K_max, order = map(
         get_model_constants().get, ["k", "n", "maxiter", "maxlsiter", "tol", "K_max", "order"]

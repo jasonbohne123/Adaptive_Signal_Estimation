@@ -17,6 +17,7 @@ def test_adaptive_tf(
     true_sol: Union[None, np.ndarray] = None,
     true_knots: Union[None, np.ndarray] = None,
     prior_model: Union[Prior, None] = None,
+    snr: float = 0,
     exp_name="DEFAULT",
     flags: Dict[str, bool] = None,
 ):
@@ -35,8 +36,15 @@ def test_adaptive_tf(
 
     # cross validation is time independent atm
     if prior_model:
-        # adaptive tf
-        best_scaler = perform_cv(sample, D, prior_model)
+        # prior is decomposed for is/oos testing
+        # if prior submodel exists, use this in cv
+
+        if prior_model.submodel is not None:
+            best_scaler = perform_cv(sample, D, prior_model.submodel, prior_ags={"bandwidth": prior_model.bandwidth})
+        else:
+            # if prior submodel does not exist, use the prior model
+            best_scaler = perform_cv(sample, D, prior_model)
+
         prior = 1 / prior_model.prior[1:-1] * best_scaler
 
     else:
@@ -92,6 +100,7 @@ def test_adaptive_tf(
             exp_name,
             results,
             prior_model,
+            snr,
             best_scaler,
             mse_from_sample,
             mse_from_true,

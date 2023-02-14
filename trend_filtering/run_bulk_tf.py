@@ -1,9 +1,11 @@
 import sys
 
 sys.path.append("../")
+import itertools
 import random
 import string
 import time
+from typing import Dict
 
 import numpy as np
 
@@ -11,12 +13,20 @@ from prior_models.deterministic_prior import Deterministic_Prior
 from prior_models.kernel_smooth import Kernel_Smooth_Prior
 from prior_models.prior_model import Prior
 from prior_models.volume_prior import Volume_Prior
-from simulations.generate_sims import generate_conditional_piecewise_paths
+from simulations.generate_sims import generate_samples, generate_true_dgp
 from trend_filtering.test_adaptive_tf import test_adaptive_tf
 from trend_filtering.tf_constants import get_model_constants, get_simulation_constants
 
 
-def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n: int, verbose=True):
+def run_bulk_trend_filtering(
+    exp_name: str,
+    true: np.ndarray,
+    true_knots: np.ndarray,
+    samples: np.ndarray,
+    prior_model: Prior,
+    sim_grid: Dict = None,
+    verbose=True,
+):
     """Solves Bulk Trend Filtering problems
 
     m: Number of simulations
@@ -25,36 +35,17 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
     """
     start_time = time.time()
 
-    # generate samples
-    # this uses local maximas to generate the paths on the smooth prior
-    true, samples, true_knots = generate_conditional_piecewise_paths(prior_model.prior, sim_style)
+    # decompose prior into raw data
+    submodel = prior_model.submodel
 
-    # indicator Prior Model on true knots
-    # difference of 1000 is arbitrary
-    # indicator = np.random.uniform(0,2,n)
+    submodel.prior[true_knots] = 1
+    submodel.prior[np.setdiff1d(np.arange(len(submodel.prior)), true_knots)] = 0.01
 
-    # # pin cp at true knots
-    indicator = 0.01 * np.ones(n)
-    indicator[true_knots] = 10
-    indicator[0] = 10
-    indicator[-1] = 10
+    # biased prior to true cp
+    updated_prior = Deterministic_Prior(submodel.prior)
 
-    # reverse_indicator = 1/indicator
-
-    # biased prior
-    updated_prior = Deterministic_Prior(indicator)
-
-    kernel_smooth_prior = Kernel_Smooth_Prior(updated_prior, 2500)
-
-    # inverse indicator to see if it works
-    # updated_prior = Deterministic_Prior(reverse_indicator)
-
-    random_letters = "".join(random.choice(string.ascii_uppercase) for i in range(5))
-    exp_name = f"L1_Trend_Filter_{random_letters}"
-
-    if verbose:
-        print("Running {n_sims} simulations of length {n}".format(n_sims=n_sims, n=n))
-        print("Experiment is {sim_style} ".format(sim_style=sim_style))
+    # smooth around indicator
+    kernel_smooth_prior = Kernel_Smooth_Prior(updated_prior, sim_grid["bandwidth"])
 
     # apply tf to each path with specified flags
     flags = {"include_cv": True, "plot": True, "verbose": True, "bulk": True, "log_mlflow": True}
@@ -69,6 +60,7 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
         true_knots=true_knots,
         prior_model=None,
         t=None,
+        snr=sim_grid["snr"],
     )
 
     # adaptive penalty
@@ -81,6 +73,7 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
         flags=flags,
         true=true,
         true_knots=true_knots,
+        snr=sim_grid["snr"],
     )
 
     total_time = time.time() - start_time
@@ -90,7 +83,7 @@ def run_bulk_trend_filtering(prior_model: Prior, sim_style: str, n_sims: int, n:
     return
 
 
-def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, true, true_knots):
+def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, true, true_knots, snr):
     """Apply a function to each path in a set of simulations"""
 
     for i, sample_path in enumerate(paths):
@@ -102,6 +95,7 @@ def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, tr
             true_knots=true_knots,
             prior_model=prior_model,
             t=t,
+            snr=snr,
         )
 
     return
@@ -109,6 +103,10 @@ def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, tr
 
 # python run_bulk_tf.py
 if __name__ == "__main__":
+
+    random_letters = "".join(random.choice(string.ascii_uppercase) for i in range(5))
+    exp_name = f"L1_Trend_Filter_{random_letters}"
+
     n = get_model_constants().get("n")
     n_sims = get_simulation_constants().get("n_sims")
 
@@ -119,6 +117,25 @@ if __name__ == "__main__":
     # real data prior
     prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=False))
 
+    # simulation style
+
     sim_style = "piecewise_linear" if get_model_constants().get("order") == 1 else "piecewise_constant"
 
-    run_bulk_trend_filtering(prior_model, sim_style, n_sims, n)
+    # generate true dgp off optimal kde prior
+    true, true_knots, cp_knots = generate_true_dgp(prior_model, sim_style)
+
+    # evaluation for new sims with different bandwidths
+    bandwidth_grid = [1, 5, 10, 25, 50, 100, 250]
+    snr_grid = [0.025, 0.05, 0.075, 0.1]
+
+    possible_comb = itertools.product(bandwidth_grid, snr_grid)
+
+    print("Running {n_sims} simulations of length {n}".format(n_sims=n_sims, n=n))
+    print("Experiment is {sim_style} ".format(sim_style=sim_style))
+
+    for pair in possible_comb:
+
+        adjusted_true, samples = generate_samples(true, true_knots, pair[1])
+
+        sim_grid = {"bandwidth": pair[0], "snr": pair[1]}
+        run_bulk_trend_filtering(exp_name, adjusted_true, true_knots, samples, prior_model, sim_grid=sim_grid)

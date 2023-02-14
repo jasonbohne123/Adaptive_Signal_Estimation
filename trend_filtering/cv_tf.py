@@ -6,6 +6,7 @@ import numpy as np
 from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from prior_models.deterministic_prior import Deterministic_Prior
+from prior_models.kernel_smooth import Kernel_Smooth_Prior
 from prior_models.prior_model import Prior
 from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.helpers import compute_lambda_max
@@ -16,6 +17,7 @@ def cross_validation(
     x: np.ndarray,
     D: Difference_Matrix,
     prior: Union[None, Prior] = None,
+    prior_ags: dict = None,
     cv_folds: int = None,
     cv_iterations: int = None,
     verbose=True,
@@ -69,10 +71,10 @@ def cross_validation(
                 volume_is = Deterministic_Prior(prior.prior[is_index])
 
                 # get kernel estimator for our prior
-                # kernel_estimator=Kernel_Smooth_Prior(volume_is)
+                kernel_estimator = Kernel_Smooth_Prior(volume_is, preselected_bandwidth=prior_ags["bandwidth"])
 
                 # in sample prior
-                best_scaler = 1 / volume_is.prior[1:-1] * best_scaler
+                best_scaler = 1 / kernel_estimator.prior[1:-1] * best_scaler
 
             # solve tf subproblem
             result = adaptive_tf(x_is.reshape(-1, 1), D, t=None, prior=best_scaler)
@@ -109,7 +111,7 @@ def cross_validation(
     return best_prior * orig_scaler_max
 
 
-def perform_cv(sample, D, prior: Union[None, Prior] = None):
+def perform_cv(sample, D, prior: Union[None, Prior] = None, prior_ags: dict = None):
     """Perform Cross-Validation on Lambda Penalty"""
 
     cv_folds = get_simulation_constants().get("cv_folds")
@@ -118,7 +120,7 @@ def perform_cv(sample, D, prior: Union[None, Prior] = None):
 
     # best relative lambda scaled by lambda_max
     scaled_prior = cross_validation(
-        sample, D, prior=prior, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
+        sample, D, prior=prior, prior_ags=prior_ags, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
     )
 
     return scaled_prior
