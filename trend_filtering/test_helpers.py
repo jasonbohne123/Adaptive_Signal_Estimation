@@ -144,14 +144,47 @@ def log_to_mlflow(
     experiment_id, run, run_tag = create_mlflow_experiment(exp_name, description=description, bulk=bulk)
     if log_mlflow:
 
+        params = {
+            "n": n,
+            "k": k,
+            "order": order,
+            "maxiter": maxiter,
+            "maxsliter": maxlsiter,
+            "tol": tol,
+            "cross_validation": include_cv,
+            "no_folds": cv_folds,
+            "cross_validation_size": cross_validation_size,
+            "adaptive_lambda_p": adaptive_penalty,
+            "signal_to_noise": signal_to_noise,
+            "reference_variance": reference_variance,
+            "k_max": K_max,
+        }
+
+        metrics = {
+            "computation_time": results["computation_time"],
+            "optimal_relative_lambda": best_scaler,
+            "mse_from_sample": mse_from_sample,
+            "mse_from_true": mse_from_true,
+            "spline_mse": spline_mse,
+            "hausdorff_distance": hausdorff_distance,
+            "integrated_squared_prediction_error": expected_prediction_error,
+            "len_true_knots": len_true_knots,
+            "len_reconstructed_knots": len_reconstructed_knots,
+            "knot_difference": len_true_knots - len_reconstructed_knots,
+            "gap": results["gap"],
+        }
+
         artifact_list = [
             "data/images/tf.png",
             "data/true_sol.txt",
             "data/noisy_sample.txt",
             "data/sol.txt",
         ]
+
+        # add prior and knots if applicable
         if adaptive_penalty:
             artifact_list.append("data/images/prior.png")
+            metrics["bandwidth"] = prior_model.bandwidth if prior_model.name == "Kernel_Smooth_Prior" else None
 
         if len_true_knots:
             artifact_list.extend(["data/images/knots.png", "data/knots.txt", "data/true_knots.txt"])
@@ -159,34 +192,8 @@ def log_to_mlflow(
         # Log params, metrics, tags, artifacts
         run_end = log_mlflow_params(
             run,
-            params={
-                "n": n,
-                "k": k,
-                "order": order,
-                "maxiter": maxiter,
-                "maxsliter": maxlsiter,
-                "tol": tol,
-                "cross_validation": include_cv,
-                "no_folds": cv_folds,
-                "cross_validation_size": cross_validation_size,
-                "adaptive_lambda_p": adaptive_penalty,
-                "signal_to_noise": signal_to_noise,
-                "reference_variance": reference_variance,
-                "k_max": K_max,
-            },
-            metrics={
-                "computation_time": results["computation_time"],
-                "optimal_relative_lambda": best_scaler,
-                "mse_from_sample": mse_from_sample,
-                "mse_from_true": mse_from_true,
-                "spline_mse": spline_mse,
-                "hausdorff_distance": hausdorff_distance,
-                "integrated_squared_prediction_error": expected_prediction_error,
-                "len_true_knots": len_true_knots,
-                "len_reconstructed_knots": len_reconstructed_knots,
-                "knot_difference": len_true_knots - len_reconstructed_knots,
-                "gap": results["gap"],
-            },
+            params=params,
+            metrics=metrics,
             tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": results["status"]}],
             artifact_list=artifact_list,
         )

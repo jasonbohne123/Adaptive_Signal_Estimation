@@ -36,7 +36,7 @@ def test_adaptive_tf(
     # cross validation is time independent atm
     if prior_model:
         # adaptive tf
-        best_scaler = perform_cv(sample, D, prior_model)  # be careful with submodel here
+        best_scaler = perform_cv(sample, D, prior_model)
         prior = 1 / prior_model.prior[1:-1] * best_scaler
 
     else:

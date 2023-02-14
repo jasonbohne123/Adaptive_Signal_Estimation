@@ -8,11 +8,11 @@ from scipy.stats import iqr
 class KernelSmoother:
     """Kernel Smoother Class"""
 
-    def __init__(self, x, y, bandwidth_style):
+    def __init__(self, x, y, bandwidth_style, preselected_bandwidth=None):
         self.y = y
         self.x = x
         self.bandwidth_style = bandwidth_style
-        self.optimal_bandwidth = None
+        self.optimal_bandwidth = preselected_bandwidth if preselected_bandwidth else None
 
     def compute_kernel(self, x_0, x_i, bandwidth):
         """Given two points x_0 and x_i; compute the gaussian kernel utilizing euclidean distance"""
@@ -35,13 +35,16 @@ class KernelSmoother:
 
         kernel_matrix = np.zeros((len(self.x), len(self.x)))
 
-        # optimal bandwidth selection are for gaussian kernels
-        if self.bandwidth_style == 0:
-            bw = 0.9 * min(np.std(self.x), iqr(self.x) / 1.35) / (len(self.x) ** 0.2)
+        if self.optimal_bandwidth is not None:
+            pass
         else:
-            bw = 1.06 * np.std(self.x) / (len(self.x) ** 0.2)
+            # optimal bandwidth selection are for gaussian kernels
+            if self.bandwidth_style == 0:
+                bw = 0.9 * min(np.std(self.x), iqr(self.x) / 1.35) / (len(self.x) ** 0.2)
+            else:
+                bw = 1.06 * np.std(self.x) / (len(self.x) ** 0.2)
 
-        self.optimal_bandwidth = bw
+            self.optimal_bandwidth = bw
 
         for i in range(0, len(self.x)):
 
