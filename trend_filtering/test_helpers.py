@@ -120,23 +120,16 @@ def log_to_mlflow(
         ["mse_from_sample", "mse_from_true", "spline_mse", "hausdorff_distance", "expected_prediction_error"],
     )
 
+    # comparison to non adaptive metrics (if applicable)
     if non_adaptive_results:
-        (
-            non_adapt_mse_from_sample,
-            non_adapt_mse_from_true,
-            non_adapt_spline_mse,
-            non_adapt_hausdorff_distance,
-            non_adapt_expected_prediction_error,
-        ) = map(
+        (non_adapt_mse_from_true, non_adapt_spline_mse, non_adapt_hausdorff_distance,) = map(
             non_adaptive_results.get,
-            ["mse_from_sample", "mse_from_true", "spline_mse", "hausdorff_distance", "expected_prediction_error"],
+            ["mse_from_true", "spline_mse", "hausdorff_distance"],
         )
 
-        mse_sample_ratio = mse_from_sample / non_adapt_mse_from_sample
         mse_true_ratio = mse_from_true / non_adapt_mse_from_true
         spline_mse_ratio = spline_mse / non_adapt_spline_mse
         hausdorff_distance_ratio = hausdorff_distance / non_adapt_hausdorff_distance
-        expected_prediction_error_ratio = expected_prediction_error / non_adapt_expected_prediction_error
 
     adaptive_penalty = isinstance(prior_model, Prior)
 
@@ -210,11 +203,9 @@ def log_to_mlflow(
 
             metrics.update(
                 {
-                    "mse_sample_ratio": mse_sample_ratio,
                     "mse_true_ratio": mse_true_ratio,
                     "spline_mse_ratio": spline_mse_ratio,
                     "hausdorff_distance_ratio": hausdorff_distance_ratio,
-                    "expected_prediction_error_ratio": expected_prediction_error_ratio,
                 }
             )
 

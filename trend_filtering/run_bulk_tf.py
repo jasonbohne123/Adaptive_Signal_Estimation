@@ -50,8 +50,6 @@ def run_bulk_trend_filtering(
     # apply tf to each path with specified flags
     flags = {"include_cv": True, "plot": True, "verbose": True, "bulk": True, "log_mlflow": True}
 
-    args = {"bandwidth": sim_grid["bandwidth"], "snr": sim_grid["snr"], "non_adaptive_results": None}
-
     # constant penalty
     results = apply_function_to_paths(
         samples,
@@ -62,10 +60,9 @@ def run_bulk_trend_filtering(
         true_knots=true_knots,
         prior_model=None,
         t=None,
-        args=args,
+        sim_grid=sim_grid,
+        prev_results=None,
     )
-
-    args = {"bandwidth": sim_grid["bandwidth"], "snr": sim_grid["snr"], "non_adaptive_results": results}
 
     # adaptive penalty
     new_results = apply_function_to_paths(
@@ -77,7 +74,8 @@ def run_bulk_trend_filtering(
         flags=flags,
         true=true,
         true_knots=true_knots,
-        args=args,
+        sim_grid=sim_grid,
+        prev_results=results,
     )
 
     total_time = time.time() - start_time
@@ -87,11 +85,21 @@ def run_bulk_trend_filtering(
     return
 
 
-def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, true, true_knots, args):
+def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, true, true_knots, sim_grid, prev_results):
     """Apply a function to each path in a set of simulations"""
+    results = {}
 
     for i, sample_path in enumerate(paths):
-        results = function(
+
+        if prev_results is not None:
+            # pass in any grid parameters and previous results if applicable
+            args = {"bandwidth": sim_grid["bandwidth"], "snr": sim_grid["snr"], "non_adaptive_results": prev_results[i]}
+
+        else:
+            # pass in any grid parameters if applicable
+            args = {"bandwidth": sim_grid["bandwidth"], "snr": sim_grid["snr"], "non_adaptive_results": None}
+
+        results[i] = function(
             sample_path,
             exp_name=exp_name,
             flags=flags,
