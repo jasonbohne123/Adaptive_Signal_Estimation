@@ -50,6 +50,8 @@ def run_bulk_trend_filtering(
     # apply tf to each path with specified flags
     flags = {"include_cv": True, "plot": True, "verbose": True, "bulk": True, "log_mlflow": True}
 
+    args = {"bandwidth": sim_grid["bandwidth"], "snr": sim_grid["snr"], "non_adaptive_results": None}
+
     # constant penalty
     results = apply_function_to_paths(
         samples,
@@ -60,8 +62,10 @@ def run_bulk_trend_filtering(
         true_knots=true_knots,
         prior_model=None,
         t=None,
-        snr=sim_grid["snr"],
+        args=args,
     )
+
+    args = {"bandwidth": sim_grid["bandwidth"], "snr": sim_grid["snr"], "non_adaptive_results": results}
 
     # adaptive penalty
     new_results = apply_function_to_paths(
@@ -73,7 +77,7 @@ def run_bulk_trend_filtering(
         flags=flags,
         true=true,
         true_knots=true_knots,
-        snr=sim_grid["snr"],
+        args=args,
     )
 
     total_time = time.time() - start_time
@@ -83,11 +87,11 @@ def run_bulk_trend_filtering(
     return
 
 
-def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, true, true_knots, snr):
+def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, true, true_knots, args):
     """Apply a function to each path in a set of simulations"""
 
     for i, sample_path in enumerate(paths):
-        function(
+        results = function(
             sample_path,
             exp_name=exp_name,
             flags=flags,
@@ -95,10 +99,10 @@ def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, tr
             true_knots=true_knots,
             prior_model=prior_model,
             t=t,
-            snr=snr,
+            args=args,
         )
 
-    return
+    return results
 
 
 # python run_bulk_tf.py

@@ -103,13 +103,10 @@ def log_to_mlflow(
     exp_name,
     results,
     prior_model,
-    snr,
     best_scaler,
-    mse_from_sample,
-    mse_from_true,
-    spline_mse,
-    expected_prediction_error,
-    hausdorff_distance,
+    adaptive_results,
+    non_adaptive_results,
+    snr,
     len_true_knots,
     len_reconstructed_knots,
     flags,
@@ -117,6 +114,29 @@ def log_to_mlflow(
     """Logs params, metrics, and tags to mlflow"""
 
     log_mlflow, bulk, include_cv = map(flags.get, ["log_mlflow", "bulk", "include_cv"])
+
+    mse_from_sample, mse_from_true, spline_mse, hausdorff_distance, expected_prediction_error = map(
+        adaptive_results.get,
+        ["mse_from_sample", "mse_from_true", "spline_mse", "hausdorff_distance", "expected_prediction_error"],
+    )
+
+    if non_adaptive_results:
+        (
+            non_adapt_mse_from_sample,
+            non_adapt_mse_from_true,
+            non_adapt_spline_mse,
+            non_adapt_hausdorff_distance,
+            non_adapt_expected_prediction_error,
+        ) = map(
+            non_adaptive_results.get,
+            ["mse_from_sample", "mse_from_true", "spline_mse", "hausdorff_distance", "expected_prediction_error"],
+        )
+
+        mse_sample_ratio = mse_from_sample / non_adapt_mse_from_sample
+        mse_true_ratio = mse_from_true / non_adapt_mse_from_true
+        spline_mse_ratio = spline_mse / non_adapt_spline_mse
+        hausdorff_distance_ratio = hausdorff_distance / non_adapt_hausdorff_distance
+        expected_prediction_error_ratio = expected_prediction_error / non_adapt_expected_prediction_error
 
     adaptive_penalty = isinstance(prior_model, Prior)
 
@@ -187,6 +207,16 @@ def log_to_mlflow(
         if adaptive_penalty:
             artifact_list.append("data/images/prior.png")
             metrics["bandwidth"] = prior_model.bandwidth if prior_model.name == "Kernel_Smooth_Prior" else None
+
+            metrics.update(
+                {
+                    "mse_sample_ratio": mse_sample_ratio,
+                    "mse_true_ratio": mse_true_ratio,
+                    "spline_mse_ratio": spline_mse_ratio,
+                    "hausdorff_distance_ratio": hausdorff_distance_ratio,
+                    "expected_prediction_error_ratio": expected_prediction_error_ratio,
+                }
+            )
 
         if len_true_knots:
             artifact_list.extend(["data/images/knots.png", "data/knots.txt", "data/true_knots.txt"])

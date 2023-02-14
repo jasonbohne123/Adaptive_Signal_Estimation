@@ -17,8 +17,8 @@ def test_adaptive_tf(
     true_sol: Union[None, np.ndarray] = None,
     true_knots: Union[None, np.ndarray] = None,
     prior_model: Union[Prior, None] = None,
-    snr: float = 0,
-    exp_name="DEFAULT",
+    exp_name: str = "DEFAULT",
+    args: Dict[str, Union[str, float, np.ndarray]] = None,
     flags: Dict[str, bool] = None,
 ):
     """Wrapper function to apply trend filtering to a single path
@@ -96,20 +96,25 @@ def test_adaptive_tf(
 
     # log information to mlflow
     if log_mlflow:
+        adaptive_results = {
+            "mse_from_sample": mse_from_sample,
+            "mse_from_true": mse_from_true,
+            "spline_mse": spline_mse,
+            "hausdorff_distance": hausdorff_distance,
+            "expected_prediction_error": expected_prediction_error,
+        }
+
         log_to_mlflow(
             exp_name,
             results,
             prior_model,
-            snr,
             best_scaler,
-            mse_from_sample,
-            mse_from_true,
-            spline_mse,
-            expected_prediction_error,
-            hausdorff_distance,
+            adaptive_results,
+            args["non_adaptive_results"],
+            args["snr"],
             len(true_knots),
             len(knots),
             flags,
         )
 
-    return
+    return {"mse_from_true": mse_from_true, "spline_mse": spline_mse, "hausdorff_distance": hausdorff_distance}
