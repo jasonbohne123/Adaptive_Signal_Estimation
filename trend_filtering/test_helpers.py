@@ -127,9 +127,9 @@ def log_to_mlflow(
             ["mse_from_true", "spline_mse", "hausdorff_distance"],
         )
 
-        mse_true_ratio = mse_from_true / non_adapt_mse_from_true
-        spline_mse_ratio = spline_mse / non_adapt_spline_mse
-        hausdorff_distance_ratio = hausdorff_distance / non_adapt_hausdorff_distance
+        mse_true_diff = non_adapt_mse_from_true - mse_from_true
+        spline_mse_diff = non_adapt_spline_mse - spline_mse
+        hausdorff_distance_diff = non_adapt_hausdorff_distance - hausdorff_distance
 
     adaptive_penalty = isinstance(prior_model, Prior)
 
@@ -203,9 +203,9 @@ def log_to_mlflow(
 
             metrics.update(
                 {
-                    "mse_true_ratio": mse_true_ratio,
-                    "spline_mse_ratio": spline_mse_ratio,
-                    "hausdorff_distance_ratio": hausdorff_distance_ratio,
+                    "mse_true_diff": mse_true_diff,
+                    "spline_mse_diff": spline_mse_diff,
+                    "hausdorff_distance_diff": hausdorff_distance_diff,
                 }
             )
 
