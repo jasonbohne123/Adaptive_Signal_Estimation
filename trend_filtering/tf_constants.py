@@ -49,7 +49,7 @@ def get_model_constants():
     hyperparams = {
         # Optimization params
         "k": 2,
-        "n": 750,
+        "n": 600,
         "alpha": 0.01,
         "beta": 0.5,
         "mu": 2,

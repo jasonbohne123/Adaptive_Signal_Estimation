@@ -15,10 +15,10 @@ def label_changepoints(prior, cp_label_style, k_points):
         cp_index = np.argpartition(prior, k_points)[:k_points]
 
     elif cp_label_style == "k_local_spikes":
-        cp_index, _ = find_peaks(prior, height=0, distance=2)
+        cp_index, _ = find_peaks(prior, height=0, distance=1)
 
     elif cp_label_style == "k_local_valleys":
-        cp_index, _ = find_peaks(-prior, height=0, distance=5)
+        cp_index, _ = find_peaks(-prior, height=0, distance=1)
 
     else:
         raise ValueError("Invalid changepoint labeling style")
