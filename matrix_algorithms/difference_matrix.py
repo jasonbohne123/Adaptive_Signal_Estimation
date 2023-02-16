@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 from scipy.linalg import get_lapack_funcs
 from scipy.sparse import dia_matrix
 from scipy.sparse.linalg import spsolve
@@ -114,8 +115,10 @@ class Difference_Matrix:
         """
 
         # confirm this works
-        sparse_mat = dia_matrix((diag, range(-self.k, self.k + 1)), shape=(self.n - self.k, self.n - self.k))
-        inv = spsolve(sparse_mat, np.eye(self.n - 2))
+        if not isinstance(diag, scipy.sparse.csc.csc_matrix):
+            diag = scipy.sparse.csc.csc_matrix(diag)
+
+        inv = spsolve(diag, np.eye(self.n - self.k))
         return inv
 
     def compose_difference_matrix(self, n, k):
