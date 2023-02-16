@@ -27,7 +27,7 @@ class Piecewise_Linear_Model:
     ):
         self.x = x
 
-        self.k = get_model_constants()["k"]
+        self.k = D.k
 
         # if D is not provided, create it either with or without time
         if not isinstance(D, Difference_Matrix) and not isinstance(D, Time_Difference_Matrix):
