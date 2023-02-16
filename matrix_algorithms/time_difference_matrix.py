@@ -37,14 +37,17 @@ class Time_Difference_Matrix(Difference_Matrix):
     def construct_time_matrix(self, t):
         """Accounts for unequal time increments via recursion by Tibshirani"""
 
+        # initialize D_k to be D_1
         D_k = Difference_Matrix(self.D.n, 1).D
 
+        # loop through up to kth order tf
         for k in range(1, self.D.k):
             D_1 = Difference_Matrix(self.D.n - k, 1).D
 
             diff = np.array(differences(t, k=k))
             scale = np.diag((k) / diff)
 
+            # recursively account for time increments
             D_k = D_1.dot(scale.dot(D_k))
 
         return D_k
