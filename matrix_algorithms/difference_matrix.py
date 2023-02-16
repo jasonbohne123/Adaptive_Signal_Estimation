@@ -114,7 +114,7 @@ class Difference_Matrix:
             Inverse of the difference matrix
         """
 
-        # confirm this works
+        # convert to sparse matrix if not already
         if not isinstance(diag, scipy.sparse.csc.csc_matrix):
             diag = scipy.sparse.csc.csc_matrix(diag)
 

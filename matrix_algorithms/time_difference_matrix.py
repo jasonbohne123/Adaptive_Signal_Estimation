@@ -1,4 +1,8 @@
+import sys
+
 import numpy as np
+
+sys.path.append("../matrix_algorithms")
 from difference_matrix import Difference_Matrix
 from k_differences import differences
 
