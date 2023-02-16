@@ -20,7 +20,6 @@ def adaptive_tf(
     D_: Difference_Matrix,
     t: Union[None, np.ndarray] = None,
     prior: Union[float, np.ndarray] = None,
-    k: int = 2,
     select_knots=False,
     true_knots=None,
 ):
@@ -33,7 +32,9 @@ def adaptive_tf(
         hyperparams.get, ["alpha", "beta", "mu", "mu_inc", "maxiter", "maxlsiter", "tol"]
     )
 
+    k = D_.k + 1
     n = len(y)
+
     m = n - k
 
     prior = prep_penalty(prior, m)

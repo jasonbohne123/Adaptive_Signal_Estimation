@@ -27,7 +27,6 @@ class Continous_TF:
             raise ValueError("D must be a Difference_Matrix or Time_Difference_Matrix")
 
         self.t = self.T_D.t
-        print(self.t)
 
         # create falling factorial basis on input data
         self.falling_factorial_basis = Falling_Factorial_Basis(self.t, self.k)
@@ -35,10 +34,10 @@ class Continous_TF:
         self.h_j_x = self.falling_factorial_basis.h_j_x
         self.h_k_j_x = self.falling_factorial_basis.h_k_j_x
 
-        self.phi = self.compute_phi(self.x_tf)
-        self.theta = self.compute_theta(self.x_tf)
+        self.phi = self.compute_phi()
+        self.theta = self.compute_theta()
 
-    def compute_phi(self, x):
+    def compute_phi(self):
         """Compute phi coefficents for h_j_x terms"""
 
         phi = []
@@ -66,7 +65,7 @@ class Continous_TF:
 
         return np.array(phi)
 
-    def compute_theta(self, x):
+    def compute_theta(self):
         """Compute theta coefficents for h_k_j_x terms"""
 
         # note that the difference matrix is (k+1) order
