@@ -25,7 +25,7 @@ class Difference_Matrix:
         # determine the projected coefficients across diagonals
         DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k, k + 1)]
 
-        self.DDT_diag = np.array([i * np.ones(n - 2) for i in DDT_diag_coeff])
+        self.DDT_diag = np.array([i * np.ones(n - k) for i in DDT_diag_coeff])
 
         # save the DDT matrix
         self.DDT = DDT.toarray()
@@ -34,7 +34,7 @@ class Difference_Matrix:
         self.DDT_inv = np.asarray(self.invert(self.DDT_diag, style=self.style), order="C")
 
         # confirm this is in fact the inverse
-        assert self.DDT.dot(self.DDT_inv).all() == np.eye(n - 2).all()
+        assert self.DDT.dot(self.DDT_inv).all() == np.eye(n - k).all()
 
     def invert(self, diag, style):
         """
@@ -86,7 +86,7 @@ class Difference_Matrix:
 
         # setup identity matrix
         if b is None:
-            b = np.eye(self.n - 2)
+            b = np.eye(self.n - self.k)
         else:
             b = np.asarray(b)
 
@@ -97,7 +97,7 @@ class Difference_Matrix:
         (gbsv,) = get_lapack_funcs(("gbsv",), (diag, b))
 
         # setup problem
-        a2 = np.zeros((2 * nlower + nupper + 1, self.n - 2), dtype=gbsv.dtype)
+        a2 = np.zeros((2 * nlower + nupper + 1, self.n - self.k), dtype=gbsv.dtype)
         a2[nlower:, :] = diag
         lu, piv, x, info = gbsv(nlower, nupper, a2, b, overwrite_ab=True, overwrite_b=True)
 
@@ -114,7 +114,7 @@ class Difference_Matrix:
         """
 
         # confirm this works
-        sparse_mat = dia_matrix((diag, range(-self.k, self.k + 1)), shape=(self.n - 2, self.n - 2))
+        sparse_mat = dia_matrix((diag, range(-self.k, self.k + 1)), shape=(self.n - self.k, self.n - self.k))
         inv = spsolve(sparse_mat, np.eye(self.n - 2))
         return inv
 
@@ -135,11 +135,11 @@ class Difference_Matrix:
         coeff = [coeff[i] if i % 2 == 0 else -coeff[i] for i in range(0, len(coeff))]
 
         if k == 0:
-            D = dia_matrix((np.ones(n), 0), shape=(n - 2, n))
+            D = dia_matrix((np.ones(n), 0), shape=(n - k, n))
         elif k == 1:
-            D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - 2, n))
+            D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - k, n))
         else:
-            D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - 2, n))
+            D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - k, n))
 
         return D
 
@@ -155,10 +155,10 @@ def test_lapack(n=100):
 
     DDT_rank = np.linalg.matrix_rank(DDT)
 
-    print(f"Rank of DDT matrix is {DDT_rank} out of {n-2}.")
+    print(f"Rank of DDT matrix is {DDT_rank} out of {n-k}.")
 
     # check that the inverse is correct
-    assert np.allclose(DDT.dot(DDT_inv), np.eye(n - 2), rtol=1e-8, atol=1e-8)
+    assert np.allclose(DDT.dot(DDT_inv), np.eye(n - k), rtol=1e-8, atol=1e-8)
 
     return
 
@@ -174,10 +174,10 @@ def test_sparse(n=100):
 
     DDT_rank = np.linalg.matrix_rank(DDT)
 
-    print(f"Rank of DDT matrix is {DDT_rank} out of {n-2}.")
+    print(f"Rank of DDT matrix is {DDT_rank} out of {n-k}.")
 
     # check that the inverse is correct
-    assert np.allclose(DDT.dot(DDT_inv), np.eye(n - 2), rtol=1e-8, atol=1e-8)
+    assert np.allclose(DDT.dot(DDT_inv), np.eye(n - k), rtol=1e-8, atol=1e-8)
 
     return
 
@@ -193,9 +193,9 @@ def test_pentapy(n=100):
 
     DDT_rank = np.linalg.matrix_rank(DDT)
 
-    print(f"Rank of DDT matrix is {DDT_rank} out of {n-2}.")
+    print(f"Rank of DDT matrix is {DDT_rank} out of {n-k}.")
 
     # check that the inverse is correct
-    assert np.allclose(DDT.dot(DDT_inv), np.eye(n - 2), rtol=1e-8, atol=1e-8)
+    assert np.allclose(DDT.dot(DDT_inv), np.eye(n - k), rtol=1e-8, atol=1e-8)
 
     return
