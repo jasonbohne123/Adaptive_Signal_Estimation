@@ -32,20 +32,22 @@ class Time_Difference_Matrix(Difference_Matrix):
         # Note there are issues with LAPACK so will specify sparse inversion for time weighted
         self.T_DDT_inv = np.asarray(self.invert(self.T_DDT, style="sparse"), order="C")
 
-        assert self.T_DDT.dot(self.T_DDT_inv).all() == np.eye(self.D.n - self.D.k).all()
+        assert self.T_DDT.dot(self.T_DDT_inv).all() == np.eye(self.D.n - self.D.k - 1).all()
 
     def construct_time_matrix(self, t):
         """Accounts for unequal time increments via recursion by Tibshirani"""
 
         # initialize D_k to be D_1
-        D_k = Difference_Matrix(self.D.n, 1).D
+        D_k = Difference_Matrix(self.D.n, 0).D
 
         # loop through up to kth order tf
-        for k in range(1, self.D.k):
-            D_1 = Difference_Matrix(self.D.n - k, 1).D
+        for k in range(0, self.D.k):
 
-            diff = np.array(differences(t, k=k))
-            scale = np.diag((k) / diff)
+            # for kth order system
+            D_1 = Difference_Matrix(self.D.n - k - 1, 0).D
+
+            diff = np.array(differences(t, k=k + 1))
+            scale = np.diag((k + 1) / diff)
 
             # recursively account for time increments
             D_k = D_1.dot(scale.dot(D_k))

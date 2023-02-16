@@ -10,12 +10,12 @@ class Difference_Matrix:
 
         self.n = n
         self.k = k
-        self.l, self.u = k, k
+        self.l, self.u = k + 1, k + 1
         self.style = style if style is not None else "lapack"
         self.time_enabled = False
 
         # create the kth order difference matrix (sparse)
-        D = self.compose_difference_matrix(n, k)
+        D = self.compose_difference_matrix(n, k + 1)
 
         # save the difference matrix
         self.D = D.toarray()
@@ -28,9 +28,9 @@ class Difference_Matrix:
 
         if self.style == "lapack":
             # determine the projected coefficients across diagonals
-            DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k, k + 1)]
+            DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k - 1, k + 2)]
 
-            self.DDT_diag = np.array([i * np.ones(n - k) for i in DDT_diag_coeff])
+            self.DDT_diag = np.array([i * np.ones(n - k - 1) for i in DDT_diag_coeff])
 
             self.DDT_to_invert = self.DDT_diag
 
@@ -42,7 +42,7 @@ class Difference_Matrix:
         self.DDT_inv = np.asarray(self.invert(self.DDT_to_invert, style=self.style), order="C")
 
         # confirm this is in fact the inverse
-        assert self.DDT.dot(self.DDT_inv).all() == np.eye(n - k).all()
+        assert self.DDT.dot(self.DDT_inv).all() == np.eye(n - k - 1).all()
 
     def invert(self, diag, style):
         """
@@ -94,7 +94,7 @@ class Difference_Matrix:
 
         # setup identity matrix
         if b is None:
-            b = np.eye(self.n - self.k)
+            b = np.eye(self.n - self.k - 1)
         else:
             b = np.asarray(b)
 
@@ -105,7 +105,7 @@ class Difference_Matrix:
         (gbsv,) = get_lapack_funcs(("gbsv",), (diag, b))
 
         # setup problem
-        a2 = np.zeros((2 * nlower + nupper + 1, self.n - self.k), dtype=gbsv.dtype)
+        a2 = np.zeros((2 * nlower + nupper + 1, self.n - self.k - 1), dtype=gbsv.dtype)
         a2[nlower:, :] = diag
         lu, piv, x, info = gbsv(nlower, nupper, a2, b, overwrite_ab=True, overwrite_b=True)
 
@@ -125,7 +125,7 @@ class Difference_Matrix:
         if not isinstance(diag, scipy.sparse.csc.csc_matrix):
             diag = scipy.sparse.csc.csc_matrix(diag)
 
-        inv = spsolve(diag, np.eye(self.n - self.k))
+        inv = spsolve(diag, np.eye(self.n - self.k - 1))
         return inv
 
     def compose_difference_matrix(self, n, k):

@@ -1,7 +1,10 @@
+import sys
 from typing import Union
 
 import numpy as np
 from scipy.interpolate import LSQUnivariateSpline
+
+sys.path.append("../")
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix

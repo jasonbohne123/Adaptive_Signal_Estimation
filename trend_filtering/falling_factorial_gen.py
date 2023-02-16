@@ -2,8 +2,8 @@ import numpy as np
 
 
 class Falling_Factorial_Basis:
-    def __init__(self, x: np.ndarray, k: int):
-        self.x = x
+    def __init__(self, t: np.ndarray, k: int):
+        self.t = t.flatten()
         self.k = k
         self.h_j_x, self.h_k_j_x = self.construct_basis()
 
@@ -19,8 +19,13 @@ class Falling_Factorial_Basis:
         """Constructs the truncated basis functions callable by x"""
 
         def h_j_x(x: np.ndarray):
-            terms = [[x - self.x[l] for l in range(j)] for j in range(self.k + 1)]
-            return np.prod(terms, axis=1)
+            terms = np.zeros((self.k + 1, len(x)))
+
+            terms[0, :] = 1
+            for j in range(1, self.k + 1):
+                terms[j, :] = np.prod([(x - self.t[l - 1]) for l in range(1, j)], axis=0)
+
+            return terms
 
         return h_j_x
 
@@ -28,13 +33,16 @@ class Falling_Factorial_Basis:
         """Constructs the constraint basis functions callable by x"""
 
         def h_k_j_x(x: np.ndarray, k: int = self.k):
-            n = len(self.x)
+            n = len(self.t)
 
-            # basis function with max indicator
-            terms = [
-                [(x - self.x[j + l]) * (x >= self.x[j + k]).astype(int) for l in range(k)] for j in range(0, n - k)
-            ]
+            terms = np.zeros((n - k - 1, len(x)))
 
-            return np.prod(terms, axis=1)
+            for j in range(1, n - k):
+
+                terms[j - 1, :] = np.prod(
+                    [(x - self.t[j + l - 2]) * (x >= self.t[j + k - 2]).astype(int) for l in range(1, k + 1)], axis=0
+                )
+
+            return terms
 
         return h_k_j_x
