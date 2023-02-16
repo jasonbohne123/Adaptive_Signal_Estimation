@@ -1,6 +1,10 @@
+import sys
+
 import numpy as np
 
-from matrix_algorithms.difference_matrix import Difference_Matrix
+sys.path.append("../matrix_algorithms")
+from difference_matrix import Difference_Matrix
+from k_differences import differences
 
 
 class Time_Difference_Matrix(Difference_Matrix):
@@ -15,47 +19,35 @@ class Time_Difference_Matrix(Difference_Matrix):
         self.t = t
         self.time_enabled = True
 
+        self.D = matrix
+
         # if time increments are not provided, assume they are unit spaced
         if t is None:
-            t = np.arange(1, self.n + 1)
+            t = np.arange(1, self.D.n + 1)
 
         # returns the time matrix T
         self.T_D = self.construct_time_matrix(t)
         self.T_DDT = self.T_D.dot(self.T_D.T)
 
-        # determine the projected coefficients across diagonals
-        T_DDT_diag_coeff = [self.T_DDT.diagonal(i)[0] for i in range(-self.k, self.k + 1)]
+        # Note there are issues with LAPACK so will specify sparse for time weighted
+        self.T_DDT_inv = np.asarray(self.invert(self.T_DDT, style="sparse"), order="C")
 
-        self.T_DDT_diag = np.array([i * np.ones(self.n - 2) for i in T_DDT_diag_coeff])
-
-        # need to fix this inversion
-        self.T_DDT_inv = np.asarray(self.invert(self.T_DDT_diag, style=self.style), order="C")
-
-        # confirm this is in fact the inverse
-        assert self.T_DDT.dot(self.T_DDT_inv).all() == np.eye(self.n - 2).all()
+        assert self.T_DDT.dot(self.T_DDT_inv).all() == np.eye(self.D.n - self.D.k).all()
 
     def construct_time_matrix(self, t):
-        """Constructs time matrix T which is embedded in our difference matrix"""
-        n = len(t)
+        """Accounts for unequal time increments via recursion by Tibshirani"""
 
-        assert n == self.n, "Time increments must be same length as number of observations"
+        # initialize D_k to be D_1
+        D_k = Difference_Matrix(self.D.n, 1).D
 
-        assert self.k == 2, "Time weighted difference matrix construction only works for k=2 atm "
+        # loop through up to kth order tf
+        for k in range(1, self.D.k):
+            D_1 = Difference_Matrix(self.D.n - k, 1).D
 
-        # reference time increment
-        if t[0] != 1.0:
-            t = [t[i] - t[0] + 1.0 for i in range(0, n)]
+            diff = np.array(differences(t, k=k))
+            scale = np.diag((k) / diff)
 
-        # iteratively construct the time matrix
-        T = np.zeros((n - 2, n))
-        for i in range(0, n):
-            for j in range(0, n - 2):
-                if i == j:
-                    T[j, i] = t[j + 1] - t[j]
-                elif i == j + 1:
-                    T[j, i] = -((t[j + 2] - t[j + 1]) + (t[j + 1] - t[j]))
-                elif i == j + 2:
-                    T[j, i] = t[j + 2] - t[j + 1]
-                else:
-                    T[j, i] = 0.0
-        return T
+            # recursively account for time increments
+            D_k = D_1.dot(scale.dot(D_k))
+
+        return D_k
