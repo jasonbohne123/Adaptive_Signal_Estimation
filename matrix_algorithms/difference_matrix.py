@@ -23,16 +23,23 @@ class Difference_Matrix:
         # create DDT
         DDT = D.dot(D.T)
 
-        # determine the projected coefficients across diagonals
-        DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k, k + 1)]
-
-        self.DDT_diag = np.array([i * np.ones(n - k) for i in DDT_diag_coeff])
-
         # save the DDT matrix
         self.DDT = DDT.toarray()
 
+        if self.style == "lapack":
+            # determine the projected coefficients across diagonals
+            DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k, k + 1)]
+
+            self.DDT_diag = np.array([i * np.ones(n - k) for i in DDT_diag_coeff])
+
+            self.DDT_to_invert = self.DDT_diag
+
+        elif self.style == "sparse":
+
+            self.DDT_to_invert = DDT
+
         # save the inverse of the DDT matrix as C Contigous array
-        self.DDT_inv = np.asarray(self.invert(self.DDT_diag, style=self.style), order="C")
+        self.DDT_inv = np.asarray(self.invert(self.DDT_to_invert, style=self.style), order="C")
 
         # confirm this is in fact the inverse
         assert self.DDT.dot(self.DDT_inv).all() == np.eye(n - k).all()
@@ -48,7 +55,7 @@ class Difference_Matrix:
             Diagonals of the difference matrix
 
         style : str
-            "lapack" or "pentapy" or "sparse"
+            "lapack" or "sparse"
 
         Returns
         -------
@@ -122,7 +129,7 @@ class Difference_Matrix:
         return inv
 
     def compose_difference_matrix(self, n, k):
-        """Extracts the first difference matrix for any n-size array"""
+        """Extracts the kth difference matrix for any n-size array using pascal's triangle"""
 
         def pascals(k):
             pas = [0, 1, 0]
@@ -139,66 +146,31 @@ class Difference_Matrix:
 
         if k == 0:
             D = dia_matrix((np.ones(n), 0), shape=(n - k, n))
-        elif k == 1:
-            D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - k, n))
         else:
             D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - k, n))
 
         return D
 
+    def compute_k_difference(self, k: int):
+        """
+        Computes the kth order difference matrix
 
-def test_lapack(n=100):
-    """Test the LU decomposition method"""
-    k = 2
-    print("Testing LU decomposition method")
-    D = Difference_Matrix(n, k, style="lapack")
+        Parameters
+        ----------
+        k : int
+            Order of difference
 
-    DDT = D.DDT
-    DDT_inv = D.DDT_inv
+        Returns
+        -------
+        D : Array
+            Difference matrix
+        """
 
-    DDT_rank = np.linalg.matrix_rank(DDT)
+        # if the order is the same as the original, return the original saving computation time
+        if k == self.k:
+            return self.D
 
-    print(f"Rank of DDT matrix is {DDT_rank} out of {n-k}.")
-
-    # check that the inverse is correct
-    assert np.allclose(DDT.dot(DDT_inv), np.eye(n - k), rtol=1e-8, atol=1e-8)
-
-    return
-
-
-def test_sparse(n=100):
-    """Test the sparse method"""
-    k = 2
-    print("Testing sparse method")
-    D = Difference_Matrix(n, k, style="sparse")
-
-    DDT = D.DDT
-    DDT_inv = D.DDT_inv
-
-    DDT_rank = np.linalg.matrix_rank(DDT)
-
-    print(f"Rank of DDT matrix is {DDT_rank} out of {n-k}.")
-
-    # check that the inverse is correct
-    assert np.allclose(DDT.dot(DDT_inv), np.eye(n - k), rtol=1e-8, atol=1e-8)
-
-    return
-
-
-def test_pentapy(n=100):
-    """Test the pentapy method"""
-    k = 2
-    print("Testing pentapy method")
-    D = Difference_Matrix(n, k, style="pentapy")
-
-    DDT = D.DDT
-    DDT_inv = D.DDT_inv
-
-    DDT_rank = np.linalg.matrix_rank(DDT)
-
-    print(f"Rank of DDT matrix is {DDT_rank} out of {n-k}.")
-
-    # check that the inverse is correct
-    assert np.allclose(DDT.dot(DDT_inv), np.eye(n - k), rtol=1e-8, atol=1e-8)
-
-    return
+        # else compute the difference matrix
+        else:
+            D = self.compose_difference_matrix(self.n, k)
+            return D.toarray()

@@ -29,7 +29,7 @@ class Time_Difference_Matrix(Difference_Matrix):
         self.T_D = self.construct_time_matrix(t)
         self.T_DDT = self.T_D.dot(self.T_D.T)
 
-        # Note there are issues with LAPACK so will specify sparse for time weighted
+        # Note there are issues with LAPACK so will specify sparse inversion for time weighted
         self.T_DDT_inv = np.asarray(self.invert(self.T_DDT, style="sparse"), order="C")
 
         assert self.T_DDT.dot(self.T_DDT_inv).all() == np.eye(self.D.n - self.D.k).all()
