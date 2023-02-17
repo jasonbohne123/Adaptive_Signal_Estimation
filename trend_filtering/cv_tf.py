@@ -46,12 +46,8 @@ def cross_validation(
         x_is = x[is_index]
         x_oos = x[oos_index]
 
-        # compute difference matrix (more stable if equal time)
-        m = len(is_index)
-        D = Difference_Matrix(m, D.k)
-
-        # compute lambda_max for each subproblem
-        prior_max = compute_lambda_max(D, x_is, time=False)
+        # compute lambda_max for each subproblem given difference matrix
+        prior_max, D_bar = compute_lambda_max(D, x_is)
 
         for lambda_i in grid:
 
@@ -77,7 +73,7 @@ def cross_validation(
                 best_scaler = 1 / kernel_estimator.prior[1:-1] * best_scaler
 
             # solve tf subproblem
-            result = adaptive_tf(x_is.reshape(-1, 1), D, t=None, prior=best_scaler)
+            result = adaptive_tf(x_is.reshape(-1, 1), D_bar, prior=best_scaler)
             status = result["status"]
             sol = result["sol"]
 
@@ -94,7 +90,8 @@ def cross_validation(
             predictions = sol.predict(oos_index)
 
             # compute mse on oos test set
-            oos_error = compute_error(predictions, x_oos, type="mse")
+
+            oos_error = compute_error(predictions.reshape(-1, 1), x_oos, type="mse")
 
             # add to average oos error for each lambda
             results[lambda_i] += oos_error
@@ -103,10 +100,8 @@ def cross_validation(
     best_prior_dict = {k: v / cv_iterations for k, v in results.items()}
     best_prior = min(best_prior_dict, key=best_prior_dict.get)
 
-    # compute lambda_max for original problem
-    D = Difference_Matrix(len(x), D.k)
-
-    orig_scaler_max = compute_lambda_max(D, x, time=False)
+    # get original lambda_max
+    orig_scaler_max, D_bar = compute_lambda_max(D, x)
 
     return best_prior * orig_scaler_max
 
