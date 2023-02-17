@@ -40,10 +40,6 @@ def adaptive_tf(
 
     D, DDT, DDT_inv = prep_difference_matrix(D_)
 
-    D = D_.D
-    DDT = D_.DDT
-    DDT_inv = D_.DDT_inv
-
     Dy = np.dot(D, y)
 
     # init variables and objectives
@@ -112,7 +108,7 @@ def prep_penalty(prior: Union[float, np.ndarray], m):
 def prep_difference_matrix(D_: Union[Difference_Matrix, Time_Difference_Matrix]):
     """Accounts for irregular time series in difference matrix"""
 
-    if isinstance(D_, Difference_Matrix):
+    if D_.time_enabled == False:
 
         D = D_.D
         DDT = D_.DDT

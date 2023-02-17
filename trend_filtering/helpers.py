@@ -7,11 +7,12 @@ from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from trend_filtering.tf_constants import get_model_constants
 
 
-def compute_lambda_max(D: Union[Difference_Matrix, Time_Difference_Matrix], x: np.ndarray):
+def compute_lambda_max(D: Union[Difference_Matrix, Time_Difference_Matrix], x: np.ndarray, t=None):
     """Computes the maximum lambda value for the adaptive trend filtering algorithm"""
 
+    assert D.time_enabled == (t is not None), "Time must be provided if time enabled"
+
     if D.time_enabled:
-        t = D.t
         D = Difference_Matrix(len(x), k=D.k)
         D = Time_Difference_Matrix(D=D, t=t)
 

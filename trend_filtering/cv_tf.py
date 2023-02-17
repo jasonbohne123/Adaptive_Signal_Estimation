@@ -5,6 +5,7 @@ import numpy as np
 
 from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
+from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from prior_models.deterministic_prior import Deterministic_Prior
 from prior_models.kernel_smooth import Kernel_Smooth_Prior
 from prior_models.prior_model import Prior
@@ -47,7 +48,8 @@ def cross_validation(
         x_oos = x[oos_index]
 
         # compute lambda_max for each subproblem given difference matrix
-        prior_max, D_bar = compute_lambda_max(D, x_is)
+        is_t = D.t[is_index] if D.time_enabled else None
+        prior_max, D_bar = compute_lambda_max(D, x_is, is_t)
 
         for lambda_i in grid:
 
@@ -101,12 +103,18 @@ def cross_validation(
     best_prior = min(best_prior_dict, key=best_prior_dict.get)
 
     # get original lambda_max
-    orig_scaler_max, D_bar = compute_lambda_max(D, x)
+    is_t = D.t if D.time_enabled else None
+    orig_scaler_max, D_bar = compute_lambda_max(D, x, is_t)
 
     return best_prior * orig_scaler_max
 
 
-def perform_cv(sample, D, prior: Union[None, Prior] = None, prior_ags: dict = None):
+def perform_cv(
+    sample,
+    D: Union[Difference_Matrix, Time_Difference_Matrix],
+    prior: Union[None, Prior] = None,
+    prior_ags: dict = None,
+):
     """Perform Cross-Validation on Lambda Penalty"""
 
     cv_folds = get_simulation_constants().get("cv_folds")

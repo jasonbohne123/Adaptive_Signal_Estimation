@@ -113,7 +113,7 @@ def log_to_mlflow(
 ):
     """Logs params, metrics, and tags to mlflow"""
 
-    log_mlflow, bulk, include_cv = map(flags.get, ["log_mlflow", "bulk", "include_cv"])
+    log_mlflow, bulk, include_cv, time_aware = map(flags.get, ["log_mlflow", "bulk", "include_cv", "time_aware"])
 
     mse_from_sample, mse_from_true, spline_mse, hausdorff_distance, expected_prediction_error = map(
         adaptive_results.get,
@@ -217,6 +217,11 @@ def log_to_mlflow(
             run,
             params=params,
             metrics=metrics,
-            tags=[{"Adaptive": adaptive_penalty}, {"Cross_Validation": include_cv}, {"Status": results["status"]}],
+            tags=[
+                {"Adaptive": adaptive_penalty},
+                {"Cross_Validation": include_cv},
+                {"Status": results["status"]},
+                {"Time_Aware": time_aware},
+            ],
             artifact_list=artifact_list,
         )
