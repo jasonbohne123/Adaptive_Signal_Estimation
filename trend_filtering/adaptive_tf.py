@@ -76,7 +76,7 @@ def adaptive_tf(
             status = "solved"
             x = y - np.dot(D.transpose(), z)
             return {
-                "sol": Piecewise_Linear_Model(x, D=D, t=t, select_knots=select_knots, true_knots=true_knots),
+                "sol": Piecewise_Linear_Model(x, D=D_, t=t, select_knots=select_knots, true_knots=true_knots),
                 "status": status,
                 "gap": gap,
                 "iters": iters,

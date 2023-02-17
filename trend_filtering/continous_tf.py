@@ -61,9 +61,11 @@ class Continous_TF:
 
             first_row = np.dot(diff, D_j_1)[0:1, :]
 
-            phi.append(scale * first_row.dot(self.x_tf.reshape(-1, 1))[0][0])
+            phi_to_add = scale * np.dot(first_row, self.x_tf.reshape(-1, 1))
 
-        return np.array(phi)
+            phi.append(phi_to_add[0][0])
+
+        return np.array(phi).reshape(-1, 1)
 
     def compute_theta(self):
         """Compute theta coefficents for h_k_j_x terms"""
@@ -78,6 +80,15 @@ class Continous_TF:
         """Evaluate the TF at range x"""
 
         h_j_x = self.h_j_x(x)
+
         h_k_j_x = self.h_k_j_x(x, self.k)
 
-        return np.dot(self.theta.T, h_k_j_x) + np.dot(self.phi, h_j_x)
+        return (np.dot(self.phi.T, h_j_x) + np.dot(self.theta.T, h_k_j_x)).flatten()
+
+    def basis_expansion(self, x: np.ndarray):
+        """Evaluate the TF at range x"""
+
+        h_j_x = self.h_j_x(x)
+        h_k_j_x = self.h_k_j_x(x, self.k)
+
+        return {"h_j_x": h_j_x, "h_k_j_x": h_k_j_x, "theta": self.theta, "phi": self.phi}

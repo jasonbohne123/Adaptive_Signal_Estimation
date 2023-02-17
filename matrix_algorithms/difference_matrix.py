@@ -146,6 +146,8 @@ class Difference_Matrix:
 
         if k == 0:
             D = dia_matrix((np.ones(n), 0), shape=(n - k, n))
+        elif k == 1:
+            D = dia_matrix((np.vstack([i * np.ones(n) for i in [-1, 1]]), range(0, k + 1)), shape=(n - k, n))
         else:
             D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - k, n))
 

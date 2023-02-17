@@ -19,11 +19,14 @@ class Falling_Factorial_Basis:
         """Constructs the truncated basis functions callable by x"""
 
         def h_j_x(x: np.ndarray):
+
             terms = np.zeros((self.k + 1, len(x)))
 
-            terms[0, :] = 1
-            for j in range(1, self.k + 1):
-                terms[j, :] = np.prod([(x - self.t[l - 1]) for l in range(1, j)], axis=0)
+            for j in range(1, self.k + 2):
+                if j == 1:
+                    terms[j - 1, :] = 1
+                else:
+                    terms[j - 1, :] = np.prod([(x - self.t[l - 1]) for l in range(1, j)], axis=0)
 
             return terms
 
