@@ -84,11 +84,3 @@ class Continous_TF:
         h_k_j_x = self.h_k_j_x(x, self.k)
 
         return (np.dot(self.phi.T, h_j_x) + np.dot(self.theta.T, h_k_j_x)).flatten()
-
-    def basis_expansion(self, x: np.ndarray):
-        """Evaluate the TF at range x"""
-
-        h_j_x = self.h_j_x(x)
-        h_k_j_x = self.h_k_j_x(x, self.k)
-
-        return {"h_j_x": h_j_x, "h_k_j_x": h_k_j_x, "theta": self.theta, "phi": self.phi}

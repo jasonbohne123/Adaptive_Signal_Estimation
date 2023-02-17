@@ -17,8 +17,7 @@ from trend_filtering.tf_constants import get_model_constants
 
 def adaptive_tf(
     y: np.ndarray,
-    D_: Difference_Matrix,
-    t: Union[None, np.ndarray] = None,
+    D_: Union[Difference_Matrix, Time_Difference_Matrix],
     prior: Union[float, np.ndarray] = None,
     select_knots=False,
     true_knots=None,
@@ -39,7 +38,7 @@ def adaptive_tf(
 
     prior = prep_penalty(prior, m)
 
-    D, DDT, DDT_inv = prep_difference_matrix(D_, t)
+    D, DDT, DDT_inv = prep_difference_matrix(D_)
 
     D = D_.D
     DDT = D_.DDT
@@ -76,7 +75,7 @@ def adaptive_tf(
             status = "solved"
             x = y - np.dot(D.transpose(), z)
             return {
-                "sol": Piecewise_Linear_Model(x, D=D_, t=t, select_knots=select_knots, true_knots=true_knots),
+                "sol": Piecewise_Linear_Model(x, D=D_, select_knots=select_knots, true_knots=true_knots),
                 "status": status,
                 "gap": gap,
                 "iters": iters,
@@ -110,20 +109,20 @@ def prep_penalty(prior: Union[float, np.ndarray], m):
         raise ValueError("prior must be a float or numpy array")
 
 
-def prep_difference_matrix(D_, t=None):
+def prep_difference_matrix(D_: Union[Difference_Matrix, Time_Difference_Matrix]):
     """Accounts for irregular time series in difference matrix"""
 
-    if t is None:
+    if isinstance(D_, Difference_Matrix):
+
         D = D_.D
         DDT = D_.DDT
         DDT_inv = D_.DDT_inv
         return D, DDT, DDT_inv
 
     else:
-        T = Time_Difference_Matrix(D_, t)
-        D = T.T_D
-        DDT = T.T_DDT
-        DDT_inv = T.T_DDT_inv
+        D = D_.T_D
+        DDT = D_.T_DDT
+        DDT_inv = D_.T_DDT_inv
         return D, DDT, DDT_inv
 
 

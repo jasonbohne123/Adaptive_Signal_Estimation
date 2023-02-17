@@ -10,6 +10,7 @@ from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from model_selection.cp_model_selection import generalized_cross_validation
 from model_selection.partition import partition_solver
+from trend_filtering.continous_tf import Continous_TF
 from trend_filtering.helpers import extract_cp
 from trend_filtering.tf_constants import get_model_constants
 
@@ -20,8 +21,7 @@ class Piecewise_Linear_Model:
     def __init__(
         self,
         x: np.ndarray,
-        D: Union[Difference_Matrix, Time_Difference_Matrix, None] = None,
-        t: np.ndarray = None,
+        D: Union[Difference_Matrix, Time_Difference_Matrix] = None,
         select_knots=False,
         true_knots=None,
     ):
@@ -29,13 +29,15 @@ class Piecewise_Linear_Model:
 
         self.k = D.k
 
-        # if D is not provided, create it either with or without time
-        if not isinstance(D, Difference_Matrix) and not isinstance(D, Time_Difference_Matrix):
+        # if D is Diff_Matrix, create Time_Diff_Matrix
+        if isinstance(D, Difference_Matrix):
+            self.D = Time_Difference_Matrix(D, t=np.arange(1, D.n + 1))
+            self.t = np.arange(1, D.n + 1)
 
-            self.D = Difference_Matrix(len(self.x), self.k)
-
-            if t is not None:
-                self.D = Time_Difference_Matrix(self.D, t)
+        # if D is provided, use it
+        else:
+            self.D = D
+            self.t = D.t
 
         # constants for cp selection and model
         self.threshold = get_model_constants()["cp_threshold"]
@@ -47,62 +49,16 @@ class Piecewise_Linear_Model:
         if self.select_knots:
             self.knots = self.get_knots()
 
+        # extract tf to continous domain
+
+        self.continous_tf = Continous_TF(self.x, self.D, self.k)
+
     def predict(self, t: np.ndarray):
-        """Predict the output at time t using linear itnerpolation between two observed values"""
+        """Predict the output at time t using continous extrapolation"""
 
-        rhs_val = max(len(self.x), max(t) + 1)
+        predict = self.continous_tf.evaluate_tf(t)
 
-        # if precomputed knots are used, use them
-        if self.select_knots:
-            knots = self.knots
-
-        # else construct knots from in-sample data
-        else:
-            knots = np.setdiff1d(np.arange(rhs_val + 1), t)
-            knots = np.sort(knots)
-
-        t = list(t)
-        estimate = []
-
-        for t_i in t:
-
-            # index of farthest right left point of t_i
-            left_knots = knots[np.where(knots < t_i)[0]]
-
-            # index of farthest left right point of t_i
-            right_knots = knots[np.where(knots > t_i)[0]]
-
-            # determine if left or right point is extrapolation
-            if len(left_knots) == 0 and len(right_knots) > 0:
-                left_knot = min(knots)
-                right_knot = right_knots[0]
-
-            elif len(right_knots) == 0 and len(left_knots) > 0:
-                left_knot = left_knots[-1]
-                right_knot = min(rhs_val - 1, max(knots))
-            elif len(left_knots) == 0 and len(right_knots) == 0:
-                left_knot = min(knots)
-                right_knot = min(rhs_val - 1, max(knots))
-            else:
-                left_knot = left_knots[-1]
-                right_knot = right_knots[0]
-
-            # determine farthest right left state of t_i
-            left_point = self.x[np.where(knots == left_knot)[0][0]]
-
-            # determine farthest left right state of t_i (might be extrapolation)
-            right_point = (
-                self.x[np.where(knots == right_knot)[0][0]]
-                if right_knot < max(knots)
-                else (self.x[-1] - self.x[-2]) * (right_knot - left_knot) + left_point
-            )
-
-            slope = (right_point - left_point) / (right_knot - left_knot) if right_knot != left_knot else 0
-
-            # prediction for t_i is linear between left and right point
-            estimate.append(left_point + slope * (t_i - left_knot))
-
-        return np.array(estimate)
+        return predict
 
     def get_knots(self):
         """Get the knots of the piecewise linear model up to a threshold"""
