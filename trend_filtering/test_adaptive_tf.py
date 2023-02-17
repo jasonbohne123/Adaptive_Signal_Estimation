@@ -33,6 +33,9 @@ def test_adaptive_tf(
     )
 
     sample, true_sol, D = prep_signal(sample, true_sol, t)
+    time_aware = D.time_enabled
+
+    flags["time_aware"] = time_aware
 
     # cross validation is time independent atm
     if prior_model:
