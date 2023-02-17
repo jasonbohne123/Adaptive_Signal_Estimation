@@ -174,5 +174,5 @@ class Difference_Matrix:
 
         # else compute the difference matrix
         else:
-            D = self.compose_difference_matrix(self.n, k)
+            D = self.compose_difference_matrix(self.n, k + 1)
             return D.toarray()
