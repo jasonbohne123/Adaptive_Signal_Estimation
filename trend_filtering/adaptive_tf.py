@@ -35,7 +35,7 @@ def adaptive_tf(
 
     m = n - k
 
-    D, DDT, DDT_inv = prep_difference_matrix(D_)
+    D, DDT = prep_difference_matrix(D_)
 
     Dy = np.dot(D, y)
 
@@ -57,7 +57,7 @@ def adaptive_tf(
         DTz, DDTz, w = prep_matrices(D, Dy, z, mu1, mu2)
 
         # compute objectives
-        pobj1, pobj2, dobj, gap = compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p)
+        pobj1, pobj2, dobj, gap = compute_objective(DDT, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p)
 
         # if duality gap becomes negative
         if gap < 0:
@@ -77,9 +77,11 @@ def adaptive_tf(
             }
 
         # update step
-        newz, newmu1, newmu2, newf1, newf2 = update_step(
-            DDT, DDTz, Dy, DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
+        newz, newmu1, newmu2, newf1, newf2, status = update_step(
+            DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
         )
+        if len(status) > 0:
+            return {"sol": None, "status": status, "gap": -1, "iters": iters}
 
         # adaptive stepsize of mu with ratio gamma
         # newmu1, newmu2 = adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma)
@@ -99,8 +101,7 @@ def prep_difference_matrix(D_: Difference_Matrix):
 
     D = D_.D
     DDT = D_.DDT
-    DDT_inv = D_.DDT_inv
-    return D, DDT, DDT_inv
+    return D, DDT
 
 
 @njit(fastmath=False, cache=True)
@@ -114,11 +115,11 @@ def prep_matrices(D, Dy, z, mu1, mu2):
 
 
 @njit(fastmath=False, cache=True)
-def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
+def compute_objective(DDT, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     """Computes Primal and Dual objectives and duality gap"""
 
     # evaluates primal with dual variable of dual and optimality condition
-    pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
+    pobj1 = 0.5 * np.dot(w.T, (np.linalg.solve(DDT, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
     pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, np.abs(Dy - DDTz)))
     pobj1 = pobj1.item()
     pobj2 = pobj2.item()
@@ -130,10 +131,10 @@ def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
 
 
 @njit(fastmath=False, cache=True)
-def update_step(
-    DDT, DDTz, Dy, DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
-):
+def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter):
     """Update Newton's step for z, mu1, mu2, f1, f2"""
+
+    status = ""
 
     # Update scheme for mu
 
@@ -146,7 +147,11 @@ def update_step(
     S = DDT - np.diag((mu1 / f1 + mu2 / f2).flatten())
     S_inv = np.linalg.inv(S)
 
-    # S_inv=woodbury_matrix_inversion(-(mu1 / f1 + mu2 / f2), DDT_inv,step=20)
+    inv_error = np.max(abs(np.dot(S, S_inv) - np.eye(m)))
+
+    if inv_error > 1e-6:
+        status = "Matrix inversion error"
+        return z, mu1, mu2, f1, f2, status
 
     r = -DDTz + Dy + mu_inc_inv / f1 - mu_inc_inv / f2
     dz = np.dot(S_inv, r)
@@ -190,4 +195,4 @@ def update_step(
         # must not return step otherwise converges to zero
         step *= beta
 
-    return newz, newmu1, newmu2, newf1, newf2
+    return newz, newmu1, newmu2, newf1, newf2, status

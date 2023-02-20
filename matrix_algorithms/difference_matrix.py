@@ -2,10 +2,8 @@ import sys
 
 sys.path.append("../")
 import numpy as np
-import scipy
 from scipy.linalg import get_lapack_funcs
 from scipy.sparse import dia_matrix
-from scipy.sparse.linalg import spsolve
 
 from matrix_algorithms.k_differences import differences
 
@@ -13,7 +11,7 @@ from matrix_algorithms.k_differences import differences
 class Difference_Matrix:
     """General class for creating difference matrices of unequally spaced and equally spaced data"""
 
-    def __init__(self, n, k, t=None, prior: np.ndarray = None, style="lapack") -> None:
+    def __init__(self, n, k, t=None, prior: np.ndarray = None) -> None:
 
         self.n = n
         self.k = k
@@ -24,11 +22,6 @@ class Difference_Matrix:
 
         self.time_enabled = False
         self.prior_enabled = False
-
-        if prior is not None or t is not None:
-            self.style = "sparse"
-        else:
-            self.style = style
 
         # create the kth order difference matrix (sparse)
         D = self.compose_difference_matrix(n, k + 1).toarray()
@@ -53,23 +46,20 @@ class Difference_Matrix:
         # save the DDT matrix
         self.DDT = DDT
 
-        if self.style == "lapack":
-            # determine the projected coefficients across diagonals
-            DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k - 1, k + 2)]
+    # inverse only required in special cases
 
-            self.DDT_diag = np.array([i * np.ones(n - k - 1) for i in DDT_diag_coeff])
+    # # determine the projected coefficients across diagonals
+    # DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k - 1, k + 2)]
 
-            self.DDT_to_invert = self.DDT_diag
+    # self.DDT_diag = np.array([i * np.ones(n - k - 1) for i in DDT_diag_coeff])
 
-        elif self.style == "sparse":
+    # self.DDT_to_invert = self.DDT_diag
 
-            self.DDT_to_invert = DDT
+    # # save the inverse of the DDT matrix as C Contigous array (requires transpose)
+    # self.DDT_inv = self.LU_decomposition(self.DDT_to_invert)
 
-        # save the inverse of the DDT matrix as C Contigous array
-        self.DDT_inv = np.asarray(self.invert(self.DDT_to_invert, style=self.style), order="C")
-
-        # confirm this is in fact the inverse
-        assert self.DDT.dot(self.DDT_inv).all() == np.eye(n - k - 1).all()
+    # # absolute tolerance for testing higher due to scaling
+    # assert np.allclose(self.DDT.dot(self.DDT_inv), np.eye(self.DDT.shape[0]), atol=1e-6)
 
     def compose_difference_matrix(self, n, k):
         """Extracts the kth difference matrix for any n-size array using pascal's triangle"""
@@ -95,35 +85,6 @@ class Difference_Matrix:
             D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - k, n))
 
         return D
-
-    def invert(self, diag, style):
-        """
-        Inverts the banded difference matrix
-
-        Parameters
-        ----------
-
-        diag: Array
-            Diagonals of the difference matrix
-
-        style : str
-            "lapack" or "sparse"
-
-        Returns
-        -------
-        DDT_inv : Array
-            Inverse of the difference matrix
-        """
-        if style == "lapack":
-            DDT_inv = self.LU_decomposition(diag)
-
-            return DDT_inv
-        elif style == "sparse":
-            DDT_inv = self.sparse_banded(diag)
-            return DDT_inv
-        else:
-
-            return None
 
     def LU_decomposition(self, diag, b=None):
         """
@@ -162,20 +123,6 @@ class Difference_Matrix:
         lu, piv, x, info = gbsv(nlower, nupper, a2, b, overwrite_ab=True, overwrite_b=True)
 
         return x
-
-    def sparse_banded(self, diag):
-        """
-        Solves the system using scipy sparse banded matrix solver
-
-        * Much better performance for irregularly spaced data
-        """
-
-        # convert to sparse matrix if not already
-        if not isinstance(diag, scipy.sparse.csc.csc_matrix):
-            diag = scipy.sparse.csc.csc_matrix(diag)
-
-        inv = spsolve(diag, np.eye(self.n - self.k - 1))
-        return inv
 
     def compute_k_difference(self, k: int):
         """

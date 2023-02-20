@@ -7,7 +7,7 @@ from trend_filtering.tf_constants import get_model_constants
 def compute_lambda_max(D: Difference_Matrix, x: np.ndarray):
     """Computes the maximum lambda value for the adaptive trend filtering algorithm"""
 
-    DDT_inv = D.DDT_inv
+    DDT_inv = np.linalg.solve(D.DDT, np.eye(D.DDT.shape[0]))
     D_D = D.D
 
     # lambda value which gives best affine fit
