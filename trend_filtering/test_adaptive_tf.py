@@ -32,32 +32,19 @@ def test_adaptive_tf(
         flags.get, ["include_cv", "plot", "verbose", "bulk", "log_mlflow"]
     )
 
-    sample, true_sol, D = prep_signal(sample, true_sol, t)
+    sample, true_sol, D = prep_signal(sample, true_sol, prior_model=prior_model, t=t)
+
     time_aware = D.time_enabled
+    adaptive_tf_flag = D.prior_enabled
 
     flags["time_aware"] = time_aware
+    flags["adaptive_tf"] = adaptive_tf_flag
 
-    # cross validation is time independent atm
-    if prior_model:
-        # prior is decomposed for is/oos testing
-        # if prior submodel exists, use this in cv
-
-        if prior_model.submodel is not None:
-            best_scaler = perform_cv(sample, D, prior_model.submodel, prior_ags={"bandwidth": prior_model.bandwidth})
-        else:
-            # if prior submodel does not exist, use the prior model
-            best_scaler = perform_cv(sample, D, prior_model)
-
-        prior = 1 / prior_model.prior[1:-1] * best_scaler
-
-    else:
-        # constant tf
-        best_scaler = perform_cv(sample, D, None)
-        prior = best_scaler
+    best_scaler = perform_cv(sample, D)
 
     # reconstruct signal (allows for time)
     results = adaptive_tf(
-        sample, D_=D, prior=prior, select_knots=get_model_constants()["solve_cp"], true_knots=true_knots
+        sample, D_=D, lambda_p=best_scaler, select_knots=get_model_constants()["solve_cp"], true_knots=true_knots
     )
     results["computation_time"] = time.time() - start_time
 

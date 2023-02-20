@@ -1,6 +1,5 @@
 import math
 import sys
-from typing import Union
 
 import numpy as np
 from falling_factorial_gen import Falling_Factorial_Basis
@@ -8,25 +7,16 @@ from falling_factorial_gen import Falling_Factorial_Basis
 sys.path.append("../")
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.k_differences import differences
-from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 
 
 class Continous_TF:
-    def __init__(self, x_tf: np.ndarray, D: Union[Difference_Matrix, Time_Difference_Matrix], k: int):
+    def __init__(self, x_tf: np.ndarray, D: Difference_Matrix, k: int):
         self.x_tf = x_tf.flatten()
         self.k = k
 
-        # if time indexed difference matrix is provided, use it
-        if isinstance(D, Time_Difference_Matrix):
-            self.T_D = D
+        self.D = D
 
-        # else create it
-        elif isinstance(D, Difference_Matrix):
-            self.T_D = Time_Difference_Matrix(D, t=np.arange(1, D.n + 1))
-        else:
-            raise ValueError("D must be a Difference_Matrix or Time_Difference_Matrix")
-
-        self.t = self.T_D.t
+        self.t = self.D.t if self.D.t is not None else np.arange(1, len(self.x_tf) + 1)
 
         # create falling factorial basis on input data
         self.falling_factorial_basis = Falling_Factorial_Basis(self.t, self.k)
@@ -53,11 +43,10 @@ class Continous_TF:
             diff = np.diag(1 / np.array(differences(self.t, k=j - 1)))
 
             # requires arbitrary difference matrix
-            D = Difference_Matrix(n, k=j - 2)
-            T_D = Time_Difference_Matrix(D, t=self.t)
+            D = Difference_Matrix(n, k=j - 2, t=self.t)
 
             # time indexed difference matrix
-            D_j_1 = T_D.T_D
+            D_j_1 = D.D
 
             first_row = np.dot(diff, D_j_1)[0:1, :]
 
@@ -72,7 +61,7 @@ class Continous_TF:
 
         # note that the difference matrix is (k+1) order
 
-        theta = self.T_D.T_D.dot(self.x_tf.reshape(-1, 1)) / math.factorial(self.k)
+        theta = self.D.D.dot(self.x_tf.reshape(-1, 1)) / math.factorial(self.k)
 
         return theta
 

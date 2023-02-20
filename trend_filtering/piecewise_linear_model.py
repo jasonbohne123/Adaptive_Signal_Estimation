@@ -1,5 +1,4 @@
 import sys
-from typing import Union
 
 import numpy as np
 from scipy.interpolate import LSQUnivariateSpline
@@ -7,7 +6,6 @@ from scipy.interpolate import LSQUnivariateSpline
 sys.path.append("../")
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from model_selection.cp_model_selection import generalized_cross_validation
 from model_selection.partition import partition_solver
 from trend_filtering.continous_tf import Continous_TF
@@ -21,7 +19,7 @@ class Piecewise_Linear_Model:
     def __init__(
         self,
         x: np.ndarray,
-        D: Union[Difference_Matrix, Time_Difference_Matrix] = None,
+        D: Difference_Matrix,
         select_knots=False,
         true_knots=None,
     ):
@@ -29,15 +27,8 @@ class Piecewise_Linear_Model:
 
         self.k = D.k
 
-        # if D is Diff_Matrix, create Time_Diff_Matrix
-        if isinstance(D, Difference_Matrix):
-            self.D = Time_Difference_Matrix(D, t=np.arange(1, D.n + 1))
-            self.t = np.arange(1, D.n + 1)
-
-        # if D is provided, use it
-        else:
-            self.D = D
-            self.t = D.t
+        self.D = D
+        self.t = D.t
 
         # constants for cp selection and model
         self.threshold = get_model_constants()["cp_threshold"]

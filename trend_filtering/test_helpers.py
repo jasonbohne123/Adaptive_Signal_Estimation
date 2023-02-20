@@ -2,12 +2,11 @@ import matplotlib.pyplot as plt
 from tf_constants import get_model_constants, get_simulation_constants
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from prior_models.prior_model import Prior
 from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
 
 
-def prep_signal(sample, true_sol, t=None):
+def prep_signal(sample, true_sol, prior_model=None, t=None):
     """Generates and preps our signal"""
 
     n, k = get_model_constants().get("n"), get_model_constants().get("k")
@@ -17,11 +16,14 @@ def prep_signal(sample, true_sol, t=None):
     sample = sample[:n].reshape(-1, 1)
     true_sol = true_sol[:n].reshape(-1, 1)
 
-    D = Difference_Matrix(n, k)
+    if prior is not None:
+        assert len(prior.prior) == len(true_sol)
+        prior = prior.prior
 
     if t is not None:
-        t = t[:n]
-        D = Time_Difference_Matrix(D, t)
+        assert len(t) == len(true_sol)
+
+    D = Difference_Matrix(n, k, prior=prior, t=t)
 
     return sample, true_sol, D
 

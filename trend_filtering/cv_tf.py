@@ -1,14 +1,9 @@
 from collections import defaultdict
-from typing import Union
 
 import numpy as np
 
 from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
-from prior_models.deterministic_prior import Deterministic_Prior
-from prior_models.kernel_smooth import Kernel_Smooth_Prior
-from prior_models.prior_model import Prior
 from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.helpers import compute_lambda_max
 from trend_filtering.tf_constants import get_simulation_constants
@@ -17,8 +12,6 @@ from trend_filtering.tf_constants import get_simulation_constants
 def cross_validation(
     x: np.ndarray,
     D: Difference_Matrix,
-    prior: Union[None, Prior] = None,
-    prior_ags: dict = None,
     cv_folds: int = None,
     cv_iterations: int = None,
     verbose=True,
@@ -47,41 +40,30 @@ def cross_validation(
         x_is = x[is_index]
         x_oos = x[oos_index]
 
-        # compute lambda_max for each subproblem given difference matrix
         is_t = D.t[is_index] if D.time_enabled else None
-        prior_max, D_bar = compute_lambda_max(D, x_is, is_t)
+        is_prior = D.prior[is_index] if D.prior_enabled else None
+
+        is_D = Difference_Matrix(len(is_index), D.k, is_t, is_prior)
+
+        # compute lambda_max for each subproblem given difference matrix and prior
+        prior_max, is_D_D = compute_lambda_max(is_D, x_is)
 
         for lambda_i in grid:
 
             # relative lambda scaled to max
-            best_scaler = lambda_i * prior_max
+            relative_scaler = lambda_i * prior_max
 
             if verbose:
-                print(f"Performing cross validation for lambda = {best_scaler}")
-
-            # if prior is provided, scale lambda to have mean of candidate lambda
-            if prior is not None:
-
-                # must be an instance of a prior model
-                assert isinstance(prior, Prior)
-
-                # get prior for in-sample data (time independent)
-                volume_is = Deterministic_Prior(prior.prior[is_index])
-
-                # get kernel estimator for our prior
-                kernel_estimator = Kernel_Smooth_Prior(volume_is, preselected_bandwidth=prior_ags["bandwidth"])
-
-                # in sample prior
-                best_scaler = 1 / kernel_estimator.prior[1:-1] * best_scaler
+                print(f"Performing cross validation for lambda = {relative_scaler}")
 
             # solve tf subproblem
-            result = adaptive_tf(x_is.reshape(-1, 1), D_bar, prior=best_scaler)
+            result = adaptive_tf(x_is.reshape(-1, 1), is_D_D, lambda_p=relative_scaler)
             status = result["status"]
             sol = result["sol"]
 
             if sol is None:
                 if verbose:
-                    print("No solution found for lambda = {}".format(best_scaler))
+                    print("No solution found for lambda = {}".format(relative_scaler))
                     print("Status: {}".format(status))
 
                 # ignore cases where no solution is found
@@ -104,16 +86,14 @@ def cross_validation(
 
     # get original lambda_max
     is_t = D.t if D.time_enabled else None
-    orig_scaler_max, D_bar = compute_lambda_max(D, x, is_t)
+    orig_scaler_max, D_bar = compute_lambda_max(D, x)
 
     return best_prior * orig_scaler_max
 
 
 def perform_cv(
     sample,
-    D: Union[Difference_Matrix, Time_Difference_Matrix],
-    prior: Union[None, Prior] = None,
-    prior_ags: dict = None,
+    D: Difference_Matrix,
 ):
     """Perform Cross-Validation on Lambda Penalty"""
 
@@ -122,8 +102,6 @@ def perform_cv(
     verbose_cv = get_simulation_constants().get("verbose_cv")
 
     # best relative lambda scaled by lambda_max
-    scaled_prior = cross_validation(
-        sample, D, prior=prior, prior_ags=prior_ags, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv
-    )
+    scaled_prior = cross_validation(sample, D, cv_folds=cv_folds, cv_iterations=cv_iterations, verbose=verbose_cv)
 
     return scaled_prior

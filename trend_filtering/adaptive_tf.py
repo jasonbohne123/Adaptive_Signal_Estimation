@@ -5,7 +5,6 @@ from numba import njit
 from piecewise_linear_model import Piecewise_Linear_Model
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from trend_filtering.tf_constants import get_model_constants
 
 ###### Numba Integration
@@ -17,8 +16,8 @@ from trend_filtering.tf_constants import get_model_constants
 
 def adaptive_tf(
     y: np.ndarray,
-    D_: Union[Difference_Matrix, Time_Difference_Matrix],
-    prior: Union[float, np.ndarray] = None,
+    D_: Difference_Matrix,
+    lambda_p: Union[float, None] = 1.0,
     select_knots=False,
     true_knots=None,
 ):
@@ -36,8 +35,6 @@ def adaptive_tf(
 
     m = n - k
 
-    prior = prep_penalty(prior, m)
-
     D, DDT, DDT_inv = prep_difference_matrix(D_)
 
     Dy = np.dot(D, y)
@@ -49,8 +46,10 @@ def adaptive_tf(
 
     step = np.inf
 
-    f1 = z - prior
-    f2 = -z - prior
+    lambda_p = lambda_p * np.ones((m, 1))
+
+    f1 = z - lambda_p
+    f2 = -z - lambda_p
 
     # main loop of iteration; solving a sequence of equality constrained quadratic programs
     for iters in range(maxiter + 1):
@@ -58,7 +57,7 @@ def adaptive_tf(
         DTz, DDTz, w = prep_matrices(D, Dy, z, mu1, mu2)
 
         # compute objectives
-        pobj1, pobj2, dobj, gap = compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, prior)
+        pobj1, pobj2, dobj, gap = compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p)
 
         # if duality gap becomes negative
         if gap < 0:
@@ -79,7 +78,7 @@ def adaptive_tf(
 
         # update step
         newz, newmu1, newmu2, newf1, newf2 = update_step(
-            DDT, DDTz, Dy, DDT_inv, prior, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
+            DDT, DDTz, Dy, DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
         )
 
         # adaptive stepsize of mu with ratio gamma
@@ -95,31 +94,13 @@ def adaptive_tf(
     return {"sol": None, "status": status, "gap": -1, "iters": iters}
 
 
-def prep_penalty(prior: Union[float, np.ndarray], m):
-
-    if isinstance(prior, np.ndarray):
-        return prior.reshape(-1, 1)
-    elif isinstance(prior, float):
-        return prior * np.ones((m, 1))
-    else:
-        raise ValueError("prior must be a float or numpy array")
-
-
-def prep_difference_matrix(D_: Union[Difference_Matrix, Time_Difference_Matrix]):
+def prep_difference_matrix(D_: Difference_Matrix):
     """Accounts for irregular time series in difference matrix"""
 
-    if D_.time_enabled == False:
-
-        D = D_.D
-        DDT = D_.DDT
-        DDT_inv = D_.DDT_inv
-        return D, DDT, DDT_inv
-
-    else:
-        D = D_.T_D
-        DDT = D_.T_DDT
-        DDT_inv = D_.T_DDT_inv
-        return D, DDT, DDT_inv
+    D = D_.D
+    DDT = D_.DDT
+    DDT_inv = D_.DDT_inv
+    return D, DDT, DDT_inv
 
 
 @njit(fastmath=False, cache=True)
@@ -133,12 +114,12 @@ def prep_matrices(D, Dy, z, mu1, mu2):
 
 
 @njit(fastmath=False, cache=True)
-def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, prior):
+def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     """Computes Primal and Dual objectives and duality gap"""
 
     # evaluates primal with dual variable of dual and optimality condition
-    pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(prior.T, (mu1 + mu2)))
-    pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(prior.T, np.abs(Dy - DDTz)))
+    pobj1 = 0.5 * np.dot(w.T, (np.dot(DDT_inv, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
+    pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, np.abs(Dy - DDTz)))
     pobj1 = pobj1.item()
     pobj2 = pobj2.item()
     pobj = min(pobj1, pobj2)
@@ -150,7 +131,7 @@ def compute_objective(DDT_inv, Dy, DTz, DDTz, z, w, mu1, mu2, prior):
 
 @njit(fastmath=False, cache=True)
 def update_step(
-    DDT, DDTz, Dy, DDT_inv, prior, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
+    DDT, DDTz, Dy, DDT_inv, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
 ):
     """Update Newton's step for z, mu1, mu2, f1, f2"""
 
@@ -193,8 +174,8 @@ def update_step(
         newz = z + step * dz
         newmu1 = mu1 + step * dmu1
         newmu2 = mu2 + step * dmu2
-        newf1 = newz - prior
-        newf2 = -newz - prior
+        newf1 = newz - lambda_p
+        newf2 = -newz - lambda_p
 
         newResidual = np.vstack(
             (np.dot(DDT, newz) - Dy + newmu1 - newmu2, -newmu1 * newf1 - 1 / mu_inc, -newmu2 * newf2 - 1 / mu_inc)
