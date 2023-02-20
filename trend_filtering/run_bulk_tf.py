@@ -127,7 +127,7 @@ if __name__ == "__main__":
     # prior_model = Uniform_Prior(n)
 
     # real data prior
-    prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=False))
+    prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=True))
 
     # simulation style
 

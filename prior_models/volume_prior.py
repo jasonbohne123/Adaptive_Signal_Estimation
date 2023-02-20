@@ -29,6 +29,8 @@ class Volume_Prior(Prior):
             volume_data.index = pd.to_datetime(volume_data.index)
             t = [(i - volume_data.index[0]).total_seconds() for i in volume_data.index]
 
+            t=(t-np.min(t))/(np.max(t)-np.min(t)
+
             # update time_flag and t
             self.time_flag = time_flag
             self.t = t
