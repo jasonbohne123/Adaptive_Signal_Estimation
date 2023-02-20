@@ -59,7 +59,7 @@ def run_bulk_trend_filtering(
         true=true,
         true_knots=true_knots,
         prior_model=None,
-        t=None,
+        t=kernel_smooth_prior.t,
         sim_grid=sim_grid,
         prev_results=None,
     )
@@ -70,7 +70,7 @@ def run_bulk_trend_filtering(
         test_adaptive_tf,
         exp_name=exp_name,
         prior_model=kernel_smooth_prior,
-        t=None,
+        t=kernel_smooth_prior.t,
         flags=flags,
         true=true,
         true_knots=true_knots,
@@ -137,13 +137,14 @@ if __name__ == "__main__":
     true, true_knots, cp_knots = generate_true_dgp(prior_model, sim_style)
 
     # evaluation for new sims with different bandwidths
-    bandwidth_grid = [2, 5, 10, 25, 50, 75, 100]
+    bandwidth_grid = [100]
     snr_grid = [0.025, 0.035, 0.05, 0.075]
 
     possible_comb = itertools.product(bandwidth_grid, snr_grid)
 
     print("Running {n_sims} simulations of length {n}".format(n_sims=n_sims, n=n))
     print("Experiment is {sim_style} ".format(sim_style=sim_style))
+    print("Experiment is Time Aware of {time_flag} ".format(time_flag=prior_model.time_flag))
 
     for pair in possible_comb:
 

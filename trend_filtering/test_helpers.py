@@ -16,14 +16,14 @@ def prep_signal(sample, true_sol, prior_model=None, t=None):
     sample = sample[:n].reshape(-1, 1)
     true_sol = true_sol[:n].reshape(-1, 1)
 
-    if prior is not None:
-        assert len(prior.prior) == len(true_sol)
-        prior = prior.prior
+    if prior_model is not None:
+        assert len(prior_model.prior) == len(true_sol)
+        prior_model = prior_model.prior
 
     if t is not None:
         assert len(t) == len(true_sol)
 
-    D = Difference_Matrix(n, k, prior=prior, t=t)
+    D = Difference_Matrix(n, k, prior=prior_model, t=t)
 
     return sample, true_sol, D
 
