@@ -77,11 +77,9 @@ def adaptive_tf(
             }
 
         # update step
-        newz, newmu1, newmu2, newf1, newf2, status = update_step(
+        newz, newmu1, newmu2, newf1, newf2 = update_step(
             DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
         )
-        if len(status) > 0:
-            return {"sol": None, "status": status, "gap": -1, "iters": iters}
 
         # adaptive stepsize of mu with ratio gamma
         # newmu1, newmu2 = adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma)
@@ -134,8 +132,6 @@ def compute_objective(DDT, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
 def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter):
     """Update Newton's step for z, mu1, mu2, f1, f2"""
 
-    status = ""
-
     # Update scheme for mu
 
     if step >= 0.2:
@@ -145,16 +141,9 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
     rz = DDTz - w
 
     S = DDT - np.diag((mu1 / f1 + mu2 / f2).flatten())
-    S_inv = np.linalg.inv(S)
-
-    inv_error = np.max(abs(np.dot(S, S_inv) - np.eye(m)))
-
-    if inv_error > 1e-6:
-        status = "Matrix inversion error"
-        return z, mu1, mu2, f1, f2, status
 
     r = -DDTz + Dy + mu_inc_inv / f1 - mu_inc_inv / f2
-    dz = np.dot(S_inv, r)
+    dz = np.linalg.solve(S, r)
 
     # step size for the dual variables formulated from constraints
     dmu1 = -(mu1 + (mu_inc_inv + dz * mu1) / f1)
@@ -195,4 +184,4 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
         # must not return step otherwise converges to zero
         step *= beta
 
-    return newz, newmu1, newmu2, newf1, newf2, status
+    return newz, newmu1, newmu2, newf1, newf2

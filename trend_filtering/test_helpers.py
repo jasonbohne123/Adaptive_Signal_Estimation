@@ -202,14 +202,14 @@ def log_to_mlflow(
         if adaptive_penalty:
             artifact_list.append("data/images/prior.png")
             metrics["bandwidth"] = prior_model.bandwidth if prior_model.name == "Kernel_Smooth_Prior" else None
-
-            metrics.update(
-                {
-                    "mse_true_diff": mse_true_diff,
-                    "spline_mse_diff": spline_mse_diff,
-                    "hausdorff_distance_diff": hausdorff_distance_diff,
-                }
-            )
+            if non_adaptive_results:
+                metrics.update(
+                    {
+                        "mse_true_diff": mse_true_diff,
+                        "spline_mse_diff": spline_mse_diff,
+                        "hausdorff_distance_diff": hausdorff_distance_diff,
+                    }
+                )
 
         if len_true_knots:
             artifact_list.extend(["data/images/knots.png", "data/knots.txt", "data/true_knots.txt"])
