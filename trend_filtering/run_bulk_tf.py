@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # evaluation for new sims with different bandwidths
     bandwidth_grid = [50]
-    snr_grid = [10000]
+    snr_grid = [1]
 
     possible_comb = itertools.product(bandwidth_grid, snr_grid)
 

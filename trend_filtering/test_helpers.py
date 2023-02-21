@@ -120,7 +120,9 @@ def log_to_mlflow(
 ):
     """Logs params, metrics, and tags to mlflow"""
 
-    log_mlflow, bulk, include_cv, time_aware = map(flags.get, ["log_mlflow", "bulk", "include_cv", "time_aware"])
+    log_mlflow, bulk, include_cv, time_aware, adaptive_tf = map(
+        flags.get, ["log_mlflow", "bulk", "include_cv", "time_aware", "adaptive_tf"]
+    )
 
     mse_from_sample, mse_from_true, spline_mse, hausdorff_distance, expected_prediction_error = map(
         adaptive_results.get,
@@ -137,8 +139,6 @@ def log_to_mlflow(
         mse_true_diff = non_adapt_mse_from_true - mse_from_true
         spline_mse_diff = non_adapt_spline_mse - spline_mse
         hausdorff_distance_diff = non_adapt_hausdorff_distance - hausdorff_distance
-
-    adaptive_penalty = isinstance(prior_model, Prior)
 
     # extract params and constants for logging
     cv_folds, cross_validation_size, reference_variance, signal_to_noise = map(
