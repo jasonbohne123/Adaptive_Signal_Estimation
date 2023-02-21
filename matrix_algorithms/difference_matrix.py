@@ -47,12 +47,13 @@ class Difference_Matrix:
 
             self.time_enabled = True
 
+        # account for conditional prior
         if prior is not None:
 
             D, mat_to_append = self.construct_prior_matrix(D, prior)
 
             for mat in mat_to_append:
-                self.sequence.add_matrix(mat)
+                self.sequence.add_matrix_left(mat)
 
             self.prior_enabled = True
 
@@ -64,16 +65,21 @@ class Difference_Matrix:
         # save the DDT matrix
         self.DDT = DDT
 
-        # save the transpose of D
+        # save the transpose sequence of D
         self.sequence_transpose = self.sequence.compute_transpose()
 
+        # save the full sequence of D
+        self.DDT_sequence = self.sequence_transpose.get_sequence() + self.sequence_transpose.get_sequence()
+
+        # save the composite sequence of D
         self.composite_sequence = self.sequence.compute_matrix().dot(self.sequence_transpose.compute_matrix())
 
         assert np.allclose(self.composite_sequence, DDT)
 
         condition_number = np.linalg.cond(D)
 
-        print(f"Condition number of D is {condition_number}")
+        if condition_number > 1e8:
+            print(" WARNING Condition number is large: {}".format(condition_number))
 
     def compose_difference_matrix(self, n, k):
         """Extracts the kth difference matrix for any n-size array using pascal's triangle"""

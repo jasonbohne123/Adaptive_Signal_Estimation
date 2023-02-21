@@ -17,7 +17,7 @@ def get_simulation_constants():
         "underlying_dist": "normal",
         "label_style": "k_local_spikes",
         "signal_to_noise": 0.05,
-        "reference_variance": 1e-2,
+        "reference_variance": 100,
         "shift": 100,
         # cross validation params
         "cv_folds": 20,

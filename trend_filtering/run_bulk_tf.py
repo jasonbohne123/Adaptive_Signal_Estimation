@@ -43,9 +43,7 @@ def run_bulk_trend_filtering(
     # submodel.prior[np.setdiff1d(np.arange(len(submodel.prior)), true_knots)] = 0.1
 
     # biased prior to true cp
-    updated_prior = Deterministic_Prior(np.ones(len(submodel.t)), submodel.t)
-
-    print(submodel.t)
+    updated_prior = Deterministic_Prior(submodel.prior, submodel.t)
 
     # # smooth around indicator
     kernel_smooth_prior = Kernel_Smooth_Prior(updated_prior, sim_grid["bandwidth"])
@@ -150,8 +148,7 @@ if __name__ == "__main__":
     print("Experiment is Time Aware of {time_flag} ".format(time_flag=prior_model.time_flag))
 
     for pair in possible_comb:
-
-        adjusted_true, samples = generate_samples(true, true_knots, pair[1])
+        adjusted_true, samples = generate_samples(true, prior_model.t, true_knots, pair[1])
 
         sim_grid = {"bandwidth": pair[0], "snr": pair[1]}
         run_bulk_trend_filtering(exp_name, adjusted_true, true_knots, samples, prior_model, sim_grid=sim_grid)

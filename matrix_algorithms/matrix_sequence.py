@@ -8,9 +8,16 @@ class Matrix_Sequence:
 
         self.sequence = deque()
 
+    def get_sequence(self):
+        return self.sequence
+
     def add_matrix(self, mat):
 
         self.sequence.append(mat)
+
+    def add_matrix_left(self, mat):
+
+        self.sequence.appendleft(mat)
 
     def compute_matrix(self):
         return np.linalg.multi_dot(self.sequence)

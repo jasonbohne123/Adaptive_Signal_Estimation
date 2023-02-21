@@ -16,9 +16,12 @@ class Volume_Prior(Prior):
     def __init__(self, n, time_flag=False, t=None):
 
         # initialize the prior model off real data
-        market_data = pd.read_csv(PATH + DATA_FILE, index_col=0, nrows=2 * n)
+        market_data = pd.read_csv(PATH + DATA_FILE, index_col=0, nrows=20 * n)
 
-        market_data = market_data.groupby(market_data.index).agg({"Trade_Volume": "sum"})
+        # group by aggregated seconds
+        market_data["second_to_round"] = pd.to_datetime(market_data.index).round("100ms")
+
+        market_data = market_data.groupby("second_to_round").agg({"Trade_Volume": "sum"})
 
         # fetch the last n volume data; log transform
         volume_data = np.log(market_data["Trade_Volume"][market_data["Trade_Volume"] < 1000][-n:])
@@ -29,9 +32,10 @@ class Volume_Prior(Prior):
         # fetch time series if time_flag is true
         if time_flag:
             volume_data.index = pd.to_datetime(volume_data.index)
-            t = np.array([(i - volume_data.index[0]).total_seconds() for i in volume_data.index])
 
-            t = 1000 * (t - t[0]) / (t[-1] - t[0]) + 1
+            # standardize time to average time
+            t = np.array([(i - volume_data.index[0]).total_seconds() for i in volume_data.index])
+            t = t / np.mean(t)
 
             # update time_flag and t
             self.time_flag = time_flag

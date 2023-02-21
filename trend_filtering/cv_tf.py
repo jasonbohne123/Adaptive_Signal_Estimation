@@ -81,8 +81,6 @@ def cross_validation(
             # compute mse on oos test set
             oos_error = compute_error(predictions.reshape(-1, 1), x_oos, type="mse")
 
-            print(f"OOS Prediction Error for {lambda_i} is {oos_error}")
-
             # add to average oos error for each lambda
             results[lambda_i] += oos_error
 

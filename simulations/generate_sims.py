@@ -1,5 +1,7 @@
 import sys
 
+import numpy as np
+
 from simulations.Conditional_Simulator import ConditionalSimulator
 from simulations.Sampler import Sampler
 from trend_filtering.tf_constants import get_simulation_constants
@@ -22,7 +24,7 @@ def generate_true_dgp(prior: Prior, sim_style, label_style="k_local_spikes"):
     return true, true_knots, cp_knots
 
 
-def generate_samples(true, true_knots, snr=None):
+def generate_samples(true, time_index, true_knots, snr=None):
     """Generate piecewise constant/linear paths with changepoints at the k_maxima of the prior distribution"""
 
     # fetch simulation constants from prespecified file (tf_constants.py)
@@ -37,6 +39,7 @@ def generate_samples(true, true_knots, snr=None):
     sampler = Sampler(underlying_dist)
 
     # (n_sims,len_sims), (n_sims*n_samples,len_sims)
-    samples, adjusted_true = sampler.sample(true, n_samples=n_samples, scale=reference_variance / snr)
+    padded_diff = np.pad(np.diff(time_index), (1, 0), "constant", constant_values=(1, 1))
+    samples, adjusted_true = sampler.sample(true, n_samples=n_samples, scale=padded_diff * reference_variance / snr)
 
     return adjusted_true, samples
