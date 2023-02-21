@@ -128,7 +128,7 @@ def compute_objective(DDT, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     return pobj1, pobj2, dobj, gap
 
 
-@njit(fastmath=False, cache=True)
+# @njit(fastmath=False, cache=True)
 def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter):
     """Update Newton's step for z, mu1, mu2, f1, f2"""
 
@@ -144,6 +144,10 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
 
     r = -DDTz + Dy + mu_inc_inv / f1 - mu_inc_inv / f2
     dz = np.linalg.solve(S, r)
+    max_error = np.max(np.abs(S.dot(dz) - r))
+
+    if max_error > 1e-6:
+        print(f"Max Error is {max_error}")
 
     # step size for the dual variables formulated from constraints
     dmu1 = -(mu1 + (mu_inc_inv + dz * mu1) / f1)

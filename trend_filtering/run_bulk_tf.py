@@ -42,7 +42,7 @@ def run_bulk_trend_filtering(
     submodel.prior[np.setdiff1d(np.arange(len(submodel.prior)), true_knots)] = 0.01
 
     # biased prior to true cp
-    updated_prior = Deterministic_Prior(submodel.prior, submodel.t)
+    updated_prior = Deterministic_Prior(1 / submodel.prior, submodel.t)
 
     # smooth around indicator
     kernel_smooth_prior = Kernel_Smooth_Prior(updated_prior, sim_grid["bandwidth"])
@@ -59,7 +59,7 @@ def run_bulk_trend_filtering(
         true=true,
         true_knots=true_knots,
         prior_model=None,
-        t=kernel_smooth_prior.t,
+        t=None,
         sim_grid=sim_grid,
         prev_results=None,
     )
@@ -70,7 +70,7 @@ def run_bulk_trend_filtering(
         test_adaptive_tf,
         exp_name=exp_name,
         prior_model=kernel_smooth_prior,
-        t=kernel_smooth_prior.t,
+        t=None,
         flags=flags,
         true=true,
         true_knots=true_knots,

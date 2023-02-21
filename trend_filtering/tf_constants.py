@@ -22,7 +22,7 @@ def get_simulation_constants():
         "shift": 100,
         # cross validation params
         "cv_folds": 20,
-        "cross_validation_size": 0.9,
+        "cross_validation_size": 0.75,
         "cv_grid_lb": 1e-8,
         "cv_iterations": 5,
         "cv_bias": 0.5,

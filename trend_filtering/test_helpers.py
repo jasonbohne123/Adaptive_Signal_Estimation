@@ -18,7 +18,7 @@ def prep_signal(sample, true_sol, prior_model=None, t=None):
 
     if prior_model is not None:
         assert len(prior_model.prior) == len(true_sol)
-        prior_model = prior_model.prior
+        prior_model = prior_model.prior / np.linalg.norm(prior_model.prior)
 
     if t is not None:
         assert len(t) == len(true_sol)
