@@ -6,6 +6,7 @@ from scipy.linalg import get_lapack_funcs
 from scipy.sparse import dia_matrix
 
 from matrix_algorithms.k_differences import differences
+from matrix_algorithms.matrix_sequence import Matrix_Sequence
 
 
 class Difference_Matrix:
@@ -23,19 +24,36 @@ class Difference_Matrix:
         self.time_enabled = False
         self.prior_enabled = False
 
-        # create the kth order difference matrix (sparse)
-        D = self.compose_difference_matrix(n, k + 1).toarray()
+        # sequence of matrices used to create D
+        self.sequence = Matrix_Sequence()
 
-        # if time increments are not provided, recurse through the difference matrix
-        if t is not None:
+        # time not provided construct difference matrix
+        if t is None:
+
+            D = self.compose_difference_matrix(n, k + 1).toarray()
+
+            self.sequence.add_matrix(np.eye(n - k - 1))
+            self.sequence.add_matrix(D)
+
+        # if time increments are  provided, recurse through the difference matrix
+        else:
 
             # returns the time matrix T
-            D = self.construct_time_matrix(t)
+            D, mat_to_append = self.construct_time_matrix(t)
+
+            for mat in mat_to_append:
+
+                self.sequence.add_matrix(mat)
+
             self.time_enabled = True
 
         if prior is not None:
 
-            D = self.construct_prior_matrix(D, prior)
+            D, mat_to_append = self.construct_prior_matrix(D, prior)
+
+            for mat in mat_to_append:
+                self.sequence.add_matrix(mat)
+
             self.prior_enabled = True
 
         self.D = D
@@ -46,20 +64,16 @@ class Difference_Matrix:
         # save the DDT matrix
         self.DDT = DDT
 
-    # inverse only required in special cases
+        # save the transpose of D
+        self.sequence_transpose = self.sequence.compute_transpose()
 
-    # # determine the projected coefficients across diagonals
-    # DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k - 1, k + 2)]
+        self.composite_sequence = self.sequence.compute_matrix().dot(self.sequence_transpose.compute_matrix())
 
-    # self.DDT_diag = np.array([i * np.ones(n - k - 1) for i in DDT_diag_coeff])
+        assert np.allclose(self.composite_sequence, DDT)
 
-    # self.DDT_to_invert = self.DDT_diag
+        condition_number = np.linalg.cond(D)
 
-    # # save the inverse of the DDT matrix as C Contigous array (requires transpose)
-    # self.DDT_inv = self.LU_decomposition(self.DDT_to_invert)
-
-    # # absolute tolerance for testing higher due to scaling
-    # assert np.allclose(self.DDT.dot(self.DDT_inv), np.eye(self.DDT.shape[0]), atol=1e-6)
+        print(f"Condition number of D is {condition_number}")
 
     def compose_difference_matrix(self, n, k):
         """Extracts the kth difference matrix for any n-size array using pascal's triangle"""
@@ -154,6 +168,11 @@ class Difference_Matrix:
         # initialize D_k to be D_1
         D_k = Difference_Matrix(self.n, 0, t=None).D
 
+        mat_to_append = []
+
+        mat_to_append.append(np.eye(self.n))
+        mat_to_append.append(D_k)
+
         # loop through up to kth order tf
         for k in range(0, self.k):
 
@@ -164,10 +183,16 @@ class Difference_Matrix:
             scale = np.diag((k + 1) / diff)
             # recursively account for time increments
             D_k = D_1.dot(scale.dot(D_k))
-        return D_k
+
+            mat_to_append.append(scale)
+            mat_to_append.append(D_1)
+
+        return D_k, reversed(mat_to_append)
 
     def construct_prior_matrix(self, D, prior):
         """Constructs prior matrix assuming univariate influences"""
+
+        mat_to_append = []
 
         # construct the prior matrix from the prior vector
         prior = np.diag(prior[: self.n - self.k - 1])
@@ -175,4 +200,6 @@ class Difference_Matrix:
         # construct the prior matrix
         D_prior = prior.dot(D)
 
-        return D_prior
+        mat_to_append.append(prior)
+
+        return D_prior, mat_to_append
