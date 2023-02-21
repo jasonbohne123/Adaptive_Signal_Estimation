@@ -1,7 +1,6 @@
 from typing import Union
 
 import numpy as np
-from numba import njit
 from piecewise_linear_model import Piecewise_Linear_Model
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
@@ -102,7 +101,6 @@ def prep_difference_matrix(D_: Difference_Matrix):
     return D, DDT
 
 
-@njit(fastmath=False, cache=True)
 def prep_matrices(D, Dy, z, mu1, mu2):
     """Prep matrices for objective computation"""
 
@@ -112,11 +110,16 @@ def prep_matrices(D, Dy, z, mu1, mu2):
     return DTz, DDTz, w
 
 
-@njit(fastmath=False, cache=True)
 def compute_objective(DDT, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     """Computes Primal and Dual objectives and duality gap"""
 
     # evaluates primal with dual variable of dual and optimality condition
+    linear_solver = np.linalg.solve(DDT, w)
+    max_error = np.max(np.abs(np.dot(DDT, linear_solver) - w))
+
+    if max_error > 1e-6:
+        print("Error in linear solver: ", max_error)
+
     pobj1 = 0.5 * np.dot(w.T, (np.linalg.solve(DDT, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
     pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, np.abs(Dy - DDTz)))
     pobj1 = pobj1.item()
@@ -128,7 +131,6 @@ def compute_objective(DDT, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     return pobj1, pobj2, dobj, gap
 
 
-# @njit(fastmath=False, cache=True)
 def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter):
     """Update Newton's step for z, mu1, mu2, f1, f2"""
 
@@ -147,7 +149,7 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
     max_error = np.max(np.abs(S.dot(dz) - r))
 
     if max_error > 1e-6:
-        print(f"Max Error is {max_error}")
+        print(f"Max Error for S is {max_error}")
 
     # step size for the dual variables formulated from constraints
     dmu1 = -(mu1 + (mu_inc_inv + dz * mu1) / f1)

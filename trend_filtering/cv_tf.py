@@ -43,7 +43,7 @@ def cross_validation(
         is_t = D.t[is_index] if D.time_enabled else None
         is_prior = D.prior[is_index] if D.prior_enabled else None
 
-        is_D = Difference_Matrix(len(is_index), D.k, is_t, is_prior)
+        is_D = Difference_Matrix(len(is_index), D.k, is_t, is_prior)  # normalize prior by mean
 
         # compute lambda_max for each subproblem given difference matrix and prior
         prior_max, is_D_D = compute_lambda_max(is_D, x_is)
