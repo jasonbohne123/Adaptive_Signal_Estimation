@@ -38,13 +38,14 @@ def run_bulk_trend_filtering(
     # decompose prior into raw data
     submodel = prior_model.submodel
 
-    submodel.prior[true_knots] = 1
-    submodel.prior[np.setdiff1d(np.arange(len(submodel.prior)), true_knots)] = 0.01
+    # # # set prior to interior cp
+    # submodel.prior[true_knots] = 1
+    # submodel.prior[np.setdiff1d(np.arange(len(submodel.prior)), true_knots)] = 0.1
 
     # biased prior to true cp
-    updated_prior = Deterministic_Prior(submodel.prior)
+    updated_prior = Deterministic_Prior(submodel.prior, submodel.t)
 
-    # smooth around indicator
+    # # smooth around indicator
     kernel_smooth_prior = Kernel_Smooth_Prior(updated_prior, sim_grid["bandwidth"])
 
     # apply tf to each path with specified flags
@@ -59,7 +60,7 @@ def run_bulk_trend_filtering(
         true=true,
         true_knots=true_knots,
         prior_model=None,
-        t=None,
+        t=submodel.t,
         sim_grid=sim_grid,
         prev_results=None,
     )
@@ -70,7 +71,7 @@ def run_bulk_trend_filtering(
         test_adaptive_tf,
         exp_name=exp_name,
         prior_model=kernel_smooth_prior,
-        t=None,
+        t=submodel.t,
         flags=flags,
         true=true,
         true_knots=true_knots,
@@ -137,17 +138,17 @@ if __name__ == "__main__":
     true, true_knots, cp_knots = generate_true_dgp(prior_model, sim_style)
 
     # evaluation for new sims with different bandwidths
-    bandwidth_grid = [2, 5, 10, 25, 50, 75, 100]
-    snr_grid = [0.025, 0.035, 0.05, 0.075]
+    bandwidth_grid = [2, 10, 25, 50, 100]
+    snr_grid = [25, 50, 75, 100]
 
     possible_comb = itertools.product(bandwidth_grid, snr_grid)
 
     print("Running {n_sims} simulations of length {n}".format(n_sims=n_sims, n=n))
     print("Experiment is {sim_style} ".format(sim_style=sim_style))
+    print("Experiment is Time Aware of {time_flag} ".format(time_flag=prior_model.time_flag))
 
     for pair in possible_comb:
-
-        adjusted_true, samples = generate_samples(true, true_knots, pair[1])
+        adjusted_true, samples = generate_samples(true, prior_model.t, true_knots, pair[1])
 
         sim_grid = {"bandwidth": pair[0], "snr": pair[1]}
         run_bulk_trend_filtering(exp_name, adjusted_true, true_knots, samples, prior_model, sim_grid=sim_grid)

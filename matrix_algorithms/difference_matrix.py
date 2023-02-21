@@ -1,77 +1,110 @@
+import sys
+
+sys.path.append("../")
 import numpy as np
-import scipy
 from scipy.linalg import get_lapack_funcs
 from scipy.sparse import dia_matrix
-from scipy.sparse.linalg import spsolve
+
+from matrix_algorithms.k_differences import differences
+from matrix_algorithms.matrix_sequence import Matrix_Sequence
 
 
 class Difference_Matrix:
-    def __init__(self, n, k, style=None) -> None:
+    """General class for creating difference matrices of unequally spaced and equally spaced data"""
+
+    def __init__(self, n, k, t: np.ndarray = None, prior: np.ndarray = None) -> None:
 
         self.n = n
         self.k = k
         self.l, self.u = k + 1, k + 1
-        self.style = style if style is not None else "lapack"
+
+        self.t = t
+        self.prior = prior
+
         self.time_enabled = False
+        self.prior_enabled = False
 
-        # create the kth order difference matrix (sparse)
-        D = self.compose_difference_matrix(n, k + 1)
+        # sequence of matrices used to create D
+        self.sequence = Matrix_Sequence()
 
-        # save the difference matrix
-        self.D = D.toarray()
+        # time not provided construct difference matrix
+        if t is None:
+
+            D = self.compose_difference_matrix(n, k + 1).toarray()
+
+            self.sequence.add_matrix(np.eye(n - k - 1))
+            self.sequence.add_matrix(D)
+
+        # if time increments are  provided, recurse through the difference matrix
+        else:
+
+            # returns the time matrix T
+            D, mat_to_append = self.construct_time_matrix(t)
+
+            for mat in mat_to_append:
+
+                self.sequence.add_matrix(mat)
+
+            self.time_enabled = True
+
+        # account for conditional prior
+        if prior is not None:
+
+            D, mat_to_append = self.construct_prior_matrix(D, prior)
+
+            for mat in mat_to_append:
+                self.sequence.add_matrix_left(mat)
+
+            self.prior_enabled = True
+
+        self.D = D
 
         # create DDT
         DDT = D.dot(D.T)
 
         # save the DDT matrix
-        self.DDT = DDT.toarray()
+        self.DDT = DDT
 
-        if self.style == "lapack":
-            # determine the projected coefficients across diagonals
-            DDT_diag_coeff = [DDT.diagonal(i)[0] for i in range(-k - 1, k + 2)]
+        # save the transpose sequence of D
+        self.sequence_transpose = self.sequence.compute_transpose()
 
-            self.DDT_diag = np.array([i * np.ones(n - k - 1) for i in DDT_diag_coeff])
+        # save the full sequence of D
+        self.DDT_sequence = self.sequence_transpose.get_sequence() + self.sequence_transpose.get_sequence()
 
-            self.DDT_to_invert = self.DDT_diag
+        # save the composite sequence of D
+        self.composite_sequence = self.sequence.compute_matrix().dot(self.sequence_transpose.compute_matrix())
 
-        elif self.style == "sparse":
+        assert np.allclose(self.composite_sequence, DDT)
 
-            self.DDT_to_invert = DDT
+        condition_number = np.linalg.cond(D)
 
-        # save the inverse of the DDT matrix as C Contigous array
-        self.DDT_inv = np.asarray(self.invert(self.DDT_to_invert, style=self.style), order="C")
+        if condition_number > 1e8:
+            print(" WARNING Condition number is large: {}".format(condition_number))
 
-        # confirm this is in fact the inverse
-        assert self.DDT.dot(self.DDT_inv).all() == np.eye(n - k - 1).all()
+    def compose_difference_matrix(self, n, k):
+        """Extracts the kth difference matrix for any n-size array using pascal's triangle"""
 
-    def invert(self, diag, style):
-        """
-        Inverts the banded difference matrix
+        def pascals(k):
+            pas = [0, 1, 0]
+            counter = k
+            while counter > 0:
+                pas.insert(0, 0)
+                pas = [np.sum(pas[i : i + 2]) for i in range(0, len(pas))]
+                counter -= 1
+            return pas
 
-        Parameters
-        ----------
+        coeff = pascals(k)
+        coeff = [i for i in coeff if i != 0]
+        coeff = [coeff[i] if i % 2 == 0 else -coeff[i] for i in range(0, len(coeff))]
 
-        diag: Array
-            Diagonals of the difference matrix
-
-        style : str
-            "lapack" or "sparse"
-
-        Returns
-        -------
-        DDT_inv : Array
-            Inverse of the difference matrix
-        """
-        if style == "lapack":
-            DDT_inv = self.LU_decomposition(diag)
-
-            return DDT_inv
-        elif style == "sparse":
-            DDT_inv = self.sparse_banded(diag)
-            return DDT_inv
+        if k == 0:
+            D = dia_matrix((np.ones(n), 0), shape=(n - k, n))
+        elif k == 1:
+            D = dia_matrix((np.vstack([i * np.ones(n) for i in [-1, 1]]), range(0, k + 1)), shape=(n - k, n))
         else:
+            D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - k, n))
 
-            return None
+        return D
 
     def LU_decomposition(self, diag, b=None):
         """
@@ -111,48 +144,6 @@ class Difference_Matrix:
 
         return x
 
-    def sparse_banded(self, diag):
-        """
-        Solves the system using scipy sparse banded matrix solver
-
-        Returns
-        -------
-        inv : Array
-            Inverse of the difference matrix
-        """
-
-        # convert to sparse matrix if not already
-        if not isinstance(diag, scipy.sparse.csc.csc_matrix):
-            diag = scipy.sparse.csc.csc_matrix(diag)
-
-        inv = spsolve(diag, np.eye(self.n - self.k - 1))
-        return inv
-
-    def compose_difference_matrix(self, n, k):
-        """Extracts the kth difference matrix for any n-size array using pascal's triangle"""
-
-        def pascals(k):
-            pas = [0, 1, 0]
-            counter = k
-            while counter > 0:
-                pas.insert(0, 0)
-                pas = [np.sum(pas[i : i + 2]) for i in range(0, len(pas))]
-                counter -= 1
-            return pas
-
-        coeff = pascals(k)
-        coeff = [i for i in coeff if i != 0]
-        coeff = [coeff[i] if i % 2 == 0 else -coeff[i] for i in range(0, len(coeff))]
-
-        if k == 0:
-            D = dia_matrix((np.ones(n), 0), shape=(n - k, n))
-        elif k == 1:
-            D = dia_matrix((np.vstack([i * np.ones(n) for i in [-1, 1]]), range(0, k + 1)), shape=(n - k, n))
-        else:
-            D = dia_matrix((np.vstack([i * np.ones(n) for i in coeff]), range(0, k + 1)), shape=(n - k, n))
-
-        return D
-
     def compute_k_difference(self, k: int):
         """
         Computes the kth order difference matrix
@@ -176,3 +167,45 @@ class Difference_Matrix:
         else:
             D = self.compose_difference_matrix(self.n, k + 1)
             return D.toarray()
+
+    def construct_time_matrix(self, t):
+        """Accounts for unequal time increments via recursion by Tibshirani"""
+
+        # initialize D_k to be D_1
+        D_k = Difference_Matrix(self.n, 0, t=None).D
+
+        mat_to_append = []
+
+        mat_to_append.append(np.eye(self.n))
+        mat_to_append.append(D_k)
+
+        # loop through up to kth order tf
+        for k in range(0, self.k):
+
+            # for kth order system
+            D_1 = Difference_Matrix(self.n - k - 1, 0, t=None).D
+
+            diff = np.array(differences(t, k=k + 1))
+            scale = np.diag((k + 1) / diff)
+            # recursively account for time increments
+            D_k = D_1.dot(scale.dot(D_k))
+
+            mat_to_append.append(scale)
+            mat_to_append.append(D_1)
+
+        return D_k, reversed(mat_to_append)
+
+    def construct_prior_matrix(self, D, prior):
+        """Constructs prior matrix assuming univariate influences"""
+
+        mat_to_append = []
+
+        # construct the prior matrix from the prior vector
+        prior = np.diag(prior[: self.n - self.k - 1])
+
+        # construct the prior matrix
+        D_prior = prior.dot(D)
+
+        mat_to_append.append(prior)
+
+        return D_prior, mat_to_append

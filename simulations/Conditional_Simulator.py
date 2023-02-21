@@ -72,6 +72,7 @@ class ConditionalSimulator(Simulator):
 
                 if i == 0:
                     # sample for second degree of freedom
+
                     true_processes[:, 1] = self.underlying_simulator.simulate(n=self.n_sims, rng=self.rng)
                     diff = sampled_cp[:, 0]
                 else:

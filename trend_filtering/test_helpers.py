@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
+import numpy as np
 from tf_constants import get_model_constants, get_simulation_constants
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from matrix_algorithms.time_difference_matrix import Time_Difference_Matrix
 from prior_models.prior_model import Prior
 from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
 
 
-def prep_signal(sample, true_sol, t=None):
+def prep_signal(sample, true_sol, prior_model=None, t=None):
     """Generates and preps our signal"""
 
     n, k = get_model_constants().get("n"), get_model_constants().get("k")
@@ -17,12 +17,15 @@ def prep_signal(sample, true_sol, t=None):
     sample = sample[:n].reshape(-1, 1)
     true_sol = true_sol[:n].reshape(-1, 1)
 
-    D = Difference_Matrix(n, k)
+    if prior_model is not None:
+        assert len(prior_model.prior) == len(true_sol)
+
+        prior_model = 1 / prior_model.prior
 
     if t is not None:
-        t = t[:n]
-        D = Time_Difference_Matrix(D, t)
+        assert len(t) == len(true_sol)
 
+    D = Difference_Matrix(n, k, prior=prior_model, t=t)
     return sample, true_sol, D
 
 
@@ -31,32 +34,35 @@ def write_to_files(sample, true_sol, sol, spline, prior_model, true_knots, knots
 
     adaptive_penalty = isinstance(prior_model, Prior)
 
+    if not adaptive_penalty:
+        t = np.arange(0, len(true_sol))
+    else:
+        t = prior_model.t
+
     # plot to visualize estimation
     if plot:
         plt.figure(figsize=(14, 12))
-        plt.plot(true_sol, color="black", label="True Signal", lw=10)
-        plt.plot(sample, color="blue", label="Noisy Sample", lw=0.5)
-        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
-        plt.plot(spline, color="green", label="Spline Estimate", lw=3)
+        plt.plot(t, true_sol, color="black", label="True Signal", lw=10)
+        plt.plot(t, sample, color="blue", label="Noisy Sample", lw=0.5)
+        plt.plot(t, sol, color="red", label="Reconstructed Estimate", lw=5)
+        plt.plot(t, spline, color="green", label="Spline Estimate", lw=3)
         plt.legend()
         plt.title("Linear Trend Filtering Estimate on Noisy Sample")
         plt.savefig("data/images/tf.png")
         plt.close()
 
         plt.figure(figsize=(14, 12))
-        plt.plot(true_sol, color="black", label="True Signal", lw=10)
-        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
+        plt.plot(t, true_sol, color="black", label="True Signal", lw=10)
+        plt.plot(t, sol, color="red", label="Reconstructed Estimate", lw=5)
 
         if adaptive_penalty:
             fig, ax = plt.subplots(figsize=(14, 12))
-            ax.plot(prior_model.t, prior_model.prior, color="green", label="Original Prior", lw=2.5)  # plots prior
+            ax.plot(t, prior_model.prior, color="green", label="Original Prior", lw=2.5)  # plots prior
             ax_twin = ax.twinx()
-            ax_twin.plot(
-                prior_model.t, prior_model.orig_data, color="red", label="Original Data", lw=2.5
-            )  # plots original data
+            ax_twin.plot(t, prior_model.orig_data, color="red", label="Original Data", lw=2.5)  # plots original data
             for knot in true_knots:
                 ax.axvline(
-                    x=prior_model.t[knot], color="black", linestyle="--", lw=2.5, label="True Regime Change"
+                    x=t[knot], color="black", linestyle="--", lw=2.5, label="True Regime Change"
                 )  # plots associated cp
             plt.legend()
             plt.title("Original Prior")
@@ -113,7 +119,9 @@ def log_to_mlflow(
 ):
     """Logs params, metrics, and tags to mlflow"""
 
-    log_mlflow, bulk, include_cv, time_aware = map(flags.get, ["log_mlflow", "bulk", "include_cv", "time_aware"])
+    log_mlflow, bulk, include_cv, time_aware, adaptive_tf = map(
+        flags.get, ["log_mlflow", "bulk", "include_cv", "time_aware", "adaptive_tf"]
+    )
 
     mse_from_sample, mse_from_true, spline_mse, hausdorff_distance, expected_prediction_error = map(
         adaptive_results.get,
@@ -130,8 +138,6 @@ def log_to_mlflow(
         mse_true_diff = non_adapt_mse_from_true - mse_from_true
         spline_mse_diff = non_adapt_spline_mse - spline_mse
         hausdorff_distance_diff = non_adapt_hausdorff_distance - hausdorff_distance
-
-    adaptive_penalty = isinstance(prior_model, Prior)
 
     # extract params and constants for logging
     cv_folds, cross_validation_size, reference_variance, signal_to_noise = map(
@@ -151,7 +157,7 @@ def log_to_mlflow(
             cross_validation_size=cross_validation_size,
             reference_variance=reference_variance,
             signal_to_noise=signal_to_noise,
-            adaptive_penalty=adaptive_penalty,
+            adaptive_penalty=adaptive_tf,
         )
     )
 
@@ -169,7 +175,7 @@ def log_to_mlflow(
             "cross_validation": include_cv,
             "no_folds": cv_folds,
             "cross_validation_size": cross_validation_size,
-            "adaptive_lambda_p": adaptive_penalty,
+            "adaptive_lambda_p": adaptive_tf,
             "signal_to_noise": signal_to_noise,
             "reference_variance": reference_variance,
             "k_max": K_max,
@@ -197,17 +203,17 @@ def log_to_mlflow(
         ]
 
         # add prior and knots if applicable
-        if adaptive_penalty:
+        if adaptive_tf:
             artifact_list.append("data/images/prior.png")
             metrics["bandwidth"] = prior_model.bandwidth if prior_model.name == "Kernel_Smooth_Prior" else None
-
-            metrics.update(
-                {
-                    "mse_true_diff": mse_true_diff,
-                    "spline_mse_diff": spline_mse_diff,
-                    "hausdorff_distance_diff": hausdorff_distance_diff,
-                }
-            )
+            if non_adaptive_results:
+                metrics.update(
+                    {
+                        "mse_true_diff": mse_true_diff,
+                        "spline_mse_diff": spline_mse_diff,
+                        "hausdorff_distance_diff": hausdorff_distance_diff,
+                    }
+                )
 
         if len_true_knots:
             artifact_list.extend(["data/images/knots.png", "data/knots.txt", "data/true_knots.txt"])
@@ -218,7 +224,7 @@ def log_to_mlflow(
             params=params,
             metrics=metrics,
             tags=[
-                {"Adaptive": adaptive_penalty},
+                {"Adaptive": adaptive_tf},
                 {"Cross_Validation": include_cv},
                 {"Status": results["status"]},
                 {"Time_Aware": time_aware},
