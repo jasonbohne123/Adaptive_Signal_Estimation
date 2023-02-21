@@ -20,8 +20,7 @@ def prep_signal(sample, true_sol, prior_model=None, t=None):
     if prior_model is not None:
         assert len(prior_model.prior) == len(true_sol)
 
-        ### TO CHANGE: EXPLICITLY SET FOR CONSTANT PRIOR
-        prior_model = 1 / prior_model.submodel.prior
+        prior_model = 1 / prior_model.prior
 
     if t is not None:
         assert len(t) == len(true_sol)
@@ -158,7 +157,7 @@ def log_to_mlflow(
             cross_validation_size=cross_validation_size,
             reference_variance=reference_variance,
             signal_to_noise=signal_to_noise,
-            adaptive_penalty=adaptive_penalty,
+            adaptive_penalty=adaptive_tf,
         )
     )
 
@@ -176,7 +175,7 @@ def log_to_mlflow(
             "cross_validation": include_cv,
             "no_folds": cv_folds,
             "cross_validation_size": cross_validation_size,
-            "adaptive_lambda_p": adaptive_penalty,
+            "adaptive_lambda_p": adaptive_tf,
             "signal_to_noise": signal_to_noise,
             "reference_variance": reference_variance,
             "k_max": K_max,
@@ -204,7 +203,7 @@ def log_to_mlflow(
         ]
 
         # add prior and knots if applicable
-        if adaptive_penalty:
+        if adaptive_tf:
             artifact_list.append("data/images/prior.png")
             metrics["bandwidth"] = prior_model.bandwidth if prior_model.name == "Kernel_Smooth_Prior" else None
             if non_adaptive_results:
@@ -225,7 +224,7 @@ def log_to_mlflow(
             params=params,
             metrics=metrics,
             tags=[
-                {"Adaptive": adaptive_penalty},
+                {"Adaptive": adaptive_tf},
                 {"Cross_Validation": include_cv},
                 {"Status": results["status"]},
                 {"Time_Aware": time_aware},
