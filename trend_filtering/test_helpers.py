@@ -24,7 +24,6 @@ def prep_signal(sample, true_sol, prior_model=None, t=None):
         assert len(t) == len(true_sol)
 
     D = Difference_Matrix(n, k, prior=prior_model, t=t)
-
     return sample, true_sol, D
 
 

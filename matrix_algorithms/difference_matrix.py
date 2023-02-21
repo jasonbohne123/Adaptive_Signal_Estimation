@@ -11,7 +11,7 @@ from matrix_algorithms.k_differences import differences
 class Difference_Matrix:
     """General class for creating difference matrices of unequally spaced and equally spaced data"""
 
-    def __init__(self, n, k, t=None, prior: np.ndarray = None) -> None:
+    def __init__(self, n, k, t: np.ndarray = None, prior: np.ndarray = None) -> None:
 
         self.n = n
         self.k = k
@@ -162,21 +162,15 @@ class Difference_Matrix:
 
             diff = np.array(differences(t, k=k + 1))
             scale = np.diag((k + 1) / diff)
-
             # recursively account for time increments
             D_k = D_1.dot(scale.dot(D_k))
-
         return D_k
 
     def construct_prior_matrix(self, D, prior):
         """Constructs prior matrix assuming univariate influences"""
 
-        assert (
-            len(prior) - 2 == D.shape[0]
-        ), "Prior must be the same length as the number of rows in the difference matrix"
-
-        # construct the prior matrix
-        prior = np.diag(prior[1:-1])
+        # construct the prior matrix from the prior vector
+        prior = np.diag(prior[: self.n - self.k - 1])
 
         # construct the prior matrix
         D_prior = prior.dot(D)

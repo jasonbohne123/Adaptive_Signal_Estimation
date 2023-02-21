@@ -28,9 +28,10 @@ class Volume_Prior(Prior):
 
         # fetch time series if time_flag is true
         if time_flag:
-            volume_data.index = pd.to_datetime(volume_data.index)
-            t = np.array([(i - volume_data.index[0]).total_seconds() for i in volume_data.index])
+            # volume_data.index = pd.to_datetime(volume_data.index)
+            # t = np.array([(i - volume_data.index[0]).total_seconds() for i in volume_data.index])
 
+            t = np.arange(len(volume_data))
             # update time_flag and t
             self.time_flag = time_flag
             self.t = t

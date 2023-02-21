@@ -19,6 +19,7 @@ def adaptive_tf(
     lambda_p: Union[float, None] = 1.0,
     select_knots=False,
     true_knots=None,
+    cv=False,
 ):
     """
     Adaptive trend filtering algorithm

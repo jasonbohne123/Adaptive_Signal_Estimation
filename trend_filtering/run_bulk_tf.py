@@ -60,7 +60,7 @@ def run_bulk_trend_filtering(
         true=true,
         true_knots=true_knots,
         prior_model=None,
-        t=None,
+        t=submodel.t,
         sim_grid=sim_grid,
         prev_results=None,
     )
@@ -71,7 +71,7 @@ def run_bulk_trend_filtering(
         test_adaptive_tf,
         exp_name=exp_name,
         prior_model=kernel_smooth_prior,
-        t=None,
+        t=submodel.t,
         flags=flags,
         true=true,
         true_knots=true_knots,
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # prior_model = Uniform_Prior(n)
 
     # real data prior
-    prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=False))
+    prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=True))
 
     # simulation style
 

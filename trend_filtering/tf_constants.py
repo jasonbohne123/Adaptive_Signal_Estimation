@@ -11,10 +11,9 @@
 def get_simulation_constants():
     """Default Simulation Constants for Trend Filtering"""
     constants = {
-        "n_sims": 25,
+        "n_sims": 5,
         "n_samples": 1,
         # simulation params
-        # "k_points": 3, (only required for k_maxima and k_minima)
         "underlying_dist": "normal",
         "label_style": "k_local_spikes",
         "signal_to_noise": 0.05,
@@ -22,8 +21,8 @@ def get_simulation_constants():
         "shift": 100,
         # cross validation params
         "cv_folds": 20,
-        "cross_validation_size": 0.9,
-        "cv_grid_lb": 1e-8,
+        "cross_validation_size": 0.7,
+        "cv_grid_lb": 1e-6,
         "cv_iterations": 5,
         "cv_bias": 0.5,
         "verbose_cv": True,
@@ -54,9 +53,9 @@ def get_model_constants():
         "beta": 0.5,
         "mu": 2,
         "mu_inc": 1e-10,
-        "maxiter": 40,
-        "maxlsiter": 20,
-        "tol": 1e-8,
+        "maxiter": 30,
+        "maxlsiter": 30,
+        "tol": 1e-6,
         # model params
         "solve_cp": True,
         "K_max": 5,

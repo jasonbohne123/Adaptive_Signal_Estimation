@@ -10,13 +10,27 @@ from matrix_algorithms.k_differences import differences
 
 
 class Continous_TF:
-    def __init__(self, x_tf: np.ndarray, D: Difference_Matrix, k: int):
+    def __init__(self, x_tf: np.ndarray, D: Difference_Matrix, k: int, cv: bool = False):
         self.x_tf = x_tf.flatten()
         self.k = k
 
         self.D = D
 
-        self.t = self.D.t if self.D.t is not None else np.arange(1, len(self.x_tf) + 1)
+        # requires t to be indexed in CV
+        assert self.D.t is not None if cv else True
+
+        # in cv case, t is indexed in D
+        if self.D.t is not None:
+            self.t = self.D.t
+
+        # in non-cv case, t is just the index
+        else:
+            self.t = np.arange(1, len(self.x_tf) + 1)
+
+        # requires prior to be indexed in CV
+        assert self.D.prior is not None if cv else True
+
+        self.prior = self.D.prior
 
         # create falling factorial basis on input data
         self.falling_factorial_basis = Falling_Factorial_Basis(self.t, self.k)
@@ -42,8 +56,8 @@ class Continous_TF:
 
             diff = np.diag(1 / np.array(differences(self.t, k=j - 1)))
 
-            # requires arbitrary difference matrix
-            D = Difference_Matrix(n, k=j - 2, t=self.t)
+            # requires arbitrary difference matrix ( partial of prior and time)
+            D = Difference_Matrix(n, k=j - 2, t=self.t, prior=self.prior)
 
             # time indexed difference matrix
             D_j_1 = D.D

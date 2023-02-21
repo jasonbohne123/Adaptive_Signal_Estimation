@@ -40,10 +40,13 @@ def cross_validation(
         x_is = x[is_index]
         x_oos = x[oos_index]
 
-        is_t = D.t[is_index] if D.time_enabled else None
-        is_prior = D.prior[is_index] if D.prior_enabled else None
+        # create unequally spaced time index either from original time index or from index
+        is_t = D.t[is_index] if D.time_enabled else is_index
 
-        is_D = Difference_Matrix(len(is_index), D.k, is_t, is_prior)  # normalize prior by mean
+        # create respective prior for in-sample data
+        is_prior = D.prior[is_index] if D.prior_enabled else np.ones(len(is_index))
+
+        is_D = Difference_Matrix(len(is_index), D.k, is_t, is_prior)
 
         # compute lambda_max for each subproblem given difference matrix and prior
         prior_max, is_D_D = compute_lambda_max(is_D, x_is)
@@ -57,7 +60,8 @@ def cross_validation(
                 print(f"Performing cross validation for lambda = {relative_scaler}")
 
             # solve tf subproblem
-            result = adaptive_tf(x_is.reshape(-1, 1), is_D_D, lambda_p=relative_scaler)
+
+            result = adaptive_tf(x_is.reshape(-1, 1), is_D_D, lambda_p=relative_scaler, cv=True)
             status = result["status"]
             sol = result["sol"]
 
@@ -71,11 +75,13 @@ def cross_validation(
                 continue
 
             # to compute oos error we need to make the return type callable
+
             predictions = sol.predict(oos_index)
 
             # compute mse on oos test set
-
             oos_error = compute_error(predictions.reshape(-1, 1), x_oos, type="mse")
+
+            print(f"OOS Prediction Error for {lambda_i} is {oos_error}")
 
             # add to average oos error for each lambda
             results[lambda_i] += oos_error
