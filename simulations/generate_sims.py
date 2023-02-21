@@ -39,7 +39,8 @@ def generate_samples(true, time_index, true_knots, snr=None):
     sampler = Sampler(underlying_dist)
 
     # (n_sims,len_sims), (n_sims*n_samples,len_sims)
-    padded_diff = np.pad(np.diff(time_index), (1, 0), "constant", constant_values=(1, 1))
-    samples, adjusted_true = sampler.sample(true, n_samples=n_samples, scale=padded_diff * reference_variance / snr)
+    padded_diff = np.pad(np.diff(time_index), (1, 0), "mean")
+
+    samples, adjusted_true = sampler.sample(true, n_samples=n_samples, scale=padded_diff * reference_variance * snr)
 
     return adjusted_true, samples

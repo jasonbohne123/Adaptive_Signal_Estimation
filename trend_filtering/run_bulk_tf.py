@@ -43,7 +43,7 @@ def run_bulk_trend_filtering(
     # submodel.prior[np.setdiff1d(np.arange(len(submodel.prior)), true_knots)] = 0.1
 
     # biased prior to true cp
-    updated_prior = Deterministic_Prior(submodel.prior, submodel.t)
+    updated_prior = Deterministic_Prior(np.ones(len(submodel.t)), submodel.t)
 
     # # smooth around indicator
     kernel_smooth_prior = Kernel_Smooth_Prior(updated_prior, sim_grid["bandwidth"])
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # prior_model = Uniform_Prior(n)
 
     # real data prior
-    prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=True))
+    prior_model = Kernel_Smooth_Prior(Volume_Prior(n, time_flag=False))
 
     # simulation style
 
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # evaluation for new sims with different bandwidths
     bandwidth_grid = [50]
-    snr_grid = [0.05]
+    snr_grid = [10000]
 
     possible_comb = itertools.product(bandwidth_grid, snr_grid)
 

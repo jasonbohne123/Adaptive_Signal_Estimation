@@ -38,6 +38,7 @@ class Sampler(Simulator):
         adjusted_true = np.repeat(true_processes, n_samples, axis=0)
 
         # (n_sims,len_sims), (n_sims*n_samples,len_sims)
+        # each sample centered on true with scale across all dimensions
         return (
             self.underlying_simulator.simulate(
                 (n_samples * true_processes.shape[0], true_processes.shape[1]),

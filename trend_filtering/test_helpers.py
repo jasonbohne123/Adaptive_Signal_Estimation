@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 from tf_constants import get_model_constants, get_simulation_constants
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
@@ -18,7 +19,9 @@ def prep_signal(sample, true_sol, prior_model=None, t=None):
 
     if prior_model is not None:
         assert len(prior_model.prior) == len(true_sol)
-        prior_model = 1 / prior_model.prior
+
+        ### TO CHANGE: EXPLICITLY SET FOR CONSTANT PRIOR
+        prior_model = 1 / prior_model.submodel.prior
 
     if t is not None:
         assert len(t) == len(true_sol)
@@ -32,32 +35,35 @@ def write_to_files(sample, true_sol, sol, spline, prior_model, true_knots, knots
 
     adaptive_penalty = isinstance(prior_model, Prior)
 
+    if not adaptive_penalty:
+        t = np.arange(0, len(true_sol))
+    else:
+        t = prior_model.t
+
     # plot to visualize estimation
     if plot:
         plt.figure(figsize=(14, 12))
-        plt.plot(true_sol, color="black", label="True Signal", lw=10)
-        plt.plot(sample, color="blue", label="Noisy Sample", lw=0.5)
-        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
-        plt.plot(spline, color="green", label="Spline Estimate", lw=3)
+        plt.plot(t, true_sol, color="black", label="True Signal", lw=10)
+        plt.plot(t, sample, color="blue", label="Noisy Sample", lw=0.5)
+        plt.plot(t, sol, color="red", label="Reconstructed Estimate", lw=5)
+        plt.plot(t, spline, color="green", label="Spline Estimate", lw=3)
         plt.legend()
         plt.title("Linear Trend Filtering Estimate on Noisy Sample")
         plt.savefig("data/images/tf.png")
         plt.close()
 
         plt.figure(figsize=(14, 12))
-        plt.plot(true_sol, color="black", label="True Signal", lw=10)
-        plt.plot(sol, color="red", label="Reconstructed Estimate", lw=5)
+        plt.plot(t, true_sol, color="black", label="True Signal", lw=10)
+        plt.plot(t, sol, color="red", label="Reconstructed Estimate", lw=5)
 
         if adaptive_penalty:
             fig, ax = plt.subplots(figsize=(14, 12))
-            ax.plot(prior_model.t, prior_model.prior, color="green", label="Original Prior", lw=2.5)  # plots prior
+            ax.plot(t, prior_model.prior, color="green", label="Original Prior", lw=2.5)  # plots prior
             ax_twin = ax.twinx()
-            ax_twin.plot(
-                prior_model.t, prior_model.orig_data, color="red", label="Original Data", lw=2.5
-            )  # plots original data
+            ax_twin.plot(t, prior_model.orig_data, color="red", label="Original Data", lw=2.5)  # plots original data
             for knot in true_knots:
                 ax.axvline(
-                    x=prior_model.t[knot], color="black", linestyle="--", lw=2.5, label="True Regime Change"
+                    x=t[knot], color="black", linestyle="--", lw=2.5, label="True Regime Change"
                 )  # plots associated cp
             plt.legend()
             plt.title("Original Prior")
