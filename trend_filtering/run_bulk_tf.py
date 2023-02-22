@@ -38,9 +38,9 @@ def run_bulk_trend_filtering(
     # decompose prior into raw data
     submodel = prior_model.submodel
 
-    # # # set prior to interior cp
-    # submodel.prior[true_knots] = 1
-    # submodel.prior[np.setdiff1d(np.arange(len(submodel.prior)), true_knots)] = 0.1
+    # set prior to interior cp (indicator)
+    submodel.prior[true_knots] = 1
+    submodel.prior[np.setdiff1d(np.arange(len(submodel.prior)), true_knots)] = 0.1
 
     # biased prior to true cp
     updated_prior = Deterministic_Prior(submodel.prior, submodel.t)

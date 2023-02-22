@@ -1,6 +1,10 @@
+import sys
 from collections import defaultdict
 
 import numpy as np
+
+sys.path.append("../")
+sys.path.append("../../")
 
 from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
@@ -45,6 +49,8 @@ def cross_validation(
 
         # create respective prior for in-sample data
         is_prior = D.prior[is_index] if D.prior_enabled else np.ones(len(is_index))
+
+        # reformulate prior here
 
         is_D = Difference_Matrix(len(is_index), D.k, is_t, is_prior)
 
