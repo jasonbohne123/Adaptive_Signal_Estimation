@@ -67,10 +67,8 @@ def generalized_cross_validation(Y, optimal_indices, order, true_knots, verbose=
 
         biased_cv_epe[k_i] = relative_accuracy + in_sample_simplicity
 
-        # compute effective number of parameters;
-        # this is order + 1 for each interval (# of knots + 1)
-
-        eff_param = (k_i + 1) * (order + 1)
+        # compute effective number of parameters (arise from trend filtering estimate )
+        eff_param = len(true_knots) + order + 1
 
         gcv[k_i] = mse / (len(Y) - eff_param) ** 2
 

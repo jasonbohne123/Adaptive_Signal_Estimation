@@ -90,7 +90,7 @@ class Piecewise_Linear_Model:
 
         t = np.arange(0, len(self.x), 1)
 
-        # fits a linear spline to the data with fixed changepoints and order
+        # fits a linear spline to the data with fixed changepoints and order (NEED TO FIX DB SPLINE)
         spline = LSQUnivariateSpline(t, self.x, t=self.knots, k=self.order)
 
         return spline(t).reshape(-1, 1)
