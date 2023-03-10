@@ -31,7 +31,7 @@ class Piecewise_Linear_Model:
         self.t = D.t
 
         # constants for cp selection and model
-        self.threshold = get_model_constants()["cp_threshold"]
+        self.quantile = get_model_constants()["cp_quantile"]
         self.K_max = get_model_constants()["K_max"]
         self.order = get_model_constants()["order"]
         self.select_knots = select_knots
@@ -57,7 +57,7 @@ class Piecewise_Linear_Model:
         reshaped_x = self.x.reshape(1, -1)[0]
 
         # Extract all candidate knots up to a threshold
-        candidate_knots = extract_cp(reshaped_x, self.D, self.threshold)
+        candidate_knots = extract_cp(reshaped_x, self.D, self.quantile)
 
         # Apply dynamic programming to find optimal knots
         dp_set = partition_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
