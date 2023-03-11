@@ -6,7 +6,7 @@ Work relevant to current research interests of conditional trend filtering and c
 
 Included is
 
-Optimized numerical algorithms for difference matrix construction and optimized inversion
-Sherman-Morrison Script for Inversion
-Kernel Estimation Class and Simulations
+- Optimized numerical algorithms for difference matrix construction and optimized inversion
+- Sherman-Morrison Script for Inversion
+- Kernel Estimation Class and Simulations
 
