@@ -7,7 +7,7 @@ from prior_models.prior_model import Prior
 
 PATH = "../../../taq_db/TAQ-Query-Scripts/data/raw_data/2020-01-02/"
 sys.path.append(PATH)
-DATA_FILE = "AAPL_trades_cleaned.csv"
+DATA_FILE = "CF_trades_cleaned.csv"
 
 
 class Volume_Prior(Prior):
