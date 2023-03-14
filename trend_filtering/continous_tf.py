@@ -5,6 +5,7 @@ import numpy as np
 from falling_factorial_gen import Falling_Factorial_Basis
 
 sys.path.append("../")
+sys.path.append("../../")
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.k_differences import differences
 

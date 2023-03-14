@@ -60,7 +60,7 @@ def get_model_constants():
         "solve_cp": True,
         "K_max": 5,
         "order": 1,
-        "cp_quantile": 0.02,  # good proxy is 0.1 of variance of true process
+        "cp_quantile": 0.01,  # good proxy is 0.1 of variance of true process
         "min_cp_distance": 25,
     }
     return hyperparams

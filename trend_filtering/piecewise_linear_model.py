@@ -1,7 +1,6 @@
 import sys
 
 import numpy as np
-from scipy.interpolate import LSQUnivariateSpline
 
 sys.path.append("../")
 
@@ -38,7 +37,7 @@ class Piecewise_Linear_Model:
         self.true_knots = true_knots
 
         if self.select_knots:
-            self.knots = self.get_knots()
+            self.knots, self.gcv_scores = self.get_knots()
 
         # extract tf to continous domain
 
@@ -76,21 +75,4 @@ class Piecewise_Linear_Model:
         # flag to indicate that knots have been selected
         self.select_knots = True
 
-        return knots
-
-    def fit_linear_spline(self):
-        """Fits a linear spline to the data using the optimal changepoints
-
-        Allows for a Continous Fit of the data
-
-        """
-
-        if not self.select_knots:
-            self.knots = self.get_knots()
-
-        t = np.arange(0, len(self.x), 1)
-
-        # fits a linear spline to the data with fixed changepoints and order (NEED TO FIX DB SPLINE)
-        spline = LSQUnivariateSpline(t, self.x, t=self.knots, k=self.order)
-
-        return spline(t).reshape(-1, 1)
+        return knots, optimal_trend_cp_gcv

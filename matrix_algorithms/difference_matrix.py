@@ -86,10 +86,7 @@ class Difference_Matrix:
 
         assert np.allclose(self.composite_sequence, DDT, atol=1e-8)
 
-        condition_number = np.linalg.cond(DDT)
-
-        if condition_number > 1e8:
-            print(" WARNING Condition number is large: {}".format(condition_number))
+        np.linalg.cond(DDT)
 
         return
 

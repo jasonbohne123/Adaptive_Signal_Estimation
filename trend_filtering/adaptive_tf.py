@@ -116,10 +116,7 @@ def compute_objective(DDT, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
 
     # evaluates primal with dual variable of dual and optimality condition
     linear_solver = np.linalg.solve(DDT, w)
-    max_error = np.max(np.abs(np.dot(DDT, linear_solver) - w))
-
-    if max_error > 1e-7:
-        print("WARNING Error in linear solver: ", max_error)
+    np.max(np.abs(np.dot(DDT, linear_solver) - w))
 
     pobj1 = 0.5 * np.dot(w.T, (np.linalg.solve(DDT, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
     pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, np.abs(Dy - DDTz)))
@@ -147,10 +144,7 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
 
     r = -DDTz + Dy + mu_inc_inv / f1 - mu_inc_inv / f2
     dz = np.linalg.solve(S, r)
-    max_error = np.max(np.abs(S.dot(dz) - r))
-
-    if max_error > 1e-7:
-        print(f"WARNING Error for S is {max_error}")
+    np.max(np.abs(S.dot(dz) - r))
 
     # step size for the dual variables formulated from constraints
     dmu1 = -(mu1 + (mu_inc_inv + dz * mu1) / f1)
