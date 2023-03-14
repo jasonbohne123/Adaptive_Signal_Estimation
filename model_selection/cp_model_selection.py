@@ -6,9 +6,12 @@ from model_selection.partition import best_fit_polynomial, map_intervals
 def generalized_cross_validation(Y, optimal_indices, order, true_knots, verbose=False):
     """Determines optimal number of changepoints based on generalized cross validation"""
 
+    optimal_indices = dict(sorted(optimal_indices.items(), key=lambda x: x[0]))
+
     # init dictionaries to store the results for optimal k cp
     model_mse = dict.fromkeys(optimal_indices.keys(), 0)
     gcv = dict.fromkeys(optimal_indices.keys(), 0)
+    gcv_ratio = dict.fromkeys(optimal_indices.keys(), 0)
 
     # compute the mse of the true model
     temp_cps = np.unique(np.concatenate([[0], true_knots, [len(Y)]])).astype(int)
@@ -16,7 +19,6 @@ def generalized_cross_validation(Y, optimal_indices, order, true_knots, verbose=
     fixed_intervals = map_intervals(Y, temp_cps)
 
     true_mse = 0
-    print(fixed_intervals)
     # compute the sum of squared errors of best fitted polynomial each interval
     for inter in list(fixed_intervals.values()):
         mse = best_fit_polynomial(Y, inter, order=order)
@@ -38,15 +40,20 @@ def generalized_cross_validation(Y, optimal_indices, order, true_knots, verbose=
         for inter in list(fixed_intervals.values()):
             mse = best_fit_polynomial(Y, inter, order=order)
             fixed_mse += mse
-        model_mse[k_i] = fixed_mse
+
+        # average mse over intervals
+        model_mse[k_i] = np.mean(fixed_mse)
 
         # compute effective number of parameters (arise from trend filtering estimate )
         eff_param = len(cps) + order + 1
 
-        print("eff_param", eff_param, "fixed_mse", fixed_mse, "true_mse", true_mse)
+        # ratio of gcv scores for subsequent k
         gcv[k_i] = fixed_mse / (len(Y) - eff_param) ** 2
 
-    sorted_gcv = sorted(gcv.items(), key=lambda x: x[1])
+        # compute ratio of gcv scores for subsequent k (initial is 1.0)
+        gcv_ratio[k_i] = gcv[k_i] / gcv[k_i - 1] if k_i > 0 else 1.0
+
+    sorted_gcv = sorted(gcv_ratio.items(), key=lambda x: x[1])
 
     # if optimal cp is first index; no cp are found
     if sorted_gcv[0][0] == 0:
