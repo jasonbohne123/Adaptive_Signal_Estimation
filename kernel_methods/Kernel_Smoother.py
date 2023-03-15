@@ -24,6 +24,16 @@ class KernelSmoother:
 
         return weight
 
+    def predict(self, y):
+        """Predicts the output at time t using kernel smoothing"""
+
+        predictions = []
+        for i in range(0, len(y)):
+            y_hat = self.evaluate_kernel(y[i])
+            predictions.append(y_hat)
+
+        return predictions
+
     def fit(self):
         """
         Fits a kernel smoothing estimator on a prior series
@@ -52,8 +62,8 @@ class KernelSmoother:
                 kernel = self.compute_kernel(self.x[i], self.x[j], bandwidth=self.optimal_bandwidth)
                 kernel_matrix[i, j] = kernel
 
-        fitted_kernel_matrix = kernel_matrix / np.sum(kernel_matrix, axis=1)
-        return fitted_kernel_matrix
+        fitted_kernel_matrix = kernel_matrix / np.sum(kernel_matrix, axis=0)
+        return fitted_kernel_matrix.T
 
     def smooth_series(self, fitted_kernel_matrix):
         """Smooths the series using the kernel smoothing estimator"""
