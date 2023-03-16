@@ -7,16 +7,18 @@ class B_Spline_Basis:
     Note this is a 3-dimensional basis function, i.e. the basis functions are evaluated at each observation
     """
 
-    def __init__(self, x, gamma, order=3):
+    def __init__(self, x, gamma, order):
         self.x = x  # observations
-        self.k = len(gamma)  # number of knots
+        self.k = len(gamma)  # number of interior knots
         self.gamma = np.concatenate(
-            [np.repeat(gamma[0], order), gamma, np.repeat(gamma[-1], order)]
+            [np.repeat(min(x), order + 1), gamma, np.repeat(max(x), order + 1)]
         )  # knots of length 2m+k
         self.m = order + 1  # order of the B-Spline basis functions
 
-    def B(self, x: np.ndarray):
+    def B(self, x: np.ndarray, m=1):
         """Generates the B-Spline basis functions"""
+
+        # assert 0<p<=self.m and int(p)==p, "p must be an integer between 0 and m"
 
         # Generate the B-Spline basis functions (knots x basis functions x observations)
         B = np.zeros((self.k + 2 * self.m - 1, self.m, len(x)))
@@ -44,4 +46,4 @@ class B_Spline_Basis:
 
                     B[i, j] = lhs + rhs
 
-        return B[: -self.m + 1, -1, :].T  # return the mth order basis functions
+        return B[: self.k + 2 * self.m - m, m - 1, :].T  # return the mth order basis functions
