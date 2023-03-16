@@ -11,7 +11,7 @@
 def get_simulation_constants():
     """Default Simulation Constants for Trend Filtering"""
     constants = {
-        "n_sims": 15,
+        "n_sims": 5,
         "n_samples": 1,
         # simulation params
         "underlying_dist": "normal",
@@ -21,7 +21,7 @@ def get_simulation_constants():
         "shift": 100,
         # cross validation params
         "cv_folds": 20,
-        "cross_validation_size": 0.9,
+        "cross_validation_size": 0.75,
         "cv_grid_lb": 1e-4,
         "cv_iterations": 5,
         "cv_bias": 0.5,
@@ -48,7 +48,7 @@ def get_model_constants():
     hyperparams = {
         # Optimization params
         "k": 1,  # linear trend filtering
-        "n": 600,
+        "n": 250,
         "alpha": 0.01,
         "beta": 0.5,
         "mu": 2,
@@ -58,9 +58,9 @@ def get_model_constants():
         "tol": 1e-6,
         # model params
         "solve_cp": True,
-        "K_max": 5,
+        "K_max": 15,  # 1% of data length is good proxy
         "order": 1,
-        "cp_threshold": 0.05 * 1e-1,  # good proxy is 0.1 of variance of true process
+        "cp_quantile": 0.01,  # good proxy is 0.1 of variance of true process
         "min_cp_distance": 25,
     }
     return hyperparams

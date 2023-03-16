@@ -22,14 +22,21 @@ def compute_lambda_max(D: Difference_Matrix, x: np.ndarray):
     return lambda_max, D
 
 
-def extract_cp(smooth, D: Difference_Matrix, threshold):
+def extract_cp(smooth, D: Difference_Matrix, quantile):
     """Extract changepoints via difference operator"""
 
     D = D.D
 
     diff = np.dot(D, smooth).reshape(1, -1)[0]
 
-    x, index = np.where([abs(diff) > threshold])
+    # get cp
+    points = np.sort(np.abs(diff))
+
+    # get quantile
+    threshold = points[int(quantile * len(points))]
+
+    # get index of cp
+    index = np.where(np.abs(diff) > threshold)[0]
 
     # returns rhs of index for close pairs
     close_pairs = index[1:][np.diff(index) < get_model_constants()["min_cp_distance"]]

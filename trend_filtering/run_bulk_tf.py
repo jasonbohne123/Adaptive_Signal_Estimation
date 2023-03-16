@@ -138,8 +138,8 @@ if __name__ == "__main__":
     true, true_knots, cp_knots = generate_true_dgp(prior_model, sim_style)
 
     # evaluation for new sims with different bandwidths
-    bandwidth_grid = [2, 10, 25, 50, 100]
-    snr_grid = [25, 50, 75, 100]
+    bandwidth_grid = [100]
+    snr_grid = [10]
 
     possible_comb = itertools.product(bandwidth_grid, snr_grid)
 

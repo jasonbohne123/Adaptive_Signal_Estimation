@@ -1,7 +1,6 @@
 import sys
 
 import numpy as np
-from scipy.interpolate import LSQUnivariateSpline
 
 sys.path.append("../")
 
@@ -31,14 +30,14 @@ class Piecewise_Linear_Model:
         self.t = D.t
 
         # constants for cp selection and model
-        self.threshold = get_model_constants()["cp_threshold"]
+        self.quantile = get_model_constants()["cp_quantile"]
         self.K_max = get_model_constants()["K_max"]
         self.order = get_model_constants()["order"]
         self.select_knots = select_knots
         self.true_knots = true_knots
 
         if self.select_knots:
-            self.knots = self.get_knots()
+            self.knots, self.gcv_scores = self.get_knots()
 
         # extract tf to continous domain
 
@@ -57,7 +56,7 @@ class Piecewise_Linear_Model:
         reshaped_x = self.x.reshape(1, -1)[0]
 
         # Extract all candidate knots up to a threshold
-        candidate_knots = extract_cp(reshaped_x, self.D, self.threshold)
+        candidate_knots = extract_cp(reshaped_x, self.D, self.quantile)
 
         # Apply dynamic programming to find optimal knots
         dp_set = partition_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
@@ -76,21 +75,4 @@ class Piecewise_Linear_Model:
         # flag to indicate that knots have been selected
         self.select_knots = True
 
-        return knots
-
-    def fit_linear_spline(self):
-        """Fits a linear spline to the data using the optimal changepoints
-
-        Allows for a Continous Fit of the data
-
-        """
-
-        if not self.select_knots:
-            self.knots = self.get_knots()
-
-        t = np.arange(0, len(self.x), 1)
-
-        # fits a linear spline to the data with fixed changepoints and order
-        spline = LSQUnivariateSpline(t, self.x, t=self.knots, k=self.order)
-
-        return spline(t).reshape(-1, 1)
+        return knots, optimal_trend_cp_gcv

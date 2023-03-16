@@ -50,6 +50,9 @@ class Difference_Matrix:
         # account for conditional prior
         if prior is not None:
 
+            # save the old D matrix
+            self.old_D = D
+
             D, mat_to_append = self.construct_prior_matrix(D, prior)
 
             for mat in mat_to_append:
@@ -59,8 +62,15 @@ class Difference_Matrix:
 
         self.D = D
 
+        # compute the DDT matrix
+        self.matrix_processing()
+
+    def matrix_processing(self):
+
+        """Matrix Processing for D and DDT"""
+
         # create DDT
-        DDT = D.dot(D.T)
+        DDT = self.D.dot(self.D.T)
 
         # save the DDT matrix
         self.DDT = DDT
@@ -74,12 +84,11 @@ class Difference_Matrix:
         # save the composite sequence of D
         self.composite_sequence = self.sequence.compute_matrix().dot(self.sequence_transpose.compute_matrix())
 
-        assert np.allclose(self.composite_sequence, DDT)
+        assert np.allclose(self.composite_sequence, DDT, atol=1e-8)
 
-        condition_number = np.linalg.cond(D)
+        np.linalg.cond(DDT)
 
-        if condition_number > 1e8:
-            print(" WARNING Condition number is large: {}".format(condition_number))
+        return
 
     def compose_difference_matrix(self, n, k):
         """Extracts the kth difference matrix for any n-size array using pascal's triangle"""
@@ -209,3 +218,19 @@ class Difference_Matrix:
         mat_to_append.append(prior)
 
         return D_prior, mat_to_append
+
+    def update_prior(self, prior):
+        """Updates the prior matrix"""
+
+        # construct the prior matrix from the prior vector
+        prior = np.diag(prior[: self.n - self.k - 1])
+
+        # construct the prior matrix
+        D_prior = prior.dot(self.old_D)
+
+        self.D = D_prior
+
+        # compute the DDT matrix
+        self.matrix_processing()
+
+        return
