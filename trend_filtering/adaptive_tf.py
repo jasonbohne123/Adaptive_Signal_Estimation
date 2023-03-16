@@ -144,7 +144,6 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
 
     r = -DDTz + Dy + mu_inc_inv / f1 - mu_inc_inv / f2
     dz = np.linalg.solve(S, r)
-    np.max(np.abs(S.dot(dz) - r))
 
     # step size for the dual variables formulated from constraints
     dmu1 = -(mu1 + (mu_inc_inv + dz * mu1) / f1)
