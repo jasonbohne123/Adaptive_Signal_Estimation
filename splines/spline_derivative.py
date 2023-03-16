@@ -28,22 +28,22 @@ def compute_spline_derivative(spline: Regression_Spline_Estimator, order: int):
     # (K+M)
     gamma = spline.gamma
 
-    # differences between original control points
+    # differences between original control points (K+M-1)
     p_diff = gamma[1:] - gamma[:-1]
 
-    # differences between original knots
+    # p-differences between original snipped knots (K+2M-2)
+    # (K+2M-2-3)
     knot_diff = np.array(differences(repeated_knots[1:-1], spline.order)).reshape(-1, 1)
     index = np.where(knot_diff != 0)[0]
 
+    # (K+2M-2-3) x 1
     Q = np.zeros((derivative_basis.shape[1], 1))
 
     # update indices with non-zero differences
-    Q[index] = spline.order * p_diff[index] * (1 / knot_diff[index])
+    Q[index + 1] = spline.order * p_diff[index] * (1 / knot_diff[index])
 
     # compute the new coefficients
     estimate = derivative_basis.dot(Q)
-
-    assert len(x) == len(estimate), "x and gamma must be the same length"
 
     regression_spline = Regression_Spline_Estimator(x, estimate, knots, order=spline.order - 1)
 

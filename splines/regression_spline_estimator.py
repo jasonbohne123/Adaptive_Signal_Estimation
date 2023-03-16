@@ -43,14 +43,8 @@ class Regression_Spline_Estimator:
 
     def predict(self, x: np.ndarray):
 
-        # always fetch the pth order basis functions
         beta = self.basis.B(x, m=self.order + 1)
 
-        # regularization is used to improve numerical stability of the design matrix
-        lhs = np.dot(beta.T, beta) + self.lambda_ * np.eye(beta.shape[1])
-        L = np.linalg.cholesky(lhs)
-        LT = L.T
-
-        gamma = np.linalg.solve(L @ LT, beta.T.dot(self.y)).reshape(-1, 1)
+        gamma = self.gamma
 
         return beta.dot(gamma)

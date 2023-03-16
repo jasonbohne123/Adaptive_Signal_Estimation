@@ -8,6 +8,11 @@ class B_Spline_Basis:
     """
 
     def __init__(self, x, gamma, order):
+
+        assert min(gamma) >= min(x), "knots must be greater than or equal to the minimum observation"
+
+        assert max(gamma) <= max(x), "knots must be less than or equal to the maximum observation"
+
         self.x = x  # observations
         self.k = len(gamma)  # number of interior knots
         self.gamma = np.concatenate(
@@ -17,8 +22,6 @@ class B_Spline_Basis:
 
     def B(self, x: np.ndarray, m=1):
         """Generates the B-Spline basis functions"""
-
-        # assert 0<p<=self.m and int(p)==p, "p must be an integer between 0 and m"
 
         # Generate the B-Spline basis functions (knots x basis functions x observations)
         B = np.zeros((self.k + 2 * self.m - 1, self.m, len(x)))
