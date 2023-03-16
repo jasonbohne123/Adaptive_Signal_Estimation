@@ -115,8 +115,8 @@ def compute_objective(DDT, Dy, DTz, DDTz, z, w, mu1, mu2, lambda_p):
     """Computes Primal and Dual objectives and duality gap"""
 
     # evaluates primal with dual variable of dual and optimality condition
-    linear_solver = np.linalg.solve(DDT, w)
-    np.max(np.abs(np.dot(DDT, linear_solver) - w))
+    # linear_solver = np.linalg.solve(DDT, w)
+    # np.max(np.abs(np.dot(DDT, linear_solver) - w))
 
     pobj1 = 0.5 * np.dot(w.T, (np.linalg.solve(DDT, w))) + np.sum(np.dot(lambda_p.T, (mu1 + mu2)))
     pobj2 = 0.5 * np.dot(DTz.transpose(), DTz) + np.sum(np.dot(lambda_p.T, np.abs(Dy - DDTz)))
