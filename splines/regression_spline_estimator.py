@@ -24,6 +24,8 @@ class Regression_Spline_Estimator:
 
         self.gamma, self.f_hat = self.fit()
 
+        self.num_params = self.gamma.shape[0]
+
     def fit(self, beta=None):
 
         if beta is None:
