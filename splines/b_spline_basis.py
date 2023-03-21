@@ -7,7 +7,7 @@ class B_Spline_Basis:
     Note this is a 3-dimensional basis function, i.e. the basis functions are evaluated at each observation
     """
 
-    def __init__(self, x, gamma, order):
+    def __init__(self, x, gamma, degree):
 
         assert min(gamma) >= min(x), "knots must be greater than or equal to the minimum observation"
 
@@ -16,9 +16,9 @@ class B_Spline_Basis:
         self.x = x  # observations
         self.k = len(gamma)  # number of interior knots
         self.gamma = np.concatenate(
-            [np.repeat(min(x), order + 1), gamma, np.repeat(max(x), order + 1)]
+            [np.repeat(min(x), degree + 1), gamma, np.repeat(max(x), degree + 1)]
         )  # knots of length 2m+k
-        self.m = order + 1  # order of the B-Spline basis functions
+        self.m = degree + 1  # order of the B-Spline basis functions
 
     def B(self, x: np.ndarray, m=1):
         """Generates the B-Spline basis functions"""
