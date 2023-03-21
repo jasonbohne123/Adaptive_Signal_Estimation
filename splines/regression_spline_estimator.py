@@ -13,14 +13,15 @@ class Regression_Spline_Estimator:
 
     Developed in inspiration of Elements of Statistical Learning, Hastie, Tibshirani, Friedman, 2009, p. 185-186."""
 
-    def __init__(self, x, y, knots, order, lambda_=10e-3):
+    def __init__(self, x, y, knots, degree, lambda_=10e-3):
 
         self.x = x
         self.y = y
         self.knots = knots
         self.lambda_ = lambda_
-        self.order = order
-        self.basis = B_Spline_Basis(x, knots, order=order)
+        self.degree = degree
+        self.basis = B_Spline_Basis(x, knots, degree=degree)
+        self.m = self.basis.m
 
         self.gamma, self.f_hat = self.fit()
 
@@ -30,7 +31,7 @@ class Regression_Spline_Estimator:
 
         if beta is None:
             # always fetch the pth order basis functions
-            beta = self.basis.B(self.x, m=self.order + 1)
+            beta = self.basis.B(self.x, m=self.degree + 1)
 
         # regularization is used to improve numerical stability of the design matrix
         lhs = np.dot(beta.T, beta) + self.lambda_ * np.eye(beta.shape[1])
@@ -45,7 +46,7 @@ class Regression_Spline_Estimator:
 
     def predict(self, x: np.ndarray):
 
-        beta = self.basis.B(x, m=self.order + 1)
+        beta = self.basis.B(x, m=self.degree + 1)
 
         gamma = self.gamma
 

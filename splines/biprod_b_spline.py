@@ -23,36 +23,49 @@ class Biprod_B_Spline_Basis:
         assert (estimators[0].knots == sorted(estimators[0].knots)).all(), "Knots must be sorted"
         assert (estimators[1].knots == sorted(estimators[1].knots)).all(), "Knots must be sorted"
 
-        self.x = estimators[0].knots
-        self.y = estimators[1].knots
+        # knots of the first estimator
+        self.x_knots = estimators[0].basis.gamma
+        self.y_knots = estimators[1].basis.gamma
 
-        # order of splines
-        self.k = estimators[0].order
-        self.l = estimators[1].order
-
-        self.x_diff = {k_: np.array(differences(self.x, k_)) for k_ in range(1, self.k + 1)}
-        self.y_diff = {k_: np.array(differences(self.y, k_)) for k_ in range(1, self.l + 1)}
+        # order of splines( highest degree + 1)
+        self.k = estimators[0].m
+        self.l = estimators[1].m
 
         self.p = self.k + self.l - 1
 
-        sorted_knots = sorted(np.concatenate([self.x, self.y]))
+        # sort the knots (with duplicates)
+        sorted_knots = sorted(np.concatenate([self.x_knots, self.y_knots]))
         self.z = self.construct_z(sorted_knots)
-        self.unique_z = np.unique(self.z)
 
-        print(f"Knots for first estimator: {len(self.x)}")
-        print(f"Knots for second estimator: {len(self.y)}")
-        print(f"Number of knots in byproduct: {len(self.unique_z)}")
+        # unique knots
+        self.unique_z = np.unique(sorted_knots)
+
+        print(f"Knots with duplicates for first estimator: {len(self.x_knots)}")
+        print(f"Knots with duplicates for second estimator: {len(self.y_knots)}")
+        print(f"Number of knots with duplicates in byproduct: {len(self.z)}")
+        print(f"Number of unique knots in byproduct: {len(self.unique_z)}")
+
+        # precompute the differences for quick access in recursion
+        self.x_diff = {k_: np.array(differences(self.x_knots, k_)) for k_ in range(1, self.k + 1)}
+        self.y_diff = {l_: np.array(differences(self.y_knots, l_)) for l_ in range(1, self.l + 1)}
+        self.z_p_diff = {p_: np.array(differences(self.z, p_)) for p_ in range(1, self.p + 1)}
+        self.z_p_1_diff = {p_: np.array(differences(self.z, p_ - 1)) for p_ in range(1, self.p + 1)}
 
         self.e = estimators[0].gamma
         self.f = estimators[1].gamma
 
-        self.len_e = len(self.e)
-        self.len_f = len(self.f)
+        # pad the parameters with zeros if they are not enough
+        self.len_e = max(len(self.e), len(self.x_knots))
+        self.len_f = max(len(self.f), len(self.y_knots))
 
+        print(" ")
         print(f"Number of parameters for first estimator: {self.len_e}")
         print(f"Number of parameters for second estimator: {self.len_f}")
 
-        h = [i for i in range(len(self.unique_z))]
+        # unique basis functions (will be h=K+2M)
+        h = [i for i in range(len(self.z))]
+
+        print(f"Number of basis functions: {len(h)}")
 
         # vector of coefficients for the basis functions evaluated at multiple knots
         self.G_h = self.G(h, self.k, self.l)
@@ -63,95 +76,125 @@ class Biprod_B_Spline_Basis:
 
         """Constructs multiplicity of knots in the biproduct"""
 
-        freq_a = Counter(self.x)
-        freq_b = Counter(self.y)
+        freq_a = Counter(self.x_knots)
+        freq_b = Counter(self.y_knots)
 
         # need to correctly account for multiplicity of knots
-        multiplicty = dict(
-            zip(
-                sorted_knots,
-                [
-                    max(
-                        self.k + freq_a[knot] - 1 if knot in freq_a else self.k,
-                        self.l + freq_b[knot] - 1 if knot in freq_b else self.l,
-                    )
-                    for knot in sorted_knots
-                ],
+        multiplicty = {
+            knot: max(
+                self.k + freq_a[knot] - 1 if knot in freq_a else self.k,
+                self.l + freq_b[knot] - 1 if knot in freq_b else self.l,
             )
-        )
+            for knot in sorted_knots
+        }
 
         new_knots = [[knot for i in range(multiplicty[knot])] for knot in multiplicty.keys()]
         new_knots = [knot for sublist in new_knots for knot in sublist]
 
-        return new_knots
+        return np.array(new_knots)
 
     def construct_tau(self, h: list, k, l):
 
         """Constructs the biproduct of regression coefficients"""
 
-        # (s1-params, s2-params, k, l)
-        tau = np.zeros((len(self.e), len(self.f), self.k, self.l))
+        # (crossproduct, s1-params, s2-params, k, l)
+        tau = np.zeros((len(h), self.len_e, self.len_f, self.k, self.l))
+
+        print(f"Shape of tau: {tau.shape}")
 
         # generate byproduct for base case
         def base_case():
 
             """Base case for the recursion"""
 
-            tau_i_j = np.zeros((self.len_e, self.len_f))
+            tau_i_j = np.zeros((len(h), self.len_e, self.len_f))
 
-            i = np.where(self.x >= self.x[h])[0][0] if h < len(self.x) else self.len_e - 1
-            j = np.where(self.y >= self.y[h])[0][0] if h < len(self.y) else self.len_f - 1
+            for ct, h_ in enumerate(h):
 
-            tau_i_j[i, j] = 1
+                # find x/y index greater or equal than current knot
+                i = np.where(self.x_knots >= self.z[h_])[0][0]
+                j = np.where(self.y_knots >= self.z[h_])[0][0]
+
+                # compute the area of the rectangle
+                x = self.x_knots[i + 1] - self.x_knots[i] if i < self.len_e - 1 else 0
+                y = self.y_knots[j + 1] - self.y_knots[j] if j < self.len_f - 1 else 0
+                z = self.z[h_ + 1] - self.z[h_] if h_ < len(self.z) - 1 else 0
+
+                if z == 0:
+                    continue
+
+                tau_i_j[ct, i, j] = x * y / z
 
             return tau_i_j
 
         # initialize the base case
-        tau[:, :, 0, 0] = base_case()
+        tau[:, :, :, 0, 0] = base_case()
 
         # recursion
         for k_ in range(1, k):
             for l_ in range(1, l):
                 p = k_ + l_ - 1
 
-                z_h = self.z[h]
-                z_h_p = self.z[h + p - 1]
-                z_h_p_1 = self.z[h + p - 2]
+                # fetch boundary knots
+                z_h = self.z.take(h)
+                z_h_p = self.z.take([h_ + p if h_ + p < len(self.z) else len(self.z) - 1 for h_ in h])
 
-                scaler = (z_h_p - z_h) / (p * z_h_p_1 - z_h)
+                z_h_p_1 = self.z.take([h_ + p - 1 if h_ + p - 1 < len(self.z) else len(self.z) - 1 for h_ in h])
 
-                inner_scaler_lhs = 1  # k_ / self.x_diff[k_]
+                scaler = np.zeros(len(z_h_p))
+                idx_1 = np.where(p * z_h_p_1 != z_h)
+                scaler[idx_1] = (z_h_p[idx_1] - z_h[idx_1]) / (p * z_h_p_1[idx_1] - z_h[idx_1])
 
-                # above will be nonnegative as always more params than knots for continuous splines
-                padded_x = np.pad(self.x, (0, self.len_e - len(self.x)), "constant", constant_values=(0, 0))
-                padded_y = np.pad(self.y, (0, self.len_f - len(self.y)), "constant", constant_values=(0, 0))
+                inner_scaler_lhs = np.zeros(len(self.x_knots))
+                idx1 = np.where(self.x_diff[k_] != 0)
+                inner_scaler_lhs[idx1] = k_ / self.x_diff[k_][idx1]
 
-                term1 = tau[:, :, k_ - 1, l_].T.dot((z_h_p_1 - padded_x))
-                term2 = tau[:, :, k_ - 1, l_].T.dot((np.roll(padded_x, k_) - z_h_p_1))
+                # for each x_i apply the z transform
+                first_diff = np.array([z_i - self.x_knots for z_i in z_h_p])
+                second_diff = np.array([np.roll(self.x_knots, k_) - z_i for z_i in z_h_p_1])
 
-                inner_scaler_rhs = 1  # (l_ / self.y_diff[l_])
+                print(f"First diff: {first_diff.shape}")
+                print(f"Second diff: {second_diff.shape}")
 
-                term3 = tau[:, :, k_, l_ - 1].dot(z_h_p_1 - padded_y)
-                term4 = tau[:, :, k_, l_ - 1].dot(np.roll(padded_y, l_) - z_h_p_1)
+                term1 = np.dot(first_diff, tau[0, :, :, k_ - 1, l_])
+                term2 = np.dot(second_diff, tau[0, :, :, k_ - 1, l_])
 
-                lhs = (inner_scaler_lhs * (term1 + term2)).reshape(-1, 1)
-                rhs = (inner_scaler_rhs * (term3 + term4)).reshape(1, -1)
+                print(f"Term1: {term1.shape}")
+                print(f"Term2: {term2.shape}")
 
-                tau[:, :, k_, l_] = scaler * (lhs.dot(rhs)).T
+                inner_scaler_rhs = np.zeros(len(self.y_knots))
+                idx2 = np.where(self.y_diff[l_] != 0)
+                inner_scaler_rhs[idx2] = l_ / self.y_diff[l_][idx2]
 
-        # return a matrix of i,j indices
-        return tau[:, :, k - 1, l - 1]
+                first_diff = np.array([z_i - self.y_knots for z_i in z_h_p])
+                second_diff = np.array([np.roll(self.y_knots, l_) - z_i for z_i in z_h_p_1])
+
+                print(f"First diff: {first_diff.shape}")
+                print(f"Second diff: {second_diff.shape}")
+
+                term3 = np.dot(first_diff, tau[0, :, :, k_, l_ - 1].T)
+                term4 = np.dot(second_diff, tau[0, :, :, k_, l_ - 1].T)
+
+                print(f"Term3: {term3.shape}")
+                print(f"Term4: {term4.shape}")
+
+                lhs = np.multiply(np.multiply((term1 + term2), inner_scaler_rhs).T, scaler)
+                rhs = np.multiply(np.multiply((term3 + term4), inner_scaler_lhs).T, scaler)
+
+                tau[0, :, :, k_, l_] = np.dot(lhs, rhs.T).T
+
+        # return a matrix of i x j indices (unique given input h)
+        return tau[0, :, :, k - 1, l - 1]
 
     def G(self, h: np.ndarray, k, l):
         """Given an index set h return G(h)"""
 
-        G_h = 0
-        for h_ in h:
-            h_ = int(h_)
-            # cosntruct the order-indexed polynomials for given knot set h
-            tau_i_j = self.construct_tau(h_, k, l)
-            e_h = self.e[h_] if h_ < len(self.e) else 1
-            f_h = self.f[h_] if h_ < len(self.f) else 1
-            G_h += tau_i_j * e_h * f_h
+        assert (type(h[i]) == int for i in range(len(h))), "h must be a list of integers"
+
+        tau = self.construct_tau(h, k, l)
+
+        print(tau)
+
+        G_h = tau.dot(self.f).dot(self.e)
 
         return G_h
