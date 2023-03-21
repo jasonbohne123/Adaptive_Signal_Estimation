@@ -10,8 +10,10 @@ class Univariate_Segmented_Regression:
 
         self.x = x
         self.y = y
-        self.knots = knots
+        self.interior_knots = knots
         self.degree = degree
+
+        self.knots = np.concatenate([[0], self.interior_knots, [len(self.y)]])
 
         self.intervals = self.map_intervals(self.knots)
 
