@@ -33,7 +33,7 @@ def extract_cp(smooth, D: Difference_Matrix, quantile):
     points = np.sort(np.abs(diff))
 
     # get quantile
-    threshold = points[int(quantile * len(points))]
+    threshold = points[int((1 - quantile) * len(points))]
 
     # get index of cp
     index = np.where(np.abs(diff) > threshold)[0]

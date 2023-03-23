@@ -14,6 +14,9 @@ def generalized_cross_validation(Y, optimal_indices, order, true_knots, verbose=
     gcv_ratio = dict.fromkeys(optimal_indices.keys(), 0)
 
     # compute the mse of the true model
+    if true_knots is None:
+        true_knots = []
+
     temp_cps = np.unique(np.concatenate([[0], true_knots, [len(Y)]])).astype(int)
 
     fixed_intervals = map_intervals(Y, temp_cps)

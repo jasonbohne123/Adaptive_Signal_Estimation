@@ -39,8 +39,6 @@ class Piecewise_Linear_Model:
         if self.select_knots:
             self.knots, self.gcv_scores = self.get_knots()
 
-        # extract tf to continous domain
-
         self.continous_tf = Continous_TF(self.x, self.D, self.k)
 
     def predict(self, t: np.ndarray):
@@ -60,6 +58,8 @@ class Piecewise_Linear_Model:
 
         # Apply dynamic programming to find optimal knots
         dp_set = partition_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
+
+        print(dp_set)
 
         # If no knots are selected, return None
         if dp_set is None:

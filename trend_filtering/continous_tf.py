@@ -75,7 +75,6 @@ class Continous_TF:
         """Compute theta coefficents for h_k_j_x terms"""
 
         # note that the difference matrix is (k+1) order
-
         theta = self.D.D.dot(self.x_tf.reshape(-1, 1)) / math.factorial(self.k)
 
         return theta

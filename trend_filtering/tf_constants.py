@@ -58,9 +58,9 @@ def get_model_constants():
         "tol": 1e-6,
         # model params
         "solve_cp": True,
-        "K_max": 15,  # 1% of data length is good proxy
+        "K_max": 5,  # 1% of data length is good proxy
         "order": 1,
-        "cp_quantile": 0.01,  # good proxy is 0.1 of variance of true process
+        "cp_quantile": 0.01,  # good proxy is  5% of data length
         "min_cp_distance": 25,
     }
     return hyperparams
