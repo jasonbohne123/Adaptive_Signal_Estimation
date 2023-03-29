@@ -21,10 +21,9 @@ def get_simulation_constants():
         "shift": 100,
         # cross validation params
         "cv_folds": 20,
-        "cross_validation_size": 0.75,
+        "cross_validation_size": 0.6,
         "cv_grid_lb": 1e-4,
         "cv_iterations": 5,
-        "cv_bias": 0.5,
         "verbose_cv": True,
     }
     return constants
@@ -55,12 +54,17 @@ def get_model_constants():
         "mu_inc": 1e-10,
         "maxiter": 40,
         "maxlsiter": 30,
-        "tol": 1e-6,
-        # model params
+        "tol": 1e-4,
+        # cp model params
         "solve_cp": True,
-        "K_max": 15,  # 1% of data length is good proxy
+        "K_max": 0.025,  # good proxy is same as candidate changepoint threshold
         "order": 1,
-        "cp_quantile": 0.01,  # good proxy is 0.1 of variance of true process
-        "min_cp_distance": 25,
+        "cp_quantile": 0.025,  # good proxy is  1-2.5% of data length (25 for 1000)
+        "min_cp_distance": 0.025,  # good proxy is 2.5-5% of data length (25-50 for 1000)
+        "nu": 0.15,
     }
+
+    # only linear filtering & cp detection supported jointly
+    assert hyperparams["k"] == hyperparams["order"]
+
     return hyperparams

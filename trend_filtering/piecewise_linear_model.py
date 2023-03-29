@@ -5,7 +5,7 @@ import numpy as np
 sys.path.append("../")
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from model_selection.cp_model_selection import generalized_cross_validation
+from model_selection.model_selection import ratio_model_selection
 from model_selection.partition import partition_solver
 from trend_filtering.continous_tf import Continous_TF
 from trend_filtering.helpers import extract_cp
@@ -29,17 +29,16 @@ class Piecewise_Linear_Model:
         self.D = D
         self.t = D.t
 
-        # constants for cp selection and model
+        # constants for candidate changepoint selection
         self.quantile = get_model_constants()["cp_quantile"]
-        self.K_max = get_model_constants()["K_max"]
+        self.K_max = max(int(get_model_constants()["K_max"] * self.x.shape[0]), 1)
+        self.nu = get_model_constants()["nu"]
         self.order = get_model_constants()["order"]
         self.select_knots = select_knots
         self.true_knots = true_knots
 
         if self.select_knots:
-            self.knots, self.gcv_scores = self.get_knots()
-
-        # extract tf to continous domain
+            self.knots, self.all_models, self.optimal_model = self.get_knots()
 
         self.continous_tf = Continous_TF(self.x, self.D, self.k)
 
@@ -58,6 +57,9 @@ class Piecewise_Linear_Model:
         # Extract all candidate knots up to a threshold
         candidate_knots = extract_cp(reshaped_x, self.D, self.quantile)
 
+        # adjust K_max to the number of candidate knots
+        self.K_max = min(self.K_max, len(candidate_knots))
+
         # Apply dynamic programming to find optimal knots
         dp_set = partition_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)
 
@@ -65,14 +67,14 @@ class Piecewise_Linear_Model:
         if dp_set is None:
             return []
 
-        optimal_trend_cp_gcv = generalized_cross_validation(
-            reshaped_x, dp_set, self.order, self.true_knots, verbose=True
+        all_models, optimal_model = ratio_model_selection(
+            reshaped_x, dp_set, self.order, self.true_knots, self.nu, verbose=True
         )
 
         # Get the optimal knots
-        knots = dp_set[optimal_trend_cp_gcv[0][0]]
+        knots = dp_set[optimal_model]
 
         # flag to indicate that knots have been selected
         self.select_knots = True
 
-        return knots, optimal_trend_cp_gcv
+        return knots, all_models, optimal_model

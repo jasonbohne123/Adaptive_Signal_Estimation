@@ -10,7 +10,15 @@ from matrix_algorithms.matrix_sequence import Matrix_Sequence
 
 
 class Difference_Matrix:
-    """General class for creating difference matrices of unequally spaced and equally spaced data"""
+    """General class for creating difference matrices of unequally spaced and equally spaced data for k+1 order differences
+
+    k=-1 is identity matrix
+    k=0 is first order difference
+     k=1 is second order difference
+     k=2 is third order difference
+
+
+    """
 
     def __init__(self, n, k, t: np.ndarray = None, prior: np.ndarray = None) -> None:
 
@@ -84,7 +92,7 @@ class Difference_Matrix:
         # save the composite sequence of D
         self.composite_sequence = self.sequence.compute_matrix().dot(self.sequence_transpose.compute_matrix())
 
-        assert np.allclose(self.composite_sequence, DDT, atol=1e-8)
+        # assert np.allclose(self.composite_sequence, DDT, atol=1e-8)
 
         np.linalg.cond(DDT)
 

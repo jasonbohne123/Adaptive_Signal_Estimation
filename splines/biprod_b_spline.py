@@ -8,6 +8,20 @@ from regression_spline_estimator import Regression_Spline_Estimator
 
 from matrix_algorithms.k_differences import differences
 
+##################################################################
+# Notes
+
+# Differentiation and Integration of the B-Spline Basis Functions is relatively straightforward
+
+# The difficulty comes in the convoluation of the basis coefficients which requires a 5-tensor indexed by
+# the number of basis functions in byproduct, number of basis functions in each semester and the order of each Regression_Spline_Estimator
+
+# I believe this will compress correctly to a 3-tensor indexed by the number of basis functions in byproduct and the order of each Regression_Spline_Estimator
+
+# Issue right now is getting the matrix addition within the recursion to align. Hunch is that by computing across all h-values requires a reformulation of the RecursionError
+
+# Still also need to update B-Spline Basis to have knots of higher order multiplicity
+
 
 class Biprod_B_Spline_Basis:
     """Generates the B-Spline basis functions for the biproduct of two sets of knots and observations
@@ -130,7 +144,7 @@ class Biprod_B_Spline_Basis:
         # initialize the base case
         tau[:, :, :, 0, 0] = base_case()
 
-        # recursion
+        # recursion for the rest of the cases
         for k_ in range(1, k):
             for l_ in range(1, l):
                 p = k_ + l_ - 1

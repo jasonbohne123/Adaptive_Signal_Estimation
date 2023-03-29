@@ -30,8 +30,9 @@ class Univariate_Segmented_Regression:
     def fit(self):
         """Fits a polynomial of order k to the data Y across a given interval"""
 
+        # partitions x and y of interval
         coefficients = {}
-        estimate = []
+        estimate = {}
 
         for idx in self.intervals:
 
@@ -46,9 +47,9 @@ class Univariate_Segmented_Regression:
 
             polynomial = poly_coef.T.dot(np.vstack([x_range**i for i in range(self.degree, -1, -1)]))
 
-            estimate.append(polynomial)
+            estimate[idx] = polynomial
 
-        return coefficients, np.concatenate(estimate)
+        return coefficients, estimate
 
     def predict(self, x: np.ndarray):
         """Predicts the value of y for a given x"""
@@ -57,11 +58,19 @@ class Univariate_Segmented_Regression:
 
         all_predictions = []
 
-        # split prediction points into intervals
-        for idx in self.intervals:
+        # split prediction points into intervals and predict accordingly
+        for ct, idx in enumerate(self.intervals):
             interval = self.intervals[idx]
 
-            credible_points = np.where((x >= interval[0]) & (x <= interval[1]))
+            if ct == 0:
+                credible_points = np.where(x <= interval[0])
+
+            elif ct == len(self.intervals) - 1:
+                credible_points = np.where(x >= interval[1])
+
+            else:
+
+                credible_points = np.where((x >= interval[0]) & (x <= interval[1]))
 
             predictions = self.coefficients[idx].T.dot(
                 np.vstack([x[credible_points] ** i for i in range(self.degree, -1, -1)])

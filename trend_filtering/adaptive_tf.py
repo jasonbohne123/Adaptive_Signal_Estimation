@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append("../trend_filtering")
+
 from typing import Union
 
 import numpy as np
