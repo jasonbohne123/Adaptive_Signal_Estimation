@@ -20,7 +20,8 @@ evaluation_metrics/__pycache__/
 estimators/splines/__pycache__
 estimators/splines/helpers/__pycache__
 estimators/regression/__pycache__
-estimators/__pycache__
+estimators/__pycache__'
+estimators/trend_filtering/helpers/__pycache__
 
 # Basis
 basis/__pycache__

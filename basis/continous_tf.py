@@ -5,9 +5,9 @@ import numpy as np
 
 sys.path.append("../")
 sys.path.append("../../")
+from basis.falling_factorial_gen import Falling_Factorial_Basis
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.k_differences import differences
-from trend_filtering.falling_factorial_gen import Falling_Factorial_Basis
 
 
 class Continous_TF:

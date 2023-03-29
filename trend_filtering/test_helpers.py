@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from tf_constants import get_model_constants, get_simulation_constants
 
+from estimators.trend_filtering.helpers.tf_constants import get_model_constants, get_simulation_constants
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from prior_models.prior_model import Prior
 from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_params

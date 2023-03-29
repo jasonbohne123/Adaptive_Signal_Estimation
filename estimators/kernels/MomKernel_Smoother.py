@@ -3,14 +3,14 @@ import sys
 
 import numpy as np
 
-path = "/home/jbohne/sbu/research/"
-sys.path.append(f"{path}Adaptive_Signal_Estimation_Private/kernel_methods/")
+sys.path.append("../../estimators")
+sys.path.append("../../estimators/kernels")
 from Kernel_Smoother import KernelSmoother
 
 # TO:DO choose optimal block size based on out of sample set in cross validation
 
 
-class MomKernelSmoother(KernelSmoother):
+class MomKernelSmoother(KernelSmoother, Base_Estimator):
     """Median of Means Kernel Smoother Class"""
 
     def __init__(self, kernel_smoother, N=None):
@@ -98,3 +98,10 @@ class MomKernelSmoother(KernelSmoother):
                 print(f" OOS MSE for {n_i} blocks is {mse}")
 
         return sorted(results.items(), key=lambda x: x[1])[0]
+
+    # Need to incorporate MOM kernel into this class
+    def fit(self):
+        pass
+
+    def estimate(self):
+        pass

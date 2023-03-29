@@ -6,11 +6,11 @@ import numpy as np
 sys.path.append("../")
 sys.path.append("../../")
 
+from estimators.trend_filtering.helpers.tf_constants import get_simulation_constants
 from evaluation_metrics.loss_functions import compute_error
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from trend_filtering.helpers import compute_lambda_max
 from trend_filtering.primal_dual_tf import adaptive_tf
-from trend_filtering.tf_constants import get_simulation_constants
 
 
 def cross_validation(

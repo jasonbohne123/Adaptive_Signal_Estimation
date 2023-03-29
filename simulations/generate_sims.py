@@ -2,9 +2,9 @@ import sys
 
 import numpy as np
 
+from estimators.trend_filtering.helpers.tf_constants import get_simulation_constants
 from simulations.Conditional_Simulator import ConditionalSimulator
 from simulations.Sampler import Sampler
-from trend_filtering.tf_constants import get_simulation_constants
 
 sys.path.append("../")
 

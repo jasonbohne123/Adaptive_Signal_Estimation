@@ -1,11 +1,12 @@
+import sys
+
+sys.path.append("../../estimators")
+
 import numpy as np
 from scipy.stats import iqr
 
-# TO:DO incoporate outlier robust bandwidth calibration
-# At the moment is senstive to outliers
 
-
-class KernelSmoother:
+class KernelSmoother(BaseEstimator):
     """Kernel Smoother Class"""
 
     def __init__(self, x, y, bandwidth_style, preselected_bandwidth=None):
@@ -13,26 +14,6 @@ class KernelSmoother:
         self.x = x
         self.bandwidth_style = bandwidth_style
         self.optimal_bandwidth = preselected_bandwidth if preselected_bandwidth else None
-
-    def compute_kernel(self, x_0, x_i, bandwidth):
-        """Given two points x_0 and x_i; compute the gaussian kernel utilizing euclidean distance"""
-        if bandwidth == 0:
-            return 0
-        scale = abs((x_0 - x_i) / bandwidth)
-
-        weight = np.exp(-(scale**2))
-
-        return weight
-
-    def predict(self, y):
-        """Predicts the output at time t using kernel smoothing"""
-
-        predictions = []
-        for i in range(0, len(y)):
-            y_hat = self.evaluate_kernel(y[i])
-            predictions.append(y_hat)
-
-        return predictions
 
     def fit(self):
         """
@@ -65,11 +46,25 @@ class KernelSmoother:
         fitted_kernel_matrix = kernel_matrix / np.sum(kernel_matrix, axis=0)
         return fitted_kernel_matrix.T
 
-    def smooth_series(self, fitted_kernel_matrix):
-        """Smooths the series using the kernel smoothing estimator"""
-        smooth_prior = fitted_kernel_matrix.dot(self.y)
+    def estimate(self, y):
+        """Estimate the output at time t using kernel smoothing"""
 
-        return smooth_prior
+        estimates = []
+        for i in range(0, len(y)):
+            y_hat = self.evaluate_kernel(y[i])
+            estimates.append(y_hat)
+
+        return estimates
+
+    def compute_kernel(self, x_0, x_i, bandwidth):
+        """Given two points x_0 and x_i; compute the gaussian kernel utilizing euclidean distance"""
+        if bandwidth == 0:
+            return 0
+        scale = abs((x_0 - x_i) / bandwidth)
+
+        weight = np.exp(-(scale**2))
+
+        return weight
 
     def evaluate_kernel(self, y_i):
         """Evaluates the kernel at a given point y_i"""
@@ -93,3 +88,9 @@ class KernelSmoother:
         y_hat = np.sum(kernel_matrix * self.y) / np.sum(kernel_matrix)
 
         return y_hat
+
+    def smooth_series(self, fitted_kernel_matrix):
+        """Smooths the series using the kernel smoothing estimator"""
+        smooth_prior = fitted_kernel_matrix.dot(self.y)
+
+        return smooth_prior

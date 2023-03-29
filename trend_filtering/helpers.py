@@ -1,7 +1,7 @@
 import numpy as np
 
+from estimators.trend_filtering.helpers.tf_constants import get_model_constants
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from trend_filtering.tf_constants import get_model_constants
 
 
 def compute_lambda_max(D: Difference_Matrix, x: np.ndarray):
