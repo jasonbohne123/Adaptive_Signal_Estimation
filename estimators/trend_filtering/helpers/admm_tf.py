@@ -20,7 +20,7 @@ def specialized_admm(y: np.ndarray, D_: Difference_Matrix, lambda_: float, initi
     D_t_D = D.T.dot(D)
 
     # set max iterations
-    MAX_ITER = 250
+    MAX_ITER = 50
 
     # initialize variables with guesses
     beta = y.copy() if initial_guess is None else initial_guess.copy()

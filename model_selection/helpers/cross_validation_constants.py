@@ -3,6 +3,8 @@
 # cv_grid_lb : Lower Bound for Grid Search
 # grid_size : Number of Grid Points
 # grid_spacing : Spacing of Grid Points
+# warm_start : Whether to Warm Start Cross Validation
+# verbose : Whether to Print Cross Validation Progress
 
 
 def get_cv_constants():

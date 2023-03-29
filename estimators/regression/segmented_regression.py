@@ -14,6 +14,7 @@ class Univariate_Segmented_Regression(Base_Estimator):
 
         self.x = x
         self.y = y
+        self.name = "Univariate_Segmented_Regression"
 
         # segmented regression specific params
         self.interior_knots = knots

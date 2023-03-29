@@ -14,6 +14,8 @@ class Smoothing_Spline_Estimator(Base_Estimator):
 
         self.x = x
         self.y = y
+        self.name = "Smoothing_Spline_Estimator"
+
         self.knots = knots
         self.lambda_ = lambda_
         self.basis = B_Spline_Basis(x, knots, order=3)

@@ -10,6 +10,7 @@ class Base_Estimator(ABC):
     """
 
     def __init__(self, x, y):
+        self.name = None
         self.x = x
         self.y = y
 

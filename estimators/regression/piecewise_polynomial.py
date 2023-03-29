@@ -19,6 +19,7 @@ class Piecewise_Polynomial_Model(Base_Estimator):
         self.x = x
         self.y = y
         self.k = k
+        self.name = "Piecewise_Polynomial_Model"
 
         # constants for candidate changepoint selection
         self.quantile = get_segmentation_constants()["cp_quantile"]

@@ -18,6 +18,7 @@ class Regression_Spline_Estimator(Base_Estimator):
 
         self.x = x
         self.y = y
+        self.name = "Regression_Spline_Estimator"
 
         # regression spline specific params
         self.knots = knots

@@ -1,10 +1,5 @@
-import sys
-
-sys.path.append("../model_selection/")
-sys.path.append("../estimators/")
-
-from base_estimator import Base_Estimator
-from cross_validation import K_Fold_Cross_Validation
+from estimators.base_estimator import Base_Estimator
+from model_selection.cross_validation import K_Fold_Cross_Validation
 
 
 def cv_base_estimator(estimator: Base_Estimator):

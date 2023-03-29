@@ -1,17 +1,17 @@
-import sys
-
-sys.path.append("../../estimators")
-
 import numpy as np
 from scipy.stats import iqr
 
+from estimators.base_estimator import Base_Estimator
 
-class KernelSmoother(BaseEstimator):
+
+class KernelSmoother(Base_Estimator):
     """Kernel Smoother Class"""
 
     def __init__(self, x, y, bandwidth_style, preselected_bandwidth=None):
         self.y = y
         self.x = x
+        self.name = "KernelSmoother"
+
         self.bandwidth_style = bandwidth_style
         self.optimal_bandwidth = preselected_bandwidth if preselected_bandwidth else None
 

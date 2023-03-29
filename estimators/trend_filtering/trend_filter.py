@@ -20,6 +20,7 @@ class Trend_Filter:
         self.x = x
         self.y = y
         self.k = k
+        self.name = "Trend_Filter"
 
         # create difference matrix
         self.D = Difference_Matrix(len(y), k=k, t=x)
@@ -34,6 +35,7 @@ class Trend_Filter:
         self.hypers.update({"lambda_": 0})
 
         self.lambda_max = compute_lambda_max(self.D, self.y)
+
         self.hyper_max = {"lambda_": self.lambda_max}
 
         # fit base model

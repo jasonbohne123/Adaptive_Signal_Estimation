@@ -1,15 +1,16 @@
 import sys
 
 sys.path.append("../../estimators")
-sys.path.append("../helpers")
+
 
 from collections import defaultdict
 
 import numpy as np
-from base_estimator import Base_Estimator
-from helpers.cross_validation_constants import get_cv_constants
 
+from estimators.base_estimator import Base_Estimator
 from evaluation_metrics.loss_functions import compute_error
+from model_selection.helpers.cross_validation_constants import get_cv_constants
+from model_selection.helpers.fit_submodel import fit_submodel
 
 
 class K_Fold_Cross_Validation:
@@ -18,11 +19,14 @@ class K_Fold_Cross_Validation:
     def __init__(self, estimator: Base_Estimator):
 
         self.estimator = estimator
+        self.estimator_name = estimator.name
         self.hyperparams = list(estimator.hypers.keys())
         self.hypermax = estimator.hyper_max
 
         # get cross validation constants
         self.k_folds = get_cv_constants()["k_folds"]
+        assert self.k_folds > 1
+
         self.verbose = get_cv_constants()["verbose"]
         self.grid_spacing = get_cv_constants()["grid_spacing"]
         self.grid_size = get_cv_constants()["grid_size"]
@@ -31,12 +35,16 @@ class K_Fold_Cross_Validation:
         self.grid = [self.generate_grid() * self.hypermax[hyper] for hyper in self.hyperparams][0]
 
         # get size of cross validation
-        self.n = len(self.estimator.x)
+        self.n = len(estimator.x)
+        print(self.n, self.k_folds)
+
+        # size of leave-in set
         self.cv_size = int(self.n / self.k_folds)
+        print(self.cv_size)
 
         # save x and y
-        self.x = self.estimator.x
-        self.y = self.estimator.y
+        self.x = estimator.x
+        self.y = estimator.y
 
     def generate_grid(self):
         """Generates relative grid for Cross Validation -> [0,1]"""
@@ -65,21 +73,22 @@ class K_Fold_Cross_Validation:
             oos_index = np.sort(np.setdiff1d(np.arange(len(self.x)), is_index))
 
             # get in-sample and out-of-sample data
-            self.x[is_index]
-            x_oos = self.x[oos_index]
+            x_is = self.y[is_index]
+            x_oos = self.y[oos_index]
+
+            # fit submodel on in-sample data
+            submodel = fit_submodel(is_index, x_is, self.estimator.k, self.estimator.method, self.estimator_name)
 
             for lambda_i in self.grid:
 
                 if self.verbose:
                     print(f"Performing cross validation for lambda = {lambda_i}")
 
-                # solve tf subproblem
-                self.estimator.update_params({self.hyperparams[0]: lambda_i})
-                y_hat = self.estimator.fit(warm_start=True)
+                # iteratively update regularization param
+                hyperparams = {hyper: lambda_i for hyper in self.hyperparams}
+                submodel.update_params(hyperparams)
 
-                if y_hat is None:
-                    if self.verbose:
-                        print("No solution found for lambda = {}".format(lambda_i))
+                if submodel.y_hat is None:
 
                     # ignore cases where no solution is found
                     results[lambda_i] += np.inf
@@ -87,7 +96,7 @@ class K_Fold_Cross_Validation:
 
                 # to compute oos error we need to make the return type callable
 
-                estimates = self.estimator.estimate(x_oos)
+                estimates = submodel.estimate(x_oos)
 
                 # compute mse on oos test set
                 oos_error = compute_error(estimates, x_oos, type="mse")
