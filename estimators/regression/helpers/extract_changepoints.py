@@ -1,22 +1,13 @@
-import sys
-
-sys.path.append("../../matrix_algorithms")
-sys.path.append("../../estimators")
-
 import numpy as np
-from base_estimator import Base_Estimator
-from difference_matrix import Difference_Matrix
-from segmentation_constants import get_segmentation_constants
+
+from estimators.regression.helpers.segmentation_constants import get_segmentation_constants
+from estimators.trend_filtering.helpers.difference_matrix import Difference_Matrix
 
 
-def extract_cp(estimator: Base_Estimator, D: Difference_Matrix, quantile):
+def extract_cp(y: np.ndarray, D: Difference_Matrix, quantile):
     """Extract changepoints across an estimator via difference operator"""
 
-    y_hat = estimator.y_hat
-    n = D.n
-    D = D.D
-
-    diff = np.dot(D, y_hat).reshape(1, -1)[0]
+    diff = np.dot(D.D, y).reshape(1, -1)[0]
 
     # get cp
     points = np.sort(np.abs(diff))
@@ -28,7 +19,7 @@ def extract_cp(estimator: Base_Estimator, D: Difference_Matrix, quantile):
     index = np.where(np.abs(diff) > threshold)[0]
 
     # returns rhs of index for close pairs
-    min_cp_distance = int(get_segmentation_constants()["min_cp_distance"] * n)
+    min_cp_distance = int(get_segmentation_constants()["min_cp_distance"] * D.n)
     close_pairs = index[1:][np.diff(index) < min_cp_distance]
 
     index_to_remove = []

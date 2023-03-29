@@ -1,9 +1,9 @@
 import numpy as np
 
-from model_selection.partition import best_fit_polynomial, map_intervals
+from estimators.regression.helpers.partition import best_fit_polynomial, map_intervals
 
 
-def ratio_model_selection(Y, optimal_indices, order, true_knots, nu, verbose=True):
+def ratio_model_selection(Y, optimal_indices, order, nu, verbose=True):
     """Determines optimal number of changepoints based on generalized cross validation"""
 
     optimal_indices = dict(sorted(optimal_indices.items(), key=lambda x: x[0]))
@@ -13,11 +13,8 @@ def ratio_model_selection(Y, optimal_indices, order, true_knots, nu, verbose=Tru
     dict.fromkeys(optimal_indices.keys(), 0)
     model_ratio = dict.fromkeys(list(optimal_indices.keys())[:-1], 0)
 
-    # compute the mse of the true model
-    if true_knots is None:
-        true_knots = []
-
-    temp_cps = np.unique(np.concatenate([[0], true_knots, [len(Y)]])).astype(int)
+    # null hypothesis is no changepoints
+    temp_cps = np.unique(np.concatenate([[0], [len(Y)]])).astype(int)
 
     fixed_intervals = map_intervals(Y, temp_cps)
 

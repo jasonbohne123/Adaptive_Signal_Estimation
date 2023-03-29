@@ -1,15 +1,10 @@
 import math
-import sys
 
 import numpy as np
 
-sys.path.append("../")
-sys.path.append("../../")
-sys.path.append("../../estimators/trend_filtering/helpers")
-from difference_matrix import Difference_Matrix
-from k_differences import differences
-
 from basis.falling_factorial_gen import Falling_Factorial_Basis
+from estimators.trend_filtering.helpers.difference_matrix import Difference_Matrix
+from estimators.trend_filtering.helpers.k_differences import differences
 
 
 class Continous_TF:
