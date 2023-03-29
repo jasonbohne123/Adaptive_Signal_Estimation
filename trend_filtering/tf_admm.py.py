@@ -1,62 +1,60 @@
 import sys
 
 sys.path.append("../")
-import cvxopt as cvx
+
 import numpy as np
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
+from trend_filtering.fused_lasso import fused_lasso
 
 
-def specialized_admm(y: np.ndarray, k: int = 1, lambda_: float = 1):
-    """Specialized ADMM Implementation for Trend Filtering
+def specialized_admm(y: np.ndarray, k: int, lambda_: float):
+    """Specialized ADMM Implementation for Trend Filtering"""
 
-    Ref: https://arxiv.org/abs/1406.2082
-    """
+    # construct difference matrix of order k (not k-1)
+    n = y.shape[0]
+    y = y.reshape(-1, 1)
 
-    n = y.shape[0]  # n-k-1 total differences
-    D = Difference_Matrix(n, k=k)
+    D = Difference_Matrix(n, k=k - 1)
     D_ = D.D
     D_t_D = D_.T.dot(D_)
 
-    w, v = np.linalg.eig(D_t_D)
-    MAX_ITER = 10000
+    # set max iterations
+    MAX_ITER = 250
 
-    # Function to caluculate min 1/2(y - Ax) + l||x||
-    # via alternating direction methods
-    beta = np.zeros([n, 1])
-    alpha = np.zeros([n, 1])
-    u = np.zeros([n, 1])
+    # initialize variables with guesses
+    beta = y.copy()
 
-    # Calculate regression co-efficient and stepsize
-    r = np.amax(np.absolute(w))
-    rho = 1 / r
+    # alpha is in R^{n-k-1 x 1}
+    alpha = D.D.dot(beta)
+    u = np.zeros([n - k, 1])
+
+    # ref. sets rho to lambda for stability
+    rho = lambda_
 
     # Pre-compute to save some multiplications
     I = np.identity(n)
-    rho_D_t = rho * D_.T
+    rho_D_T = rho * D_.T
     Q = I + rho * D_t_D
     Q_inv = np.linalg.inv(Q)
-
     Q_inv_dot = Q_inv.dot
 
-    ## Fused Lasso
-
-    def diff_op(shape):
-        mat = np.zeros(shape)
-        mat[range(2, shape[0]), range(1, shape[1])] = 1
-        mat -= np.eye(shape)
-        return mat
-
-    def difference_pen(beta, epsilon):
-        return cvx.norm1(diff_op(beta.shape) @ beta)
+    # Calculate lambda_max (order k+1)
+    D_k_1 = Difference_Matrix(n, k=k)
+    np.amax(np.absolute(np.linalg.inv(D_k_1.D.dot(D_k_1.D.T)).dot((D_k_1.D).dot(y))))
 
     for _ in range(MAX_ITER):
-        # x minimisation step via posterier OLS
-        beta = Q_inv_dot(y + rho_D_t.dot(alpha - u))
 
-        alpha = difference_pen(beta, lambda_)
+        # beta is in R^{n x 1}
+        beta = Q_inv_dot(y + rho_D_T.dot((alpha + u).reshape(-1, 1)))
 
-        # mulitplier update
+        # precompute observation matrix
+        D_k_beta_u = (D.D @ beta - u).flatten()
+
+        # alpha is in R^{n-k-1 x 1}
+        alpha = fused_lasso(D_k_beta_u, alpha, D.n, k - 1, lambda_, rho)
+
+        # update u
         u = u + alpha - D_.dot(beta)
 
-    return alpha
+    return beta
