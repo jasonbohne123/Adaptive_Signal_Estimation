@@ -37,10 +37,6 @@ def get_simulation_constants():
 # maxiter : Maximum Number of Iterations for Newton's Method (Boyd)
 # maxlsiter : Maximum Number of Iterations for Line Search (Boyd)
 
-# solve_cp : Whether to solve the changepoint problem
-# K_max : Maximum Number of Changepoints
-# cp_threshold : Threshold for candidate changepoints
-
 
 def get_model_constants():
     """Default Model Constants for Trend Filtering"""
@@ -55,16 +51,6 @@ def get_model_constants():
         "maxiter": 40,
         "maxlsiter": 30,
         "tol": 1e-4,
-        # cp model params
-        "solve_cp": True,
-        "K_max": 0.025,  # good proxy is same as candidate changepoint threshold
-        "order": 1,
-        "cp_quantile": 0.025,  # good proxy is  1-2.5% of data length (25 for 1000)
-        "min_cp_distance": 0.025,  # good proxy is 2.5-5% of data length (25-50 for 1000)
-        "nu": 0.15,
     }
-
-    # only linear filtering & cp detection supported jointly
-    assert hyperparams["k"] == hyperparams["order"]
 
     return hyperparams

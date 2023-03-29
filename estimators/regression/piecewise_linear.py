@@ -4,12 +4,13 @@ import numpy as np
 
 sys.path.append("../")
 
-from estimators.trend_filtering.helpers.tf_constants import get_model_constants
 from matrix_algorithms.difference_matrix import Difference_Matrix
-from model_selection.model_selection import ratio_model_selection
-from model_selection.partition import partition_solver
 from trend_filtering.continous_tf import Continous_TF
 from trend_filtering.helpers import extract_cp
+
+from estimators.trend_filtering.helpers.tf_constants import get_model_constants
+from model_selection.model_selection import ratio_model_selection
+from model_selection.partition import partition_solver
 
 
 class Piecewise_Linear_Model:

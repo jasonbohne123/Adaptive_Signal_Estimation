@@ -1,7 +1,7 @@
 import numpy as np
 
 from estimators.trend_filtering.helpers.tf_constants import get_simulation_constants
-from trend_filtering.label_changepoints import label_changepoints
+from simulations.label_changepoints import label_changepoints
 
 from .Simulator import Simulator
 

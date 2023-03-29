@@ -2,11 +2,10 @@ import sys
 
 sys.path.append("../")
 import numpy as np
-from scipy.linalg import get_lapack_funcs
-from scipy.sparse import dia_matrix
-
 from matrix_algorithms.k_differences import differences
 from matrix_algorithms.matrix_sequence import Matrix_Sequence
+from scipy.linalg import get_lapack_funcs
+from scipy.sparse import dia_matrix
 
 
 class Difference_Matrix:
