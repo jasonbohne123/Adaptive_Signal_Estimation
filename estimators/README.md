@@ -12,3 +12,6 @@ All estimators inherit from the base class ```Base_Estimator```. This class prov
 
 - Variable Knot Splines
 - Smoothing Splines
+
+
+Estimators that do not require hyperparameters (regression splines, segmented regression) are trained on initialization. Estimators that require hyperparameters (kernel regression, trend filtering) are trained using the `fit` method. The `estimate` method is used to estimate the signal at a given time point.

@@ -38,13 +38,14 @@ class KernelSmoother(Base_Estimator):
             self.optimal_bandwidth = bw
 
         for i in range(0, len(self.x)):
-
             for j in range(0, len(self.x)):
                 kernel = self.compute_kernel(self.x[i], self.x[j], bandwidth=self.optimal_bandwidth)
                 kernel_matrix[i, j] = kernel
 
         fitted_kernel_matrix = kernel_matrix / np.sum(kernel_matrix, axis=0)
-        return fitted_kernel_matrix.T
+
+        self.y_hat = fitted_kernel_matrix.T.dot(self.y)
+        return fitted_kernel_matrix.T.dot(self.y)
 
     def estimate(self, y):
         """Estimate the output at time t using kernel smoothing"""
@@ -88,9 +89,3 @@ class KernelSmoother(Base_Estimator):
         y_hat = np.sum(kernel_matrix * self.y) / np.sum(kernel_matrix)
 
         return y_hat
-
-    def smooth_series(self, fitted_kernel_matrix):
-        """Smooths the series using the kernel smoothing estimator"""
-        smooth_prior = fitted_kernel_matrix.dot(self.y)
-
-        return smooth_prior

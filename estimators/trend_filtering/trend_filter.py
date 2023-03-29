@@ -10,15 +10,19 @@ from estimators.trend_filtering.helpers.primal_dual_tf import primal_dual
 
 
 class Trend_Filter:
-    def __init__(self, x, y, k, method="admm"):
+    """
+    Trend Filtering Estimator with support for inference with primal_dual or admm
+    """
 
+    def __init__(self, x, y, k, method="admm", prior=None):
         self.x = x
         self.y = y
         self.k = k
+        self.prior = prior
         self.name = "Trend_Filter"
 
         # create difference matrix
-        self.D = Difference_Matrix(len(y), k=k, t=x)
+        self.D = Difference_Matrix(len(y), k=k, t=x, prior=prior)
 
         # supported methods are admm or primal dual
         assert method in ["admm", "primal_dual"]
@@ -44,10 +48,8 @@ class Trend_Filter:
         lambda_ = self.hypers["lambda_"]
 
         if self.method == "admm":
-
             y_hat = specialized_admm(self.y, self.D, lambda_, initial_guess=self.y_hat if warm_start else None)
         elif self.method == "primal_dual":
-
             y_hat = primal_dual(self.y, self.D, lambda_, initial_guess=self.y_hat if warm_start else None)
         else:
             raise ValueError("method not supported")
