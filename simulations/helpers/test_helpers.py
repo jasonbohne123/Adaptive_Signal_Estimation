@@ -4,7 +4,7 @@ from matrix_algorithms.difference_matrix import Difference_Matrix
 
 from estimators.trend_filtering.helpers.tf_constants import get_model_constants, get_simulation_constants
 from prior_models.prior_model import Prior
-from simulations.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
+from simulations.helpers.mlflow_helpers import create_mlflow_experiment, log_mlflow_params
 
 
 def prep_signal(sample, true_sol, prior_model=None, t=None):
@@ -130,7 +130,11 @@ def log_to_mlflow(
 
     # comparison to non adaptive metrics (if applicable)
     if non_adaptive_results:
-        (non_adapt_mse_from_true, non_adapt_spline_mse, non_adapt_hausdorff_distance,) = map(
+        (
+            non_adapt_mse_from_true,
+            non_adapt_spline_mse,
+            non_adapt_hausdorff_distance,
+        ) = map(
             non_adaptive_results.get,
             ["mse_from_true", "spline_mse", "hausdorff_distance"],
         )
@@ -164,7 +168,6 @@ def log_to_mlflow(
     # create mlflow experiement (if not exists) and run
     experiment_id, run, run_tag = create_mlflow_experiment(exp_name, description=description, bulk=bulk)
     if log_mlflow:
-
         params = {
             "n": n,
             "k": k,

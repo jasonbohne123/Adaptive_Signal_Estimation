@@ -15,6 +15,7 @@ estimators/regression/__pycache__
 estimators/__pycache__
 estimators/trend_filtering/helpers/__pycache__
 estimators/regression/helpers/__pycache__
+estimators/kernels/__pycache__
 
 # Basis
 basis/__pycache__

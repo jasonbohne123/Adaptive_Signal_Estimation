@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 
-from estimators.trend_filtering.helpers.tf_constants import get_simulation_constants
+from simulations.helpers.get_sim_constants import get_simulation_constants
 from simulations.Conditional_Simulator import ConditionalSimulator
 from simulations.Sampler import Sampler
 
@@ -12,7 +12,6 @@ from prior_models.prior_model import Prior
 
 
 def generate_true_dgp(prior: Prior, sim_style, label_style="k_local_spikes"):
-
     sim = ConditionalSimulator(prior.prior, sim_style)
     true = sim.simulate()
     true_knots = sim.interior_index

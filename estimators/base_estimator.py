@@ -26,9 +26,14 @@ class Base_Estimator(ABC):
     def fit(self, warm_start=False):
         """Fit estimator to data given hyperparameters"""
 
+        pass
+
     def estimate(self, t: np.ndarray):
         """Estimate y_hat given x and hyperparameters"""
+        pass
 
     def update_params(self, hypers: dict):
         """Update parameters of estimator"""
         self.hypers.update(hypers)
+
+        pass

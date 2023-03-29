@@ -1,5 +1,6 @@
 def get_simulation_constants():
     """Default Simulation Constants for Trend Filtering"""
+
     constants = {
         "n_sims": 5,
         "n_samples": 1,
@@ -10,4 +11,5 @@ def get_simulation_constants():
         "reference_variance": 1e-2,
         "shift": 100,
     }
+
     return constants

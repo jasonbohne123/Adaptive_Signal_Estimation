@@ -15,7 +15,7 @@ from prior_models.deterministic_prior import Deterministic_Prior
 from prior_models.kernel_smooth import Kernel_Smooth_Prior
 from prior_models.prior_model import Prior
 from prior_models.volume_prior import Volume_Prior
-from simulations.generate_sims import generate_samples, generate_true_dgp
+from simulations.helpers.generate_sims import generate_samples, generate_true_dgp
 
 
 def run_bulk_trend_filtering(
@@ -51,6 +51,7 @@ def run_bulk_trend_filtering(
     # apply tf to each path with specified flags
     flags = {"include_cv": True, "plot": True, "verbose": True, "bulk": True, "log_mlflow": True}
 
+    ##############################################################
     # constant penalty
     results = apply_function_to_paths(
         samples,
@@ -79,6 +80,8 @@ def run_bulk_trend_filtering(
         prev_results=results,
     )
 
+    ###############################################################3
+
     total_time = time.time() - start_time
     if verbose:
         print(f"Total time taken: is {round(total_time,2)} for {n_sims} simulations ")
@@ -91,7 +94,6 @@ def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, tr
     results = {}
 
     for i, sample_path in enumerate(paths):
-
         if prev_results is not None:
             # pass in any grid parameters and previous results if applicable
             args = {"bandwidth": sim_grid["bandwidth"], "snr": sim_grid["snr"], "non_adaptive_results": prev_results[i]}
@@ -116,7 +118,6 @@ def apply_function_to_paths(paths, function, prior_model, t, exp_name, flags, tr
 
 # python run_bulk_tf.py
 if __name__ == "__main__":
-
     random_letters = "".join(random.choice(string.ascii_uppercase) for i in range(5))
     exp_name = f"L1_Trend_Filter_{random_letters}"
 
