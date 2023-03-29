@@ -1,7 +1,7 @@
 import numpy as np
 
-from estimators.trend_filtering.helpers.tf_constants import get_simulation_constants
 from evaluation_metrics.haussdorf import compute_haussdorf_distance
+from simulations.get_sim_constants import get_simulation_constants
 
 
 def compute_error(x, x_hat, type="mse"):

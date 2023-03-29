@@ -1,13 +1,17 @@
 import numpy as np
 
+from estimators.trend_filtering.helpers.difference_matrix import Difference_Matrix
 from estimators.trend_filtering.helpers.tf_constants import get_model_constants
-from matrix_algorithms.difference_matrix import Difference_Matrix
+
+### T0-DO
+# - Incoporate Initial Guess here
 
 
 def primal_dual(
     y: np.ndarray,
     D_: Difference_Matrix,
     lambda_p: float,
+    initial_guess: np.ndarray = None,
 ):
     """
     Adaptive trend filtering algorithm

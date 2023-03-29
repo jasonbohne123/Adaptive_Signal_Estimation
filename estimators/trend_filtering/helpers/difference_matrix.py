@@ -1,11 +1,13 @@
 import sys
 
 sys.path.append("../")
+sys.path.append("../../estimators/trend_filtering/helpers")
 import numpy as np
-from matrix_algorithms.k_differences import differences
-from matrix_algorithms.matrix_sequence import Matrix_Sequence
 from scipy.linalg import get_lapack_funcs
 from scipy.sparse import dia_matrix
+
+from estimators.trend_filtering.helpers.k_differences import differences
+from estimators.trend_filtering.helpers.matrix_sequence import Matrix_Sequence
 
 
 class Difference_Matrix:

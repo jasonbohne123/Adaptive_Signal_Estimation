@@ -4,11 +4,11 @@ sys.path.append("../")
 
 import numpy as np
 
-from matrix_algorithms.difference_matrix import Difference_Matrix
-from trend_filtering.fused_lasso import fused_lasso
+from estimators.trend_filtering.helpers.difference_matrix import Difference_Matrix
+from estimators.trend_filtering.helpers.fused_lasso import fused_lasso
 
 
-def specialized_admm(y: np.ndarray, D_: Difference_Matrix, lambda_: float):
+def specialized_admm(y: np.ndarray, D_: Difference_Matrix, lambda_: float, initial_guess=None):
     """Specialized ADMM Implementation for Trend Filtering"""
 
     # construct difference matrix of order k (not k-1) from original difference matrix
@@ -23,14 +23,14 @@ def specialized_admm(y: np.ndarray, D_: Difference_Matrix, lambda_: float):
     MAX_ITER = 250
 
     # initialize variables with guesses
-    beta = y.copy()
+    beta = y.copy() if initial_guess is None else initial_guess.copy()
 
     # alpha is in R^{n-k-1 x 1}
     alpha = D.dot(beta)
     u = np.zeros([n - k, 1])
 
     # ref. sets rho to lambda for stability
-    rho = lambda_
+    rho = lambda_ if lambda_ != 0 else 1
 
     # Pre-compute to save some multiplications
     I = np.identity(n)

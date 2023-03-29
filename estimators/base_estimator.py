@@ -1,4 +1,5 @@
 from abc import ABC
+from collections import defaultdict
 
 import numpy as np
 
@@ -14,8 +15,16 @@ class Base_Estimator(ABC):
 
         self.y_hat = None
 
-    def fit(self, hypers: dict):
-        pass
+        # hyperparameters and respective max values ([0,max])
+        self.hypers = defaultdict(float)
+        self.hyper_max = defaultdict(float)
+
+    def fit(self, warm_start=False):
+        """Fit estimator to data given hyperparameters"""
 
     def estimate(self, t: np.ndarray):
-        pass
+        """Estimate y_hat given x and hyperparameters"""
+
+    def update_params(self, hypers: dict):
+        """Update parameters of estimator"""
+        self.hypers.update(hypers)

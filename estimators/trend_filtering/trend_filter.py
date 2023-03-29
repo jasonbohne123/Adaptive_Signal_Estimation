@@ -2,15 +2,20 @@ import sys
 
 sys.path.append("helpers/")
 sys.path.append("../../basis")
+
+from collections import defaultdict
+
+import numpy as np
 from helpers.admm_tf import specialized_admm
+from helpers.compute_lambda_max import compute_lambda_max
+from helpers.difference_matrix import Difference_Matrix
 from helpers.primal_dual_tf import primal_dual
 
 from basis.continous_tf import Continous_TF
-from matrix_algorithms.difference_matrix import Difference_Matrix
 
 
 class Trend_Filter:
-    def __init__(self, x, y, k, method="admm", lambda_=1.0):
+    def __init__(self, x, y, k, method="admm"):
 
         self.x = x
         self.y = y
@@ -24,28 +29,42 @@ class Trend_Filter:
 
         self.method = method
 
-        # initialize hyperparameters to be 1.0 wlog
-        hypers = {"lambda_": lambda_}
+        # initialize hyperparameters to be 0 for lambda
+        self.hypers = defaultdict(float)
+        self.hypers.update({"lambda_": 0})
 
-        self.y_hat = self.fit(hypers)
+        self.lambda_max = compute_lambda_max(self.D, self.y)
+        self.hyper_max = {"lambda_": self.lambda_max}
 
-    def fit(self, hypers: dict = None):
+        # fit base model
+        self.y_hat = self.fit()
 
-        assert hypers is not None and "lambda_" in hypers.keys()
+    def fit(self, warm_start=False):
+        """Fit estimator to data given hyperparameters"""
 
-        lambda_ = hypers["lambda_"]
+        assert self.hypers is not None and "lambda_" in self.hypers.keys()
+
+        lambda_ = self.hypers["lambda_"]
 
         if self.method == "admm":
 
-            y_hat = specialized_admm(self.y, self.D, lambda_)
+            y_hat = specialized_admm(self.y, self.D, lambda_, initial_guess=self.y_hat if warm_start else None)
         elif self.method == "primal_dual":
 
-            y_hat = primal_dual(self.y, self.D, lambda_)
+            y_hat = primal_dual(self.y, self.D, lambda_, initial_guess=self.y_hat if warm_start else None)
         else:
             raise ValueError("method not supported")
 
         return y_hat
 
-    def estimate(self, x):
+    def estimate(self, t: np.ndarray):
         """Estimates given a basis function"""
-        return Continous_TF(self.x, self.y_hat, self.k).estimate(x)
+        return Continous_TF(self.y_hat, self.D, self.k).evaluate_tf(t)
+
+    def update_params(self, hypers: dict):
+        """Update parameters of estimator"""
+        self.hypers.update(hypers)
+
+        self.y_hat = self.fit()
+
+        return

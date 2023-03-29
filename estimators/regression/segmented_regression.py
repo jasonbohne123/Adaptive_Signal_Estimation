@@ -24,7 +24,7 @@ class Univariate_Segmented_Regression(Base_Estimator):
         # fit the model
         self.coefficients, self.y_hat = self.fit()
 
-    def fit(self, hypers: dict = None):
+    def fit(self, warm_start=False):
         """Fits a polynomial of order k to the data Y across a given interval"""
 
         # partitions x and y of interval
