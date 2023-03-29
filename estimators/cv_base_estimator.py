@@ -14,4 +14,6 @@ def cv_base_estimator(estimator: Base_Estimator):
     # update estimator with optimal parameters
     estimator.update_params(optimal_params)
 
+    assert estimator.y_hat is not None
+
     return optimal_params

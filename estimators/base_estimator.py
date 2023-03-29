@@ -20,6 +20,9 @@ class Base_Estimator(ABC):
         self.hypers = defaultdict(float)
         self.hyper_max = defaultdict(float)
 
+        # configs for model
+        self.configs = dict()
+
     def fit(self, warm_start=False):
         """Fit estimator to data given hyperparameters"""
 

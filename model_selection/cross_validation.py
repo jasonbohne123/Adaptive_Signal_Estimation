@@ -20,8 +20,12 @@ class K_Fold_Cross_Validation:
 
         self.estimator = estimator
         self.estimator_name = estimator.name
+
+        # get hyperparameters
         self.hyperparams = list(estimator.hypers.keys())
         self.hypermax = estimator.hyper_max
+
+        self.estimator_configs = estimator.configs
 
         # get cross validation constants
         self.k_folds = get_cv_constants()["k_folds"]
@@ -32,15 +36,12 @@ class K_Fold_Cross_Validation:
         self.grid_size = get_cv_constants()["grid_size"]
 
         # generate grid for cross validation
-        self.grid = [self.generate_grid() * self.hypermax[hyper] for hyper in self.hyperparams][0]
-
+        self.relative_grid = self.generate_grid()
         # get size of cross validation
         self.n = len(estimator.x)
-        print(self.n, self.k_folds)
 
         # size of leave-in set
-        self.cv_size = int(self.n / self.k_folds)
-        print(self.cv_size)
+        self.cv_size = self.n - int(self.n / self.k_folds)
 
         # save x and y
         self.x = estimator.x
@@ -77,15 +78,20 @@ class K_Fold_Cross_Validation:
             x_oos = self.y[oos_index]
 
             # fit submodel on in-sample data
-            submodel = fit_submodel(is_index, x_is, self.estimator.k, self.estimator.method, self.estimator_name)
+            submodel = fit_submodel(is_index, x_is, self.estimator_configs, self.estimator_name)
 
-            for lambda_i in self.grid:
+            # get local lambda max
+            local_lambda_max = submodel.lambda_max
+
+            for lambda_i in self.relative_grid:
+
+                lambda_scaled = lambda_i * local_lambda_max
 
                 if self.verbose:
-                    print(f"Performing cross validation for lambda = {lambda_i}")
+                    print(f"Performing cross validation for lambda = {lambda_scaled}")
 
                 # iteratively update regularization param
-                hyperparams = {hyper: lambda_i for hyper in self.hyperparams}
+                hyperparams = {hyper: lambda_scaled for hyper in self.hyperparams}
                 submodel.update_params(hyperparams)
 
                 if submodel.y_hat is None:
@@ -96,7 +102,7 @@ class K_Fold_Cross_Validation:
 
                 # to compute oos error we need to make the return type callable
 
-                estimates = submodel.estimate(x_oos)
+                estimates = submodel.estimate(oos_index)
 
                 # compute mse on oos test set
                 oos_error = compute_error(estimates, x_oos, type="mse")
@@ -106,6 +112,7 @@ class K_Fold_Cross_Validation:
 
         # get best lambda from all iterations
         best_prior_dict = {k: v / self.k_folds for k, v in results.items()}
+
         best_prior = min(best_prior_dict, key=best_prior_dict.get)
 
-        return {"lambda_": best_prior}
+        return {"lambda_": best_prior * self.estimator.lambda_max}

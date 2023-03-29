@@ -1,17 +1,12 @@
-import sys
-
-sys.path.append("helpers/")
-sys.path.append("../../basis")
-
 from collections import defaultdict
 
 import numpy as np
-from helpers.admm_tf import specialized_admm
-from helpers.compute_lambda_max import compute_lambda_max
-from helpers.difference_matrix import Difference_Matrix
-from helpers.primal_dual_tf import primal_dual
 
 from basis.continous_tf import Continous_TF
+from estimators.trend_filtering.helpers.admm_tf import specialized_admm
+from estimators.trend_filtering.helpers.compute_lambda_max import compute_lambda_max
+from estimators.trend_filtering.helpers.difference_matrix import Difference_Matrix
+from estimators.trend_filtering.helpers.primal_dual_tf import primal_dual
 
 
 class Trend_Filter:
@@ -34,12 +29,12 @@ class Trend_Filter:
         self.hypers = defaultdict(float)
         self.hypers.update({"lambda_": 0})
 
+        # init configs for model
+        self.configs = {"k": k, "method": method}
+
+        # set upper bound on hyperparameters
         self.lambda_max = compute_lambda_max(self.D, self.y)
-
         self.hyper_max = {"lambda_": self.lambda_max}
-
-        # fit base model
-        self.y_hat = self.fit()
 
     def fit(self, warm_start=False):
         """Fit estimator to data given hyperparameters"""
