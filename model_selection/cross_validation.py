@@ -17,7 +17,6 @@ class K_Fold_Cross_Validation:
     """General Class for K-Fold Cross Validation on a Base Estimator"""
 
     def __init__(self, estimator: Base_Estimator):
-
         self.estimator = estimator
         self.estimator_name = estimator.name
 
@@ -73,18 +72,20 @@ class K_Fold_Cross_Validation:
             is_index = np.sort(np.random.choice(len(self.x), size=self.cv_size, replace=False))
             oos_index = np.sort(np.setdiff1d(np.arange(len(self.x)), is_index))
 
+            t_is = self.x[is_index]
+            t_oos = self.x[oos_index]
+
             # get in-sample and out-of-sample data
             x_is = self.y[is_index]
             x_oos = self.y[oos_index]
 
             # fit submodel on in-sample data
-            submodel = fit_submodel(is_index, x_is, self.estimator_configs, self.estimator_name)
+            submodel = fit_submodel(t_is, x_is, self.estimator_configs, self.estimator_name)
 
             # get local lambda max
             local_lambda_max = submodel.lambda_max
 
             for lambda_i in self.relative_grid:
-
                 lambda_scaled = lambda_i * local_lambda_max
 
                 if self.verbose:
@@ -95,14 +96,13 @@ class K_Fold_Cross_Validation:
                 submodel.update_params(hyperparams)
 
                 if submodel.y_hat is None:
-
                     # ignore cases where no solution is found
                     results[lambda_i] += np.inf
                     continue
 
                 # to compute oos error we need to make the return type callable
 
-                estimates = submodel.estimate(oos_index)
+                estimates = submodel.estimate(t_oos)
 
                 # compute mse on oos test set
                 oos_error = compute_error(estimates, x_oos, type="mse")

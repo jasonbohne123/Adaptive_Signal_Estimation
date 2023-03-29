@@ -27,6 +27,7 @@ model_selection/helpers/__pycache__
 
 # Simulation
 simulations/__pycache__/
+simulations/helpers/__pycache__/
 
 # Prior Models
 prior_models/__pycache__
