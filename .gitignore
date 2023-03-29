@@ -15,5 +15,12 @@ trend_filtering/data/
 prior_models/__pycache__
 ../evaluation_metrics/__pycache__/loss_functions.cpython-310.pyc
 evaluation_metrics/__pycache__/
-splines/__pycache__/
-segmented_regression/__pycache__
+
+# Estimators
+estimators/splines/__pycache__
+estimators/splines/helpers/__pycache__
+estimators/regression/__pycache__
+estimators/__pycache__
+
+# Basis
+basis/__pycache__

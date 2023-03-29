@@ -5,8 +5,8 @@ import numpy as np
 
 from evaluation_metrics.loss_functions import compute_error
 from prior_models.prior_model import Prior
-from trend_filtering.adaptive_tf import adaptive_tf
 from trend_filtering.cv_tf import perform_cv
+from trend_filtering.primal_dual_tf import adaptive_tf
 from trend_filtering.test_helpers import log_to_mlflow, prep_signal, write_to_files
 from trend_filtering.tf_constants import get_model_constants
 
