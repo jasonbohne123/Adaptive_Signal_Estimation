@@ -1,14 +1,13 @@
 import numpy as np
 
 from evaluation_metrics.haussdorf import compute_haussdorf_distance
-from trend_filtering.tf_constants import get_simulation_constants
+from simulations.helpers.get_sim_constants import get_simulation_constants
 
 
 def compute_error(x, x_hat, type="mse"):
     assert type in ["mse", "mae", "epe", "hausdorff"]
 
     if type == "mse" or type == "mae" or type == "epe":
-
         assert x.shape == x_hat.shape
 
     if type == "mse":

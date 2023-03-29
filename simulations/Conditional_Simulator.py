@@ -1,7 +1,7 @@
 import numpy as np
 
-from trend_filtering.label_changepoints import label_changepoints
-from trend_filtering.tf_constants import get_simulation_constants
+from simulations.helpers.get_sim_constants import get_simulation_constants
+from simulations.helpers.label_changepoints import label_changepoints
 
 from .Simulator import Simulator
 
@@ -57,7 +57,6 @@ class ConditionalSimulator(Simulator):
 
         # process is piecewise constant
         if self.sim_style == "piecewise_constant":
-
             for i in range(len(cp_index) - 1):
                 # evaluate remaining of the interval to be constant
                 true_processes[:, cp_index[i] : cp_index[i + 1]] = np.multiply(
@@ -67,7 +66,6 @@ class ConditionalSimulator(Simulator):
         # process is piecewise linear
         elif self.sim_style == "piecewise_linear":
             for i in range(len(cp_index) - 1):
-
                 steps = cp_index[i + 1] - cp_index[i]
 
                 if i == 0:

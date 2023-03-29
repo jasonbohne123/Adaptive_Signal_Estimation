@@ -1,7 +1,7 @@
 import numpy as np
 
+from estimators.trend_filtering.helpers.tf_constants import get_simulation_constants
 from simulations.Simulator import Simulator
-from trend_filtering.tf_constants import get_simulation_constants
 
 
 class Sampler(Simulator):
