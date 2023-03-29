@@ -1,20 +1,19 @@
 import sys
 
 sys.path.append("../")
-
-import matplotlib.pyplot as plt
+import cvxopt as cvx
 import numpy as np
 
 from matrix_algorithms.difference_matrix import Difference_Matrix
 
 
-def specialized_admm(y: np.ndarray, k: int = 2):
+def specialized_admm(y: np.ndarray, k: int = 1, lambda_: float = 1):
     """Specialized ADMM Implementation for Trend Filtering
 
     Ref: https://arxiv.org/abs/1406.2082
     """
 
-    n = y.shape[0]
+    n = y.shape[0]  # n-k-1 total differences
     D = Difference_Matrix(n, k=k)
     D_ = D.D
     D_t_D = D_.T.dot(D_)
@@ -40,41 +39,24 @@ def specialized_admm(y: np.ndarray, k: int = 2):
 
     Q_inv_dot = Q_inv.dot
 
+    ## Fused Lasso
+
+    def diff_op(shape):
+        mat = np.zeros(shape)
+        mat[range(2, shape[0]), range(1, shape[1])] = 1
+        mat -= np.eye(shape)
+        return mat
+
+    def difference_pen(beta, epsilon):
+        return cvx.norm1(diff_op(beta.shape) @ beta)
+
     for _ in range(MAX_ITER):
         # x minimisation step via posterier OLS
         beta = Q_inv_dot(y + rho_D_t.dot(alpha - u))
 
-        alpha = ...  # fused lasso
+        alpha = difference_pen(beta, lambda_)
 
         # mulitplier update
         u = u + alpha - D_.dot(beta)
 
     return alpha
-
-
-def test(n=200):
-    """Test the ADMM method with randomly generated matrices and vectors"""
-
-    x = np.linspace(0, 1, n)
-    true_y = np.sin(2 * np.pi * x)
-
-    # add noise
-    y = true_y + np.random.normal(0, 0.1, n)
-
-    # estimate trend
-    trend = specialized_admm(y)
-
-    # plot results
-    plot(true_y, trend)
-
-    plt.show()
-
-    return
-
-
-def plot(original, computed):
-    """Plot two vectors to compare their values"""
-    plt.plot(original, label="Original")
-    plt.plot(computed, label="Estimate")
-
-    plt.legend(loc="upper right")

@@ -2,16 +2,16 @@ import math
 import sys
 
 import numpy as np
-from falling_factorial_gen import Falling_Factorial_Basis
 
 sys.path.append("../")
 sys.path.append("../../")
 from matrix_algorithms.difference_matrix import Difference_Matrix
 from matrix_algorithms.k_differences import differences
+from trend_filtering.falling_factorial_gen import Falling_Factorial_Basis
 
 
 class Continous_TF:
-    def __init__(self, x_tf: np.ndarray, D: Difference_Matrix, k: int, cv: bool = False):
+    def __init__(self, x_tf: np.ndarray, D: Difference_Matrix, k: int, cv: bool = False, theta: np.ndarray = None):
         self.x_tf = x_tf.flatten()
         self.k = k
 
@@ -40,7 +40,7 @@ class Continous_TF:
         self.h_k_j_x = self.falling_factorial_basis.h_k_j_x
 
         self.phi = self.compute_phi()
-        self.theta = self.compute_theta()
+        self.theta = self.compute_theta() if theta is None else theta
 
     def compute_phi(self):
         """Compute phi coefficents for h_j_x terms"""

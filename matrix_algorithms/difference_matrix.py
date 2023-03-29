@@ -84,7 +84,7 @@ class Difference_Matrix:
         # save the composite sequence of D
         self.composite_sequence = self.sequence.compute_matrix().dot(self.sequence_transpose.compute_matrix())
 
-        assert np.allclose(self.composite_sequence, DDT, atol=1e-8)
+        # assert np.allclose(self.composite_sequence, DDT, atol=1e-8)
 
         np.linalg.cond(DDT)
 

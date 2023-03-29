@@ -25,6 +25,7 @@ def compute_lambda_max(D: Difference_Matrix, x: np.ndarray):
 def extract_cp(smooth, D: Difference_Matrix, quantile):
     """Extract changepoints via difference operator"""
 
+    n = D.n
     D = D.D
 
     diff = np.dot(D, smooth).reshape(1, -1)[0]
@@ -39,7 +40,8 @@ def extract_cp(smooth, D: Difference_Matrix, quantile):
     index = np.where(np.abs(diff) > threshold)[0]
 
     # returns rhs of index for close pairs
-    close_pairs = index[1:][np.diff(index) < get_model_constants()["min_cp_distance"]]
+    min_cp_distance = int(get_model_constants()["min_cp_distance"] * n)
+    close_pairs = index[1:][np.diff(index) < min_cp_distance]
 
     index_to_remove = []
 

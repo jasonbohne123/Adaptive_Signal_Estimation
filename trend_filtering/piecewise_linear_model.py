@@ -31,7 +31,7 @@ class Piecewise_Linear_Model:
 
         # constants for candidate changepoint selection
         self.quantile = get_model_constants()["cp_quantile"]
-        self.K_max = min(int(get_model_constants()["K_max"] * self.x.shape[0]), 1)
+        self.K_max = max(int(get_model_constants()["K_max"] * self.x.shape[0]), 1)
         self.nu = get_model_constants()["nu"]
         self.order = get_model_constants()["order"]
         self.select_knots = select_knots
@@ -56,6 +56,9 @@ class Piecewise_Linear_Model:
 
         # Extract all candidate knots up to a threshold
         candidate_knots = extract_cp(reshaped_x, self.D, self.quantile)
+
+        # adjust K_max to the number of candidate knots
+        self.K_max = min(self.K_max, len(candidate_knots))
 
         # Apply dynamic programming to find optimal knots
         dp_set = partition_solver(reshaped_x, candidate_knots, K_max=self.K_max, k=self.order)

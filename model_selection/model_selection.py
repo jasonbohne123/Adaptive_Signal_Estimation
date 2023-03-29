@@ -55,7 +55,8 @@ def ratio_model_selection(Y, optimal_indices, order, true_knots, nu, verbose=Tru
         if k_i > 0:
             model_ratio[k_i - 1] = model_mse[k_i] / model_mse[k_i - 1]
 
-    candidate_models = {k: model_ratio[k] for k in model_ratio.keys() if model_ratio[k] > 1 - nu and model_ratio[k] < 1}
+    # optimal model is the most parsimonious model that is (1-nu) times better than the previous model
+    candidate_models = {k: model_ratio[k] for k in model_ratio.keys() if model_ratio[k] > 1 - nu}
 
     # if no candidate models are found, return optimal model of no cp
     optimal_model = min(candidate_models.keys()) if len(candidate_models) > 0 else 0
