@@ -10,8 +10,6 @@
 def get_model_constants():
     """Default Model Constants for Trend Filtering"""
     hyperparams = {
-        "k": 1,
-        "n": 250,
         "alpha": 0.01,
         "beta": 0.5,
         "mu": 2,

@@ -10,7 +10,7 @@ from typing import Dict
 import numpy as np
 from trend_filtering.test_adaptive_tf import test_adaptive_tf
 
-from estimators.trend_filtering.helpers.tf_constants import get_model_constants, get_simulation_constants
+from estimators.trend_filtering.helpers.primal_dual_constants import get_model_constants, get_simulation_constants
 from prior_models.deterministic_prior import Deterministic_Prior
 from prior_models.kernel_smooth import Kernel_Smooth_Prior
 from prior_models.prior_model import Prior

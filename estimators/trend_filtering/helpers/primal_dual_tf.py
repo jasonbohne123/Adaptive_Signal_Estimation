@@ -1,7 +1,7 @@
 import numpy as np
 
 from estimators.trend_filtering.helpers.difference_matrix import Difference_Matrix
-from estimators.trend_filtering.helpers.tf_constants import get_model_constants
+from estimators.trend_filtering.helpers.primal_dual_constants import get_model_constants
 
 ### T0-DO
 # - Incoporate Initial Guess here
@@ -45,7 +45,6 @@ def primal_dual(
 
     # main loop of iteration; solving a sequence of equality constrained quadratic programs
     for iters in range(maxiter + 1):
-
         DTz, DDTz, w = prep_matrices(D, Dy, z, mu1, mu2)
 
         # compute objectives
@@ -144,7 +143,6 @@ def update_step(DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, ste
 
     # Backtracking style line search, parameterized by alpha and beta
     for liter in range(maxlsiter):
-
         # update params within linesearch
         newz = z + step * dz
         newmu1 = mu1 + step * dmu1

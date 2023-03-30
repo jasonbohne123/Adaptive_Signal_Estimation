@@ -3,7 +3,7 @@ import sys
 sys.path.append("../")
 
 import numpy as np
-
+from estimators.trend_filtering.helpers.admm_constants import get_model_constants
 from estimators.trend_filtering.helpers.difference_matrix import Difference_Matrix
 from estimators.trend_filtering.helpers.fused_lasso import fused_lasso
 
@@ -19,8 +19,8 @@ def specialized_admm(y: np.ndarray, D_: Difference_Matrix, lambda_: float, initi
     D = D_
     D_t_D = D.T.dot(D)
 
-    # set max iterations
-    MAX_ITER = 50
+    # set constants
+    maxiter = get_model_constants()["maxiter"]
 
     # initialize variables with guesses
     beta = y.copy() if initial_guess is None else initial_guess.copy()
@@ -43,8 +43,7 @@ def specialized_admm(y: np.ndarray, D_: Difference_Matrix, lambda_: float, initi
     D_k_1 = Difference_Matrix(n, k=k)
     np.amax(np.absolute(np.linalg.inv(D_k_1.D.dot(D_k_1.D.T)).dot((D_k_1.D).dot(y))))
 
-    for _ in range(MAX_ITER):
-
+    for _ in range(maxiter):
         # beta is in R^{n x 1}
         beta = Q_inv_dot(y + rho_D_T.dot((alpha + u).reshape(-1, 1)))
 

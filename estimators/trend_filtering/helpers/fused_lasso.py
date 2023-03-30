@@ -29,6 +29,10 @@ def fused_lasso(D_k_beta_u, alpha, n, k, lambda_, rho):
 
     prob = cvx.Problem(objective)
 
-    result = prob.solve(warm_start=True)
+    result = prob.solve(solver=cvx.OSQP)
 
     return alpha_hat.value.reshape(-1, 1)
+
+
+### Ref. Available Solvers within CVXPY
+# https://www.cvxpy.org/tutorial/advanced/index.html#setting-solver-options
