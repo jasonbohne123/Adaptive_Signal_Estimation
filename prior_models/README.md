@@ -1,5 +1,4 @@
+### Exogenous Covariates and Prior Models
 
-### Folder for Prior Models for Adaptive Signal Estimation
-
-- Most at the moment are IID samples from a selected distribution
-- Eventually the idea is this is an independent estimated model that one can use to nonparametrically adaptively estimate the candidate signal
+- Given a feature matrix of exogenous covariates, we can use the prior models to generate a univariate projection of the time series.
+- The prior models are trained on the exogenous covariates and the target time series.

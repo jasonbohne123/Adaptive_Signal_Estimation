@@ -66,9 +66,6 @@ def primal_dual(
             DDT, DDTz, Dy, lambda_p, z, w, mu1, mu2, f1, f2, mu, mu_inc, step, gap, m, alpha, beta, maxlsiter
         )
 
-        # adaptive stepsize of mu with ratio gamma
-        # newmu1, newmu2 = adaptive_step_size(pobj1, pobj2, newmu1, newmu2, gamma)
-
         z = newz
         mu1 = newmu1
         mu2 = newmu2

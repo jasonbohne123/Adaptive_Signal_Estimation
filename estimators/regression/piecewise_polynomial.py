@@ -80,3 +80,7 @@ class Piecewise_Polynomial_Model(Base_Estimator):
             pass
         else:
             raise ValueError("method not supported")
+
+    def update_params(self):
+
+        pass

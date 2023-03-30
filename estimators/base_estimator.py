@@ -1,12 +1,12 @@
-from abc import ABC
+import abc
 from collections import defaultdict
 
 import numpy as np
 
 
-class Base_Estimator(ABC):
+class Base_Estimator(abc.ABC):
     """
-    Base class for all estimators; which have a fit and estimate method
+    Abstract Base Class for all estimators; which have a fit and estimate method
     """
 
     def __init__(self, x, y):
@@ -23,17 +23,15 @@ class Base_Estimator(ABC):
         # configs for model
         self.configs = dict()
 
+    @abc.abstractmethod
     def fit(self, warm_start=False):
         """Fit estimator to data given hyperparameters"""
 
-        pass
-
+    @abc.abstractmethod
     def estimate(self, t: np.ndarray):
         """Estimate y_hat given x and hyperparameters"""
-        pass
 
+    @abc.abstractmethod
     def update_params(self, hypers: dict):
         """Update parameters of estimator"""
         self.hypers.update(hypers)
-
-        pass
