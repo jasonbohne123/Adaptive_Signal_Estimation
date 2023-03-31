@@ -31,3 +31,6 @@ simulations/helpers/__pycache__/
 
 # Prior Models
 prior_models/__pycache__
+
+# Preprocessing
+preprocessing/__pycache__
