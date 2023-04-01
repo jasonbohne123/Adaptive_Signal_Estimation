@@ -1,4 +1,4 @@
-### Adaptive Signal Estimation (Private Repo)
+### Adaptive Signal Estimation (Public Repo)
 
 Collection of estimators, basis functions, and other tools for adaptive signal estimation.
 
@@ -7,8 +7,6 @@ Organized into the following directories:
 - estimators: Contains the estimators used for adaptive signal estimation
 - basis_functions: Underlying basis functions used in regression 
 - model_selection: Tools for hyperparameter tuning and model selection
-- simulations: Simulation scripts for testing the performance of the estimators
-
 
 Each directory contains a helpers directory that contains helper functions used in the directory. Constant files are across directories and contain constants used in the estimators.
 
