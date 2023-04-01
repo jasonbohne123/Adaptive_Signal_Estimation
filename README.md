@@ -1,12 +1,33 @@
-### Adaptive Signal Estimation (Public Version)
+### Adaptive Signal Estimation (Private Repo)
 
-Collection of public algorithms on my research in nonparametric methods and adaptive signal estimation
+Collection of estimators, basis functions, and other tools for adaptive signal estimation.
 
-Work relevant to current research interests of conditional trend filtering and changepoint detection
+Organized into the following directories:
 
-Included is
+- estimators: Contains the estimators used for adaptive signal estimation
+- basis_functions: Underlying basis functions used in regression 
+- model_selection: Tools for hyperparameter tuning and model selection
+- simulations: Simulation scripts for testing the performance of the estimators
 
-Optimized numerical algorithms for difference matrix construction and optimized inversion
-Sherman-Morrison Script for Inversion
-Kernel Estimation Class and Simulations
+
+Each directory contains a helpers directory that contains helper functions used in the directory. Constant files are across directories and contain constants used in the estimators.
+
+
+
+#### Installation
+
+To replicate the enviroment used for this project, run the following commands:
+
+Create a conda env using the environment.yml file
+
+```conda env create -f environment.yml```
+
+Backup environment.yml file
+
+```conda env export > environment.yml```
+
+Setup Pre-commit Hooks for formatting
+
+```conda install isort autoflake black pre-commit pre-commit install```
+
 
