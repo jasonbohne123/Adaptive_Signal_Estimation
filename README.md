@@ -27,8 +27,3 @@ Backup environment.yml file
 Setup Pre-commit Hooks for formatting
 
 ```conda install isort autoflake black pre-commit pre-commit install```
-
-Optimized numerical algorithms for difference matrix construction and optimized inversion
-Sherman-Morrison Script for Inversion
-Kernel Estimation Class and Simulations
-
